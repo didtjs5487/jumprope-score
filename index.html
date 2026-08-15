@@ -23,11 +23,14 @@
     --danger:#dc2626; --ok:#16a34a; --warn:#c9770a;
     --radius:14px;
   }
-  *{box-sizing:border-box;}
+  /* touch-action:manipulation — 더블탭 시 화면이 확대되는 iOS Safari 기본 동작을 꺼서,
+     버튼을 두 번 이상 눌렀을 때 클릭 대신 확대/축소가 일어나던 문제를 막는다.
+     (핀치 확대는 그대로 허용되고, 더블탭 확대 제스처만 꺼진다.) */
+  *{box-sizing:border-box;touch-action:manipulation;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic",sans-serif;
-    -webkit-tap-highlight-color:transparent;}
-  button{font-family:inherit;cursor:pointer;}
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  button{font-family:inherit;cursor:pointer;touch-action:manipulation;}
   input,textarea{font-family:inherit;}
   h1,h2,h3{margin:0;}
   .hidden{display:none !important;}
