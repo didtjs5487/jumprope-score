@@ -1402,7 +1402,19 @@ document.getElementById("btnExportCsv").addEventListener("click", () => {
    ========================================================= */
 if ("serviceWorker" in navigator){
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(()=>{});
+    navigator.serviceWorker.register("sw.js").then(reg => {
+      // 방문할 때마다 새 서비스워커가 있는지 명시적으로 확인해, 배포 직후에도
+      // 앱이 예전 캐시 버전에 오래 머무르지 않도록 한다.
+      reg.update().catch(()=>{});
+    }).catch(()=>{});
+  });
+  // 새 서비스워커가 활성화되면(즉 업데이트가 적용되면) 한 번 자동으로 새로고침해
+  // 사용자가 항상 최신 버전을 보도록 한다.
+  let swRefreshed = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (swRefreshed) return;
+    swRefreshed = true;
+    location.reload();
   });
 }
 
