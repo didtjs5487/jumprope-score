@@ -2,16 +2,21 @@
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#5b6ee8"/>
-      <stop offset="100%" stop-color="#3a4bc0"/>
+      <stop offset="100%" stop-color="#3547b8"/>
     </linearGradient>
   </defs>
   <rect width="192" height="192" rx="42" fill="url(#bg)"/>
-  <path d="M44 134 C44 74, 148 74, 148 134" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
-  <circle cx="44" cy="142" r="10" fill="#ffffff"/>
-  <circle cx="148" cy="142" r="10" fill="#ffffff"/>
-  <g transform="translate(80,44)">
-    <rect x="14" y="0" width="6" height="46" rx="3" fill="#ffe27a"/>
-    <path d="M20 2 C36 6, 37 20, 20 22 Z" fill="#ffe27a"/>
-    <ellipse cx="8" cy="46" rx="11" ry="8" transform="rotate(-16 8 46)" fill="#ffe27a"/>
+  <circle cx="94" cy="84" r="38" fill="none" stroke="#ffffff" stroke-width="11"/>
+  <path d="M113 117 L66 166" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  <path d="M75 117 L108 166" fill="none" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  <rect x="52" y="162" width="26" height="16" rx="8" fill="#ffffff"/>
+  <rect x="96" y="162" width="26" height="16" rx="8" fill="#ffffff"/>
+  <g transform="translate(146,32)">
+    <circle r="23" fill="#ffe27a"/>
+    <g transform="translate(-8.5,-12.5)">
+      <rect x="8.5" y="0" width="4.2" height="21" rx="2.1" fill="#3a4bc0"/>
+      <path d="M12.7 1 C22.7 4, 23.7 12.5, 12.7 13.5 Z" fill="#3a4bc0"/>
+      <circle cx="6.2" cy="21" r="6.2" fill="#3a4bc0"/>
+    </g>
   </g>
 </svg>

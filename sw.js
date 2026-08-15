@@ -1,7 +1,7 @@
 // 기본 오프라인 캐싱: 앱 셸(HTML/manifest/아이콘)만 캐시하고,
 // Firebase 등 외부 API 요청은 항상 네트워크로 보내 실시간 동기화를 방해하지 않는다.
 // same-origin 요청은 "네트워크 우선, 실패 시 캐시" 전략으로 최신 버전을 우선한다.
-const CACHE_NAME = "jumprope-score-v3";
+const CACHE_NAME = "jumprope-score-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
