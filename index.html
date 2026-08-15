@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>음악줄넘기 채점</title>
+<meta name="theme-color" content="#4a5fd9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="줄넘기채점">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#f2f3f7; --card:#ffffff; --text:#1c1e26; --muted:#6b7280; --border:#e5e7eb;
+    --primary:#4a5fd9; --primary-dark:#3a4bc0; --primary-light:#eef0fd;
+    --lv1:#e5484d; --lv1-bg:#fdecec;
+    --lv2:#c9770a; --lv2-bg:#fdf1de;
+    --lv3:#2563eb; --lv3-bg:#e8f0fe;
+    --lv4:#16a34a; --lv4-bg:#e7f7ed;
+    --danger:#dc2626; --ok:#16a34a; --warn:#c9770a;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic",sans-serif;
+    -webkit-tap-highlight-color:transparent;}
+  button{font-family:inherit;cursor:pointer;}
+  input,textarea{font-family:inherit;}
+  h1,h2,h3{margin:0;}
+  .hidden{display:none !important;}
+  .container{max-width:1100px;margin:0 auto;padding:0 12px;}
+
+  /* ---- login ---- */
+  #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+  .login-card{background:var(--card);border-radius:var(--radius);padding:32px 24px;width:100%;max-width:360px;
+    box-shadow:0 4px 24px rgba(0,0,0,.08);}
+  .login-card h1{font-size:22px;margin-bottom:4px;text-align:center;}
+  .login-card p.sub{color:var(--muted);font-size:13px;text-align:center;margin:0 0 20px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .field input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:16px;}
+  .field input:focus{outline:2px solid var(--primary);outline-offset:-1px;}
+  .btn{border:none;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:600;}
+  .btn-primary{background:var(--primary);color:#fff;width:100%;}
+  .btn-primary:active{background:var(--primary-dark);}
+  .btn-ghost{background:transparent;color:var(--primary);font-weight:600;font-size:13px;}
+  .err-msg{color:var(--danger);font-size:13px;margin-top:10px;min-height:16px;}
+  .dev-mode-btn{margin-top:14px;width:100%;background:#fff;border:1px dashed var(--muted);color:var(--muted);}
+
+  /* ---- app shell ---- */
+  #app header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--border);}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px;}
+  .topbar .title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px;}
+  .conn-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none;}
+  .conn-dot.off{background:var(--danger);}
+  .who{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;}
+  .who button{background:none;border:none;color:var(--primary);font-size:12px;font-weight:600;padding:4px;}
+  .tabs{display:flex;border-top:1px solid var(--border);}
+  .tab-btn{flex:1;padding:11px 4px;text-align:center;background:none;border:none;font-size:13px;font-weight:600;
+    color:var(--muted);border-bottom:3px solid transparent;}
+  .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);}
+  .offline-banner{background:#fef3c7;color:#92400e;font-size:12px;text-align:center;padding:5px;display:none;}
+  .offline-banner.show{display:block;}
+
+  main{padding:12px 12px 90px;}
+
+  /* ---- class selector ---- */
+  .cls-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;-webkit-overflow-scrolling:touch;}
+  .cls-btn{flex:none;min-width:44px;padding:9px 4px;border-radius:10px;border:1px solid var(--border);
+    background:var(--card);font-weight:700;font-size:14px;color:var(--text);position:relative;}
+  .cls-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .cls-btn .badge{display:block;font-size:9px;font-weight:500;opacity:.8;margin-top:1px;}
+
+  /* ---- score layout ---- */
+  #tab-score{display:flex;flex-direction:column;gap:10px;}
+  @media(min-width:860px){
+    #tab-score{display:grid;grid-template-columns:220px 1fr;align-items:start;}
+    #studentPickerWrap{grid-column:1;grid-row:1 / span 2;}
+    #scoreCardWrap{grid-column:2;grid-row:1;}
+  }
+  .student-grid{display:flex;flex-wrap:wrap;gap:6px;}
+  @media(min-width:860px){.student-grid{flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 160px);overflow-y:auto;}}
+  .stu-chip{flex:none;width:78px;padding:7px 4px;border-radius:10px;background:var(--card);border:1px solid var(--border);
+    text-align:center;position:relative;}
+  @media(min-width:860px){.stu-chip{width:100%;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
+  .stu-chip.active{border-color:var(--primary);background:var(--primary-light);}
+  .stu-chip .no{font-size:11px;color:var(--muted);}
+  .stu-chip .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stu-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:3px;background:#d1d5db;}
+  .stu-dot.partial{background:var(--warn);}
+  .stu-dot.done{background:var(--ok);}
+
+  .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .score-card h2{font-size:18px;margin-bottom:2px;}
+  .score-card .sub{color:var(--muted);font-size:12px;margin-bottom:14px;}
+  .move-row{margin-bottom:12px;}
+  .move-row .move-name{font-size:13px;font-weight:600;margin-bottom:6px;}
+  .lv-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+  .lv-btn{padding:9px 2px;border-radius:9px;border:1px solid var(--border);background:#fafafa;
+    font-size:11px;font-weight:600;color:var(--muted);line-height:1.3;}
+  .lv-btn b{display:block;font-size:13px;}
+  .lv-btn[data-lv="1"].sel{background:var(--lv1-bg);border-color:var(--lv1);color:var(--lv1);}
+  .lv-btn[data-lv="2"].sel{background:var(--lv2-bg);border-color:var(--lv2);color:var(--lv2);}
+  .lv-btn[data-lv="3"].sel{background:var(--lv3-bg);border-color:var(--lv3);color:var(--lv3);}
+  .lv-btn[data-lv="4"].sel{background:var(--lv4-bg);border-color:var(--lv4);color:var(--lv4);}
+
+  .task-list{margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
+  .task-item{display:flex;align-items:center;gap:10px;padding:9px 2px;font-size:14px;}
+  .task-item input{width:20px;height:20px;flex:none;}
+
+  /* ---- 라이브 채점 모드 ---- */
+  .mode-toggle{display:flex;gap:6px;margin-bottom:14px;}
+  .mode-btn{flex:1;padding:8px;border-radius:9px;border:1px solid var(--border);background:var(--bg);
+    font-size:12px;font-weight:700;color:var(--muted);}
+  .mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .live-step-label{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px;}
+  .live-move-name{font-size:22px;font-weight:800;margin-bottom:18px;line-height:1.3;}
+  .miss-btn{width:100%;padding:34px 10px;border-radius:16px;border:none;background:var(--lv1);color:#fff;
+    font-size:20px;font-weight:800;}
+  .miss-btn:active{opacity:.85;}
+  .miss-dots{display:flex;gap:8px;justify-content:center;margin:14px 0;}
+  .miss-dot{width:14px;height:14px;border-radius:50%;background:#e5e7eb;border:2px solid var(--border);}
+  .miss-dot.on{background:var(--lv1);border-color:var(--lv1);}
+  .live-score-line{text-align:center;font-size:15px;font-weight:700;margin-bottom:16px;}
+  .live-score-line b{color:var(--primary);font-size:20px;}
+  .live-actions{display:flex;gap:8px;margin-top:6px;}
+  .undo-btn{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;font-weight:700;color:var(--muted);}
+  .undo-btn:disabled{opacity:.4;}
+  .move-nav{display:flex;gap:8px;margin-top:14px;}
+  .move-nav button{flex:1;padding:13px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:14px;font-weight:700;}
+  .move-nav button.primary{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .move-nav button:disabled{opacity:.4;}
+  .live-wrap-title{font-size:16px;font-weight:800;margin-bottom:14px;text-align:center;}
+  .next-student-btn{width:100%;padding:18px;border-radius:14px;border:none;background:var(--ok);color:#fff;
+    font-size:16px;font-weight:800;margin-top:16px;}
+  .next-student-btn:disabled{opacity:.4;}
+
+  .summary-bar{position:sticky;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);
+    padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 -2px 10px rgba(0,0,0,.05);
+    margin:14px -16px -16px;border-radius:0 0 var(--radius) var(--radius);}
+  .summary-bar .scores{flex:1;font-size:12px;color:var(--muted);}
+  .summary-bar .final{font-size:22px;font-weight:800;color:var(--primary);}
+  .summary-bar .final small{font-size:11px;font-weight:600;color:var(--muted);}
+  .nav-btn{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:700;}
+  .save-state{font-size:11px;color:var(--muted);}
+  .save-state.err{color:var(--danger);font-weight:700;}
+
+  .empty-state{text-align:center;color:var(--muted);padding:40px 16px;font-size:14px;}
+
+  /* ---- roster tab ---- */
+  .roster-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .roster-card label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;}
+  .roster-card textarea{width:100%;min-height:280px;padding:10px;border:1px solid var(--border);border-radius:10px;
+    font-size:14px;line-height:1.7;resize:vertical;}
+  .roster-help{font-size:12px;color:var(--muted);margin:8px 0 12px;}
+  .roster-actions{display:flex;gap:8px;align-items:center;}
+  .count-field{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;}
+  .count-field input{width:70px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center;}
+
+  /* ---- dashboard ---- */
+  .cls-summary-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-bottom:14px;}
+  .cls-card{background:var(--card);border-radius:10px;padding:10px 6px;text-align:center;border:1px solid var(--border);}
+  .cls-card.active{border-color:var(--primary);background:var(--primary-light);}
+  .cls-card .n{font-size:12px;color:var(--muted);}
+  .cls-card .frac{font-size:15px;font-weight:800;margin-top:2px;}
+  .dash-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;}
+  .export-btn{background:var(--ok);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;}
+  table.dash-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;font-size:13px;}
+  table.dash-table th,table.dash-table td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);}
+  table.dash-table th{background:#fafbfc;color:var(--muted);font-size:11px;cursor:pointer;user-select:none;white-space:nowrap;}
+  table.dash-table td.name-cell{text-align:left;font-weight:600;}
+  table.dash-table td.final-cell{font-weight:800;color:var(--primary);}
+  .table-scroll{overflow-x:auto;border-radius:var(--radius);}
+
+  #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:6px;
+    align-items:center;pointer-events:none;}
+  .toast-msg{background:#1c1e26;color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);
+    animation:toastIn .15s ease-out;}
+  .toast-msg.err{background:var(--danger);}
+  @keyframes toastIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>🎵 음악줄넘기 채점</h1>
+    <p class="sub">인천영종고 체육2 · 실기평가 채점 도구</p>
+    <div class="field">
+      <label>이메일</label>
+      <input id="loginEmail" type="email" autocomplete="username" placeholder="teacher112@yeongjong.icehs.kr">
+    </div>
+    <div class="field">
+      <label>비밀번호</label>
+      <input id="loginPw" type="password" autocomplete="current-password" placeholder="비밀번호">
+    </div>
+    <button class="btn btn-primary" id="btnLogin">로그인</button>
+    <div class="err-msg" id="loginErr"></div>
+    <button class="btn dev-mode-btn hidden" id="btnDevMode">⚙️ 로컬 미리보기로 계속하기 (Firebase 미연결)</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <div class="topbar">
+      <div class="title"><span class="conn-dot" id="connDot"></span> 음악줄넘기 채점</div>
+      <div class="who">
+        <span id="whoName"></span>
+        <button id="btnChangePw">비밀번호 변경</button>
+        <button id="btnLogout">로그아웃</button>
+      </div>
+    </div>
+    <div class="offline-banner" id="offlineBanner">🔴 오프라인 상태입니다 · 재연결되면 자동으로 저장됩니다</div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="score">✏️ 채점</button>
+      <button class="tab-btn" data-tab="dashboard">📊 현황판</button>
+      <button class="tab-btn" data-tab="roster">👥 명단</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 채점 -->
+    <section id="tab-score">
+      <div id="studentPickerWrap">
+        <div class="cls-row" id="clsRowScore"></div>
+        <div class="student-grid" id="studentGrid"></div>
+      </div>
+      <div id="scoreCardWrap">
+        <div id="scoreCardEmpty" class="empty-state">반과 학생 번호를 선택하면 채점 화면이 나타납니다.</div>
+        <div id="scoreCard" class="score-card hidden"></div>
+      </div>
+    </section>
+
+    <!-- 현황판 -->
+    <section id="tab-dashboard" class="hidden">
+      <div class="cls-summary-row" id="clsSummaryRow"></div>
+      <div class="dash-toolbar">
+        <div id="dashFilterLabel" style="font-size:13px;color:var(--muted);font-weight:600;">전체 반</div>
+        <button class="export-btn" id="btnExportCsv">⬇️ CSV로 내보내기</button>
+      </div>
+      <div class="table-scroll">
+        <table class="dash-table" id="dashTable">
+          <thead>
+            <tr>
+              <th data-sort="cls">반</th>
+              <th data-sort="no">번호</th>
+              <th data-sort="name">이름</th>
+              <th data-sort="a">완성도Ⓐ</th>
+              <th data-sort="b">과제Ⓑ</th>
+              <th data-sort="raw">원점수</th>
+              <th data-sort="final">환산점수</th>
+              <th data-sort="by">채점교사</th>
+            </tr>
+          </thead>
+          <tbody id="dashTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 명단 -->
+    <section id="tab-roster" class="hidden">
+      <div class="cls-row" id="clsRowRoster"></div>
+      <div class="roster-card">
+        <div class="count-field">
+          <label style="margin:0;">인원수</label>
+          <input type="number" id="rosterCount" min="1" max="50">
+          <span style="color:var(--muted);font-size:12px;">명</span>
+        </div>
+        <label>학생 명단 (한 줄에 한 명, 1번부터 순서대로)</label>
+        <textarea id="rosterText" placeholder="김민준&#10;이서연&#10;박도윤&#10;..."></textarea>
+        <p class="roster-help">엑셀 명렬표에서 이름 열만 복사해 붙여넣어도 됩니다. 빈 줄은 그 번호를 이름 없이(“n번”) 둡니다.</p>
+        <div class="roster-actions">
+          <button class="btn btn-primary" id="btnSaveRoster" style="width:auto;">명단 저장</button>
+          <span class="save-state" id="rosterSaveState"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   1. 평가 기준 상수 (2026학년도 2학기 체육2 음악줄넘기 채점표)
+   ========================================================= */
+const MOVES = [
+  "① 양발모아뛰기 1도약",
+  "② 번갈아 뛰기",
+  "③ 번갈아두박자 뛰기",
+  "④ 십자 뛰기",
+  "⑤ 가위바위보 뛰기",
+  "⑥ 사이드 오픈(SO)",
+  "⑦ 사이드 크로스(SC)",
+  "⑧ 크로스 오픈(CO)",
+];
+const LEVELS = [
+  {v:1, label:"실패"},
+  {v:2, label:"8박자"},
+  {v:3, label:"8박자↑"},
+  {v:4, label:"Clear"},
+];
+const TASKS = [
+  "개인 연습 철저",
+  "줄넘기 기본자세 우수",
+  "각 스텝 및 기술 동작 우수",
+  "음악과 잘 어울리며 리듬감이 우수",
+];
+const CLASSES = Array.from({length:10}, (_,i)=>i+1);
+const A_MAX = MOVES.length * 4;   // 32
+const B_MAX = TASKS.length;       // 4
+
+function finalScoreFromRaw(raw){
+  if (raw <= 9) return 10;
+  if (raw <= 13) return 15;
+  if (raw <= 17) return 20;
+  if (raw <= 21) return 25;
+  if (raw <= 25) return 30;
+  if (raw <= 29) return 35;
+  return 40;
+}
+function computeScores(record){
+  const moves = (record && record.moves) || {};
+  const tasks = (record && record.tasks) || {};
+  let a = 0, scoredMoves = 0;
+  MOVES.forEach((_, i) => { const v = moves[i]; if (v) { a += v; scoredMoves++; } });
+  let b = 0;
+  TASKS.forEach((_, i) => { if (tasks[i]) b++; });
+  const raw = a + b;
+  const final = finalScoreFromRaw(raw);
+  return { a, b, raw, final, scoredMoves, allMovesScored: scoredMoves === MOVES.length };
+}
+
+// 라이브 모드: "실수" 탭 횟수 <-> 저장된 1~4점 레벨을 서로 변환한다.
+// 0회→4점, 1회→3점, 2회→2점, 3회 이상→1점 (score = max(1, 4-clicks))
+function clicksFromLevel(level){
+  return level ? Math.max(0, 4 - level) : 0;
+}
+function levelFromClicks(clicks){
+  return Math.max(1, 4 - clicks);
+}
+
+const TEACHER_NAMES = {
+  "teacher112@yeongjong.icehs.kr": "정우철",
+  "teacher74@yeongjong.icehs.kr": "김양선",
+};
+function teacherDisplayName(email){
+  if (!email) return "";
+  if (TEACHER_NAMES[email]) return TEACHER_NAMES[email];
+  return email.split("@")[0];
+}
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function pad2(n){ return String(n).padStart(2,"0"); }
+
+/* =========================================================
+   2. Firebase 설정 — Firebase 콘솔에서 새 프로젝트 만든 뒤
+      아래 값을 교체하면 실시간 동기화가 켜집니다.
+   ========================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "REPLACE_ME",
+  authDomain: "REPLACE_ME",
+  databaseURL: "REPLACE_ME",
+  projectId: "REPLACE_ME",
+};
+const FIREBASE_READY = FIREBASE_CONFIG.apiKey !== "REPLACE_ME";
+
+/* =========================================================
+   3. Backend — Firebase RTDB 또는 로컬(localStorage) 미리보기
+   ========================================================= */
+const Backend = (function(){
+  if (FIREBASE_READY){
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    db.ref(".info/connected").on("value", snap => {
+      setConnDot(!!snap.val());
+    });
+
+    return {
+      mode: "firebase",
+      auth,
+      onAuth(cb){ auth.onAuthStateChanged(cb); },
+      login(email, pw){ return auth.signInWithEmailAndPassword(email, pw); },
+      logout(){ return auth.signOut(); },
+      changePassword(pw){ return auth.currentUser.updatePassword(pw); },
+
+      onAllScores(cb){
+        const ref = db.ref("scores");
+        const handler = snap => cb(snap.val() || {});
+        ref.on("value", handler);
+        return () => ref.off("value", handler);
+      },
+      onRoster(cls, cb){
+        const ref = db.ref("rosters/" + cls);
+        const handler = snap => cb(snap.val() || null);
+        ref.on("value", handler);
+        return () => ref.off("value", handler);
+      },
+      setScore(cls, no, patch){
+        return db.ref(`scores/${cls}/${no}`).update(Object.assign({}, patch, {
+          updatedAt: firebase.database.ServerValue.TIMESTAMP,
+        }));
+      },
+      setRoster(cls, rosterObj){
+        return db.ref("rosters/" + cls).set(rosterObj);
+      },
+    };
+  }
+
+  // ---- 로컬 미리보기 백엔드 (localStorage) ----
+  const LS_SCORES = "jr_scores_v1";
+  const LS_ROSTERS = "jr_rosters_v1";
+  function readAll(key){ try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch(e){ return {}; } }
+  function writeAll(key, obj){ localStorage.setItem(key, JSON.stringify(obj)); }
+  let scoreListeners = [];
+  let rosterListeners = {};
+  setTimeout(()=>setConnDot(true), 0);
+
+  return {
+    mode: "local",
+    onAuth(cb){ setTimeout(()=>cb(readAll("jr_devuser").email ? {email: readAll("jr_devuser").email} : null), 0); },
+    login(){ return Promise.reject({code:"local/no-auth", message:"로컬 미리보기 모드에서는 로그인 대신 아래 버튼을 사용하세요."}); },
+    logout(){ localStorage.removeItem("jr_devuser"); location.reload(); return Promise.resolve(); },
+    changePassword(){ return Promise.reject({message:"로컬 미리보기 모드에서는 비밀번호 변경이 없습니다."}); },
+    devLogin(){ localStorage.setItem("jr_devuser", JSON.stringify({email:"dev@local.preview"})); location.reload(); },
+
+    onAllScores(cb){
+      cb(readAll(LS_SCORES));
+      scoreListeners.push(cb);
+      return () => { scoreListeners = scoreListeners.filter(f => f !== cb); };
+    },
+    onRoster(cls, cb){
+      const all = readAll(LS_ROSTERS);
+      cb(all[cls] || null);
+      rosterListeners[cls] = rosterListeners[cls] || [];
+      rosterListeners[cls].push(cb);
+      return () => { rosterListeners[cls] = (rosterListeners[cls]||[]).filter(f => f !== cb); };
+    },
+    setScore(cls, no, patch){
+      const all = readAll(LS_SCORES);
+      all[cls] = all[cls] || {};
+      all[cls][no] = Object.assign({}, all[cls][no], patch, {updatedAt: Date.now()});
+      writeAll(LS_SCORES, all);
+      scoreListeners.forEach(cb => cb(all));
+      return Promise.resolve();
+    },
+    setRoster(cls, rosterObj){
+      const all = readAll(LS_ROSTERS);
+      all[cls] = rosterObj;
+      writeAll(LS_ROSTERS, all);
+      (rosterListeners[cls]||[]).forEach(cb => cb(rosterObj));
+      return Promise.resolve();
+    },
+  };
+})();
+
+function setConnDot(on){
+  const dot = document.getElementById("connDot");
+  const banner = document.getElementById("offlineBanner");
+  if (!dot) return;
+  dot.classList.toggle("off", !on);
+  if (banner) banner.classList.toggle("show", !on);
+}
+
+/* =========================================================
+   4. 전역 상태
+   ========================================================= */
+const State = {
+  user: null,
+  scoresByClass: {},     // {cls: {no: record}}
+  rosterCache: {},        // {cls: {count, names:{no:name}}}
+  rosterUnsub: null,
+  currentTab: "score",
+  scoreCls: 1,
+  scoreNo: null,
+  viewMode: "live",   // 'live' | 'detail'
+  liveStep: 0,        // 0~7 = 동작 인덱스, 8 = 과제수행 마무리 단계
+  rosterCls: 1,
+  dashCls: "all",
+  dashSort: {key:"cls", dir:1},
+};
+
+/* =========================================================
+   5. 토스트 / 저장상태
+   ========================================================= */
+function toast(msg, isErr){
+  const wrap = document.getElementById("toast");
+  const d = document.createElement("div");
+  d.className = "toast-msg" + (isErr ? " err" : "");
+  d.textContent = msg;
+  wrap.appendChild(d);
+  setTimeout(()=>{ d.remove(); }, 2600);
+}
+
+/* =========================================================
+   6. 인증 화면
+   ========================================================= */
+document.getElementById("btnLogin").addEventListener("click", doLogin);
+document.getElementById("loginPw").addEventListener("keydown", e => { if (e.key === "Enter") doLogin(); });
+function doLogin(){
+  const email = document.getElementById("loginEmail").value.trim();
+  const pw = document.getElementById("loginPw").value;
+  const errEl = document.getElementById("loginErr");
+  errEl.textContent = "";
+  if (!email || !pw){ errEl.textContent = "이메일과 비밀번호를 입력하세요."; return; }
+  Backend.login(email, pw).catch(err => {
+    errEl.textContent = "로그인 실패: " + (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password" || err.code === "auth/user-not-found"
+      ? "이메일 또는 비밀번호가 올바르지 않습니다." : err.message);
+  });
+}
+if (Backend.mode === "local"){
+  const btn = document.getElementById("btnDevMode");
+  btn.classList.remove("hidden");
+  btn.addEventListener("click", () => Backend.devLogin());
+  document.getElementById("loginErr").textContent = "";
+  const sub = document.querySelector(".login-card p.sub");
+  sub.textContent = "⚠️ Firebase 미연결 — 로컬 미리보기 모드";
+}
+
+document.getElementById("btnLogout").addEventListener("click", () => {
+  if (confirm("로그아웃 하시겠습니까?")) Backend.logout();
+});
+document.getElementById("btnChangePw").addEventListener("click", () => {
+  const pw1 = prompt("새 비밀번호를 입력하세요 (6자 이상):");
+  if (!pw1) return;
+  if (pw1.length < 6){ toast("비밀번호는 6자 이상이어야 합니다.", true); return; }
+  const pw2 = prompt("확인을 위해 한 번 더 입력하세요:");
+  if (pw1 !== pw2){ toast("두 비밀번호가 일치하지 않습니다.", true); return; }
+  Backend.changePassword(pw1).then(() => {
+    toast("비밀번호가 변경되었습니다.");
+  }).catch(err => {
+    if (err.code === "auth/requires-recent-login"){
+      toast("보안을 위해 다시 로그인한 뒤 시도해주세요.", true);
+    } else {
+      toast("변경 실패: " + err.message, true);
+    }
+  });
+});
+
+Backend.onAuth(user => {
+  State.user = user;
+  if (user){
+    document.getElementById("loginScreen").classList.add("hidden");
+    document.getElementById("app").classList.remove("hidden");
+    document.getElementById("whoName").textContent = teacherDisplayName(user.email) + " 선생님";
+    startAppData();
+  } else {
+    document.getElementById("app").classList.add("hidden");
+    document.getElementById("loginScreen").classList.remove("hidden");
+  }
+});
+
+/* =========================================================
+   7. 탭 전환
+   ========================================================= */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    State.currentTab = btn.dataset.tab;
+    ["score","dashboard","roster"].forEach(t => {
+      document.getElementById("tab-" + t).classList.toggle("hidden", t !== State.currentTab);
+    });
+    if (State.currentTab === "dashboard") renderDashboard();
+    if (State.currentTab === "roster") renderRosterTab();
+  });
+});
+
+/* =========================================================
+   8. 데이터 구독 시작
+   ========================================================= */
+let dataStarted = false;
+function startAppData(){
+  if (dataStarted) return;
+  dataStarted = true;
+  Backend.onAllScores(all => {
+    State.scoresByClass = all || {};
+    if (State.currentTab === "score") { renderStudentGrid(); renderScoreCard(); }
+    if (State.currentTab === "dashboard") renderDashboard();
+  });
+  renderClassRow("clsRowScore", State.scoreCls, cls => {
+    State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
+    renderClassRow("clsRowScore", State.scoreCls, arguments.callee);
+    loadRosterFor(cls);
+    renderStudentGrid();
+    renderScoreCard();
+  });
+  loadRosterFor(State.scoreCls);
+  renderStudentGrid();
+  renderScoreCard();
+}
+
+function loadRosterFor(cls){
+  if (State.rosterUnsub) State.rosterUnsub();
+  State.rosterUnsub = Backend.onRoster(cls, roster => {
+    State.rosterCache[cls] = roster || {count: 30, names: {}};
+    if (State.scoreCls === cls){ renderStudentGrid(); renderScoreCard(); }
+    if (State.rosterCls === cls) renderRosterTab();
+  });
+}
+
+function getRoster(cls){
+  return State.rosterCache[cls] || {count: 30, names: {}};
+}
+function studentName(cls, no){
+  const r = getRoster(cls);
+  return (r.names && r.names[no]) ? r.names[no] : (no + "번");
+}
+
+/* =========================================================
+   9. 반 선택 바 (공용)
+   ========================================================= */
+function renderClassRow(elId, activeCls, onPick){
+  const row = document.getElementById(elId);
+  row.innerHTML = CLASSES.map(c => {
+    const scores = (State.scoresByClass[c] || {});
+    const count = getRoster(c).count || 30;
+    const done = Object.keys(scores).filter(no => {
+      const cs = computeScores(scores[no]);
+      return cs.allMovesScored;
+    }).length;
+    return `<button class="cls-btn ${c===activeCls?'active':''}" data-cls="${c}">${c}반<span class="badge">${done}/${count}</span></button>`;
+  }).join("");
+  row.querySelectorAll(".cls-btn").forEach(btn => {
+    btn.addEventListener("click", () => onPick(Number(btn.dataset.cls)));
+  });
+}
+
+/* =========================================================
+   10. 채점 탭 — 학생 그리드
+   ========================================================= */
+function renderStudentGrid(){
+  renderClassRow("clsRowScore", State.scoreCls, cls => {
+    State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
+    loadRosterFor(cls);
+    renderStudentGrid();
+    renderScoreCard();
+  });
+  const grid = document.getElementById("studentGrid");
+  const count = getRoster(State.scoreCls).count || 30;
+  const scores = State.scoresByClass[State.scoreCls] || {};
+  let html = "";
+  for (let no = 1; no <= count; no++){
+    const rec = scores[no];
+    const cs = computeScores(rec);
+    let dotClass = "";
+    if (cs.scoredMoves > 0 && !cs.allMovesScored) dotClass = "partial";
+    if (cs.allMovesScored) dotClass = "done";
+    const active = State.scoreNo === no ? "active" : "";
+    html += `<button class="stu-chip ${active}" data-no="${no}">
+      <span><span class="stu-dot ${dotClass}"></span><span class="no">${no}번</span></span>
+      <span class="name">${esc(studentName(State.scoreCls, no))}</span>
+    </button>`;
+  }
+  grid.innerHTML = html;
+  grid.querySelectorAll(".stu-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      State.scoreNo = Number(btn.dataset.no);
+      State.liveStep = 0;
+      renderStudentGrid();
+      renderScoreCard();
+    });
+  });
+}
+
+/* =========================================================
+   11. 채점 탭 — 채점 카드
+   ========================================================= */
+function renderScoreCard(){
+  const empty = document.getElementById("scoreCardEmpty");
+  const card = document.getElementById("scoreCard");
+  if (!State.scoreNo){
+    empty.classList.remove("hidden");
+    card.classList.add("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  card.classList.remove("hidden");
+
+  const cls = State.scoreCls, no = State.scoreNo;
+  const scores = State.scoresByClass[cls] || {};
+  const rec = scores[no] || {moves:{}, tasks:{}};
+  const cs = computeScores(rec);
+  const count = getRoster(cls).count || 30;
+
+  let html = `<h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>
+    <p class="sub">${cs.scoredMoves}/${MOVES.length}개 동작 채점됨${rec.scoredBy ? " · 마지막 채점: " + esc(rec.scoredBy) : ""}</p>
+    <div class="mode-toggle">
+      <button class="mode-btn ${State.viewMode==='live'?'active':''}" id="btnModeLive">🎯 라이브</button>
+      <button class="mode-btn ${State.viewMode==='detail'?'active':''}" id="btnModeDetail">📋 상세</button>
+    </div>`;
+
+  html += State.viewMode === "live" ? renderLiveBody(rec) : renderDetailBody(rec);
+
+  html += `<div class="summary-bar">
+    <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
+    <div class="scores">완성도Ⓐ ${cs.a}/${A_MAX} · 과제Ⓑ ${cs.b}/${B_MAX}<br>원점수 ${cs.raw}<span id="saveState" class="save-state"></span></div>
+    <div class="final">${cs.final}<small>점</small></div>
+    <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 학생 ▶</button>
+  </div>`;
+
+  card.innerHTML = html;
+
+  document.getElementById("btnModeLive").addEventListener("click", () => { State.viewMode = "live"; renderScoreCard(); });
+  document.getElementById("btnModeDetail").addEventListener("click", () => { State.viewMode = "detail"; renderScoreCard(); });
+
+  if (State.viewMode === "live") wireLiveBody(cls, no, rec);
+  else wireDetailBody(cls, no, rec);
+
+  const prevBtn = document.getElementById("btnPrevStu");
+  const nextBtn = document.getElementById("btnNextStu");
+  if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = 0; renderStudentGrid(); renderScoreCard(); }});
+  if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = 0; renderStudentGrid(); renderScoreCard(); }});
+}
+
+/* ---- 상세보기: 8동작 전체 나열 (기존 방식, 검토·수정용) ---- */
+function renderDetailBody(rec){
+  let html = "";
+  MOVES.forEach((name, i) => {
+    const v = rec.moves ? rec.moves[i] : null;
+    html += `<div class="move-row">
+      <div class="move-name">${esc(name)}</div>
+      <div class="lv-btns" data-move="${i}">
+        ${LEVELS.map(l => `<button class="lv-btn ${v===l.v?'sel':''}" data-lv="${l.v}"><b>${l.v}점</b>${l.label}</button>`).join("")}
+      </div>
+    </div>`;
+  });
+  html += `<div class="task-list">`;
+  TASKS.forEach((t, i) => {
+    const checked = rec.tasks && rec.tasks[i];
+    html += `<label class="task-item"><input type="checkbox" data-task="${i}" ${checked?"checked":""}> ${esc(t)} (1점)</label>`;
+  });
+  html += `</div>`;
+  return html;
+}
+function wireDetailBody(cls, no, rec){
+  const card = document.getElementById("scoreCard");
+  card.querySelectorAll(".lv-btns").forEach(wrap => {
+    wrap.addEventListener("click", e => {
+      const btn = e.target.closest(".lv-btn");
+      if (!btn) return;
+      const moveIdx = wrap.dataset.move;
+      const lv = Number(btn.dataset.lv);
+      const cur = rec.moves ? rec.moves[moveIdx] : null;
+      const patch = {moves: Object.assign({}, rec.moves)};
+      patch.moves[moveIdx] = (cur === lv) ? null : lv; // 같은 값 다시 탭하면 취소
+      saveRecord(cls, no, patch);
+    });
+  });
+  card.querySelectorAll('[data-task]').forEach(chk => {
+    chk.addEventListener("change", () => {
+      const idx = chk.dataset.task;
+      const patch = {tasks: Object.assign({}, rec.tasks)};
+      patch.tasks[idx] = chk.checked;
+      saveRecord(cls, no, patch);
+    });
+  });
+}
+
+/* ---- 라이브 채점: 동작 하나씩, "실수" 탭만으로 채점 ---- */
+function renderLiveBody(rec){
+  if (State.liveStep < MOVES.length){
+    const i = State.liveStep;
+    const level = rec.moves ? rec.moves[i] : null;
+    const clicks = clicksFromLevel(level);
+    const liveScore = level || 4;
+    const dots = [0,1,2].map(d => `<span class="miss-dot ${d < clicks ? 'on':''}"></span>`).join("");
+    return `
+      <div class="live-step-label">${i+1}/${MOVES.length}번째 동작</div>
+      <div class="live-move-name">${esc(MOVES[i])}</div>
+      <button class="miss-btn" id="btnMiss">❌ 실수</button>
+      <div class="miss-dots">${dots}</div>
+      <div class="live-score-line">실수 ${clicks}회 → <b>${liveScore}점</b></div>
+      <div class="live-actions">
+        <button class="undo-btn" id="btnUndo" ${clicks<=0?"disabled":""}>↩️ 되돌리기</button>
+      </div>
+      <div class="move-nav">
+        <button id="btnPrevMove" ${i<=0?"disabled":""}>◀ 이전 동작</button>
+        <button class="primary" id="btnNextMove">${i<MOVES.length-1 ? "다음 동작 ▶" : "과제수행 확인 ▶"}</button>
+      </div>`;
+  }
+  // liveStep === MOVES.length : 8동작 종료, 과제수행 마무리 화면
+  let html = `<div class="live-wrap-title">✅ 8개 동작 완료 — 과제수행을 체크하세요</div>
+    <div class="task-list" style="margin-top:0;border-top:none;padding-top:0;">`;
+  TASKS.forEach((t, i) => {
+    const checked = rec.tasks && rec.tasks[i];
+    html += `<label class="task-item"><input type="checkbox" data-task="${i}" ${checked?"checked":""}> ${esc(t)} (1점)</label>`;
+  });
+  html += `</div>
+    <div class="move-nav">
+      <button id="btnPrevMove">◀ 동작 다시 보기</button>
+    </div>
+    <button class="next-student-btn" id="btnNextStudentLive">🎉 이 학생 완료 → 다음 학생 ▶</button>`;
+  return html;
+}
+function wireLiveBody(cls, no, rec){
+  const card = document.getElementById("scoreCard");
+  const count = getRoster(cls).count || 30;
+
+  if (State.liveStep < MOVES.length){
+    const i = State.liveStep;
+    card.querySelector("#btnMiss").addEventListener("click", () => {
+      const level = rec.moves ? rec.moves[i] : null;
+      const clicks = Math.min(3, clicksFromLevel(level) + 1);
+      const patch = {moves: Object.assign({}, rec.moves)};
+      patch.moves[i] = levelFromClicks(clicks);
+      saveRecord(cls, no, patch);
+    });
+    card.querySelector("#btnUndo").addEventListener("click", () => {
+      const level = rec.moves ? rec.moves[i] : null;
+      const clicks = Math.max(0, clicksFromLevel(level) - 1);
+      const patch = {moves: Object.assign({}, rec.moves)};
+      patch.moves[i] = levelFromClicks(clicks);
+      saveRecord(cls, no, patch);
+    });
+    const prevMoveBtn = card.querySelector("#btnPrevMove");
+    if (prevMoveBtn) prevMoveBtn.addEventListener("click", () => {
+      if (i > 0){ State.liveStep = i - 1; renderScoreCard(); }
+    });
+    card.querySelector("#btnNextMove").addEventListener("click", () => {
+      const level = rec.moves ? rec.moves[i] : null;
+      if (level == null){
+        // 탭 없음 = 클리어로 확정 저장
+        const patch = {moves: Object.assign({}, rec.moves)};
+        patch.moves[i] = 4;
+        saveRecord(cls, no, patch);
+      }
+      State.liveStep = i + 1;
+      renderScoreCard();
+    });
+  } else {
+    card.querySelectorAll('[data-task]').forEach(chk => {
+      chk.addEventListener("change", () => {
+        const idx = chk.dataset.task;
+        const patch = {tasks: Object.assign({}, rec.tasks)};
+        patch.tasks[idx] = chk.checked;
+        saveRecord(cls, no, patch);
+      });
+    });
+    card.querySelector("#btnPrevMove").addEventListener("click", () => {
+      State.liveStep = MOVES.length - 1; renderScoreCard();
+    });
+    const nextStuBtn = card.querySelector("#btnNextStudentLive");
+    if (no >= count){
+      nextStuBtn.disabled = true;
+      nextStuBtn.textContent = "🎉 이 반의 마지막 학생입니다";
+    } else {
+      nextStuBtn.addEventListener("click", () => {
+        State.scoreNo = no + 1;
+        State.liveStep = 0;
+        renderStudentGrid();
+        renderScoreCard();
+      });
+    }
+  }
+}
+
+function saveRecord(cls, no, patch){
+  patch.scoredBy = teacherDisplayName(State.user && State.user.email);
+  const stateEl = () => document.getElementById("saveState");
+  if (stateEl()){ stateEl().textContent = " · 저장 중…"; stateEl().classList.remove("err"); }
+  Backend.setScore(cls, no, patch).then(() => {
+    if (stateEl()) stateEl().textContent = " · 저장됨 ✓";
+  }).catch(err => {
+    if (stateEl()){ stateEl().textContent = " · 저장 실패! 인터넷을 확인하세요"; stateEl().classList.add("err"); }
+    toast("저장 실패: " + err.message, true);
+  });
+}
+
+/* =========================================================
+   12. 명단 탭
+   ========================================================= */
+function renderRosterTabClassRow(){
+  renderClassRow("clsRowRoster", State.rosterCls, cls => {
+    State.rosterCls = cls;
+    loadRosterFor(cls);
+    renderRosterTab();
+  });
+}
+function renderRosterTab(){
+  renderRosterTabClassRow();
+  const cls = State.rosterCls;
+  const roster = getRoster(cls);
+  document.getElementById("rosterCount").value = roster.count || 30;
+  const count = roster.count || 30;
+  const lines = [];
+  for (let no=1; no<=count; no++){ lines.push((roster.names && roster.names[no]) || ""); }
+  document.getElementById("rosterText").value = lines.join("\n");
+  document.getElementById("rosterSaveState").textContent = "";
+}
+document.getElementById("btnSaveRoster").addEventListener("click", () => {
+  const cls = State.rosterCls;
+  const count = Math.max(1, Math.min(60, Number(document.getElementById("rosterCount").value) || 30));
+  const text = document.getElementById("rosterText").value;
+  const lines = text.split("\n");
+  const names = {};
+  for (let no=1; no<=count; no++){
+    const n = (lines[no-1] || "").trim();
+    if (n) names[no] = n;
+  }
+  const stateEl = document.getElementById("rosterSaveState");
+  stateEl.textContent = "저장 중…"; stateEl.classList.remove("err");
+  Backend.setRoster(cls, {count, names}).then(() => {
+    stateEl.textContent = "✓ 저장됨";
+    toast(cls + "반 명단이 저장되었습니다.");
+  }).catch(err => {
+    stateEl.textContent = "저장 실패"; stateEl.classList.add("err");
+    toast("명단 저장 실패: " + err.message, true);
+  });
+});
+
+/* =========================================================
+   13. 현황판 탭
+   ========================================================= */
+function allRecordsFlat(){
+  const rows = [];
+  CLASSES.forEach(cls => {
+    const scores = State.scoresByClass[cls] || {};
+    const count = getRoster(cls).count || 30;
+    for (let no=1; no<=count; no++){
+      const rec = scores[no];
+      if (!rec) continue;
+      const cs = computeScores(rec);
+      if (cs.scoredMoves === 0 && cs.b === 0) continue;
+      rows.push({
+        cls, no, name: studentName(cls,no),
+        a: cs.a, b: cs.b, raw: cs.raw, final: cs.final,
+        by: rec.scoredBy || "", complete: cs.allMovesScored,
+      });
+    }
+  });
+  return rows;
+}
+function renderDashboard(){
+  const summaryRow = document.getElementById("clsSummaryRow");
+  summaryRow.innerHTML = CLASSES.map(c => {
+    const scores = State.scoresByClass[c] || {};
+    const count = getRoster(c).count || 30;
+    const done = Object.keys(scores).filter(no => computeScores(scores[no]).allMovesScored).length;
+    const active = State.dashCls === c ? "active" : "";
+    return `<button class="cls-card ${active}" data-cls="${c}"><div class="n">${c}반</div><div class="frac">${done}/${count}</div></button>`;
+  }).join("") + `<button class="cls-card ${State.dashCls==='all'?'active':''}" data-cls="all"><div class="n">전체</div><div class="frac">보기</div></button>`;
+  summaryRow.querySelectorAll(".cls-card").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const v = btn.dataset.cls;
+      State.dashCls = v === "all" ? "all" : Number(v);
+      renderDashboard();
+    });
+  });
+  document.getElementById("dashFilterLabel").textContent = State.dashCls === "all" ? "전체 반" : State.dashCls + "반";
+
+  let rows = allRecordsFlat();
+  if (State.dashCls !== "all") rows = rows.filter(r => r.cls === State.dashCls);
+  const {key, dir} = State.dashSort;
+  rows.sort((x,y) => {
+    let a = x[key], b = y[key];
+    if (typeof a === "string") return a.localeCompare(b) * dir;
+    return (a-b) * dir;
+  });
+
+  document.getElementById("dashTbody").innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.cls}반</td>
+      <td>${r.no}</td>
+      <td class="name-cell">${esc(r.name)}</td>
+      <td>${r.a}/${A_MAX}</td>
+      <td>${r.b}/${B_MAX}</td>
+      <td>${r.raw}${r.complete?"":" ⏳"}</td>
+      <td class="final-cell">${r.final}</td>
+      <td>${esc(r.by)}</td>
+    </tr>
+  `).join("") || `<tr><td colspan="8" style="padding:24px;color:var(--muted);">아직 채점된 학생이 없습니다.</td></tr>`;
+}
+document.querySelectorAll("#dashTable th[data-sort]").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    if (State.dashSort.key === key) State.dashSort.dir *= -1;
+    else State.dashSort = {key, dir:1};
+    renderDashboard();
+  });
+});
+
+document.getElementById("btnExportCsv").addEventListener("click", () => {
+  let rows = allRecordsFlat();
+  if (State.dashCls !== "all") rows = rows.filter(r => r.cls === State.dashCls);
+  const header = ["반","번호","이름", ...MOVES, "완성도(Ⓐ)","과제수행(Ⓑ)","원점수","환산점수","채점교사"];
+  const lines = [header];
+  CLASSES.forEach(cls => {
+    if (State.dashCls !== "all" && State.dashCls !== cls) return;
+    const scores = State.scoresByClass[cls] || {};
+    const count = getRoster(cls).count || 30;
+    for (let no=1; no<=count; no++){
+      const rec = scores[no];
+      if (!rec) continue;
+      const cs = computeScores(rec);
+      if (cs.scoredMoves === 0 && cs.b === 0) continue;
+      const moveVals = MOVES.map((_,i) => (rec.moves && rec.moves[i]) || "");
+      lines.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, rec.scoredBy||""]);
+    }
+  });
+  const csv = "﻿" + lines.map(row => row.map(cell => {
+    const s = String(cell);
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }).join(",")).join("\r\n");
+  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement("a");
+  const now = new Date();
+  const fname = `음악줄넘기_${State.dashCls==='all'?'전체':State.dashCls+'반'}_${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}.csv`;
+  a.href = URL.createObjectURL(blob);
+  a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast("CSV 파일을 내려받았습니다.");
+});
+
+/* =========================================================
+   14. PWA — 서비스워커 등록
+   ========================================================= */
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  });
+}
+
+})();
+</script>
+</body>
+</html>
