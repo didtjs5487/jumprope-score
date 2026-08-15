@@ -155,6 +155,10 @@
   .roster-card textarea{width:100%;min-height:280px;padding:10px;border:1px solid var(--border);border-radius:10px;
     font-size:14px;line-height:1.7;resize:vertical;}
   .roster-help{font-size:12px;color:var(--muted);margin:8px 0 12px;}
+  .roster-title{font-size:15px;margin-bottom:10px;}
+  .one-stu-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
+  .one-stu-row .field{min-width:80px;}
+  .field select{width:100%;padding:12px 10px;border:1px solid var(--border);border-radius:10px;font-size:15px;background:#fff;}
   .roster-actions{display:flex;gap:8px;align-items:center;}
   .count-field{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;}
   .count-field input{width:70px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center;}
@@ -261,8 +265,19 @@
 
     <!-- 명단 -->
     <section id="tab-roster" class="hidden">
-      <div class="cls-row" id="clsRowRoster"></div>
       <div class="roster-card">
+        <h3 class="roster-title">📋 표 전체 일괄 등록</h3>
+        <p class="roster-help">엑셀에서 여러 반이 나란히 있는 명렬표를 통째로 선택해 복사(Ctrl+C)한 뒤 아래에 붙여넣으세요. <b>번호·성명(또는 이름)</b> 열이 있는 머리글 줄과, 그 위에 반 이름(예: <b>3반</b>, <b>1-3</b>)이 적힌 줄까지 함께 복사되어 있어야 합니다.</p>
+        <textarea id="bulkRosterPaste" placeholder="엑셀 표를 여기에 붙여넣으세요 (Ctrl+V)"></textarea>
+        <div class="roster-actions">
+          <button class="btn" id="btnBulkRosterAdd" style="width:auto;background:#0d9488;color:#fff;">표 전체 일괄 등록</button>
+          <span class="save-state" id="bulkRosterResult"></span>
+        </div>
+      </div>
+
+      <div class="roster-card">
+        <h3 class="roster-title">✏️ 반 하나씩 입력</h3>
+        <div class="cls-row" id="clsRowRoster"></div>
         <div class="count-field">
           <label style="margin:0;">인원수</label>
           <input type="number" id="rosterCount" min="1" max="50">
@@ -274,6 +289,29 @@
         <div class="roster-actions">
           <button class="btn btn-primary" id="btnSaveRoster" style="width:auto;">명단 저장</button>
           <span class="save-state" id="rosterSaveState"></span>
+        </div>
+      </div>
+
+      <div class="roster-card">
+        <h3 class="roster-title">➕ 학생 한 명 추가·수정 (전학생 등)</h3>
+        <p class="roster-help">반 전체를 다시 붙여넣지 않고, 전학 온 학생 한 명만 빠르게 넣거나 이름을 고칠 때 씁니다.</p>
+        <div class="one-stu-row">
+          <div class="field" style="margin:0;">
+            <label>반</label>
+            <select id="oneStuCls"></select>
+          </div>
+          <div class="field" style="margin:0;">
+            <label>번호</label>
+            <input type="number" id="oneStuNo" min="1" max="60" placeholder="번호">
+          </div>
+          <div class="field" style="margin:0;flex:1;">
+            <label>이름</label>
+            <input type="text" id="oneStuName" placeholder="이름">
+          </div>
+        </div>
+        <div class="roster-actions">
+          <button class="btn btn-primary" id="btnOneStuAdd" style="width:auto;">추가·수정</button>
+          <span class="save-state" id="oneStuResult"></span>
         </div>
       </div>
     </section>
@@ -918,6 +956,131 @@ document.getElementById("btnSaveRoster").addEventListener("click", () => {
   }).catch(err => {
     stateEl.textContent = "저장 실패"; stateEl.classList.add("err");
     toast("명단 저장 실패: " + err.message, true);
+  });
+});
+
+// 로스터를 캐시에 의존하지 않고 서버(또는 로컬 백엔드)에서 한 번만 최신값으로 읽는다.
+// (개별 학생 추가는 다른 반의 데이터를 실수로 덮어쓰면 안 되므로 항상 최신값 위에 병합한다.)
+function fetchRosterOnce(cls){
+  return new Promise(resolve => {
+    let done = false;
+    const unsub = Backend.onRoster(cls, roster => {
+      if (done) return;
+      done = true;
+      resolve(roster || {count: 30, names: {}});
+      setTimeout(unsub, 0);
+    });
+  });
+}
+
+// 표 전체 일괄 등록: 엑셀에서 여러 반이 나란히 배치된 명렬표를 통째로 복사(Ctrl+C)해
+// 붙여넣으면, 번호·성명 열과 그 위의 반 이름을 스스로 찾아 반별로 나눠 저장한다.
+function parseBulkRoster(text){
+  const rows = text.split(/\r?\n/).map(line => line.split("\t").map(c => c.trim()));
+  const norm = s => (s || "").replace(/\s+/g, "");
+  if (!text.includes("\t")){
+    return {rosters: {}, error: "칸이 나뉘지 않았습니다 — 엑셀에서 표를 선택해 복사(Ctrl+C)한 뒤 붙여넣어 주세요."};
+  }
+  let headerRow = -1, nameCols = [];
+  rows.forEach((row, r) => {
+    const cols = [];
+    row.forEach((cell, c) => { if (norm(cell) === "성명" || norm(cell) === "이름") cols.push(c); });
+    if (cols.length > nameCols.length){ nameCols = cols; headerRow = r; }
+  });
+  if (headerRow < 0){
+    return {rosters: {}, error: "'성명' 또는 '이름' 열을 찾지 못했습니다 — 머리글(번호·성명) 줄까지 포함해 복사했는지 확인해 주세요."};
+  }
+  const hdr = rows[headerRow];
+  const noCols = [];
+  hdr.forEach((cell, c) => { if (norm(cell) === "번호" || norm(cell).includes("번호")) noCols.push(c); });
+
+  function extractClassNo(raw){
+    const v = (raw || "").trim();
+    if (!v) return null;
+    let m = v.match(/(\d{1,2})\s*반/); if (m) return Number(m[1]);
+    m = v.match(/\d+\s*[-–—]\s*(\d{1,2})/); if (m) return Number(m[1]); // 학년-반 형식이면 반만 취함
+    m = v.match(/^(\d{1,2})$/); if (m) return Number(m[1]);
+    return null;
+  }
+
+  const result = {};
+  nameCols.forEach(nameCol => {
+    let noCol = -1;
+    noCols.forEach(c => { if (c < nameCol && (noCol < 0 || c > noCol)) noCol = c; });
+
+    let cls = null;
+    for (let up = headerRow - 1; up >= 0 && cls == null; up--){
+      for (let c = nameCol; c >= Math.max(0, nameCol - 2); c--){
+        const n = extractClassNo((rows[up] && rows[up][c]) || "");
+        if (n != null){ cls = n; break; }
+      }
+    }
+    if (cls == null || cls < 1 || cls > CLASSES.length) return;
+
+    const names = {};
+    let maxNo = 0, seq = 0;
+    for (let dr = headerRow + 1; dr < rows.length; dr++){
+      const name = (rows[dr][nameCol] || "").trim();
+      const noRaw = noCol >= 0 ? (rows[dr][noCol] || "").trim() : "";
+      if (!name && !noRaw) break; // 표 끝
+      if (!name || name === "-" || name === "－") continue; // 결번은 건너뜀
+      seq++;
+      const no = noCol >= 0 && /^\d+$/.test(noRaw) ? Number(noRaw) : seq;
+      names[no] = name;
+      if (no > maxNo) maxNo = no;
+    }
+    if (Object.keys(names).length) result[cls] = {count: maxNo, names};
+  });
+
+  return {rosters: result};
+}
+document.getElementById("btnBulkRosterAdd").addEventListener("click", () => {
+  const text = document.getElementById("bulkRosterPaste").value;
+  const resultEl = document.getElementById("bulkRosterResult");
+  resultEl.classList.remove("err");
+  if (!text.trim()){ resultEl.textContent = "표 내용을 붙여넣어 주세요."; resultEl.classList.add("err"); return; }
+  const {rosters: parsed, error} = parseBulkRoster(text);
+  const clsList = Object.keys(parsed).map(Number).sort((a, b) => a - b);
+  if (!clsList.length){
+    resultEl.textContent = error || "인식된 반을 찾지 못했습니다 — 반 이름(3반 등)이 적힌 줄부터 학생 명단까지 함께 복사했는지 확인해 주세요.";
+    resultEl.classList.add("err");
+    return;
+  }
+  resultEl.textContent = "저장 중…";
+  Promise.all(clsList.map(cls => Backend.setRoster(cls, parsed[cls]))).then(() => {
+    const total = clsList.reduce((s, c) => s + Object.keys(parsed[c].names).length, 0);
+    resultEl.textContent = `${clsList.map(c => c + "반").join(", ")} — 총 ${clsList.length}개 반 ${total}명 등록 완료`;
+    document.getElementById("bulkRosterPaste").value = "";
+    toast(`일괄 등록 완료: ${clsList.length}개 반 ${total}명`);
+  }).catch(err => {
+    resultEl.textContent = "저장 실패: " + err.message;
+    resultEl.classList.add("err");
+  });
+});
+
+// 학생 한 명 추가·수정: 다른 번호의 명단을 건드리지 않도록 항상 서버 최신값 위에 병합해서 저장한다.
+document.getElementById("oneStuCls").innerHTML = CLASSES.map(c => `<option value="${c}">${c}반</option>`).join("");
+document.getElementById("btnOneStuAdd").addEventListener("click", () => {
+  const cls = Number(document.getElementById("oneStuCls").value);
+  const no = Number(document.getElementById("oneStuNo").value);
+  const name = document.getElementById("oneStuName").value.trim();
+  const resultEl = document.getElementById("oneStuResult");
+  resultEl.classList.remove("err");
+  if (!no || no < 1 || no > 60){ resultEl.textContent = "번호를 정확히 입력하세요."; resultEl.classList.add("err"); return; }
+  if (!name){ resultEl.textContent = "이름을 입력하세요."; resultEl.classList.add("err"); return; }
+  resultEl.textContent = "저장 중…";
+  fetchRosterOnce(cls).then(roster => {
+    const names = Object.assign({}, roster.names, {[no]: name});
+    const count = Math.max(roster.count || 30, no);
+    return Backend.setRoster(cls, {count, names});
+  }).then(() => {
+    resultEl.textContent = `✓ ${cls}반 ${no}번 ${esc(name)} 저장됨`;
+    document.getElementById("oneStuNo").value = "";
+    document.getElementById("oneStuName").value = "";
+    toast(`${cls}반 ${no}번 ${name} 등록됨`);
+  }).catch(err => {
+    resultEl.textContent = "저장 실패: " + err.message;
+    resultEl.classList.add("err");
   });
 });
 
