@@ -152,12 +152,10 @@
   .live-score-line{text-align:center;font-size:15px;font-weight:700;margin-bottom:6px;}
   .live-score-line b{color:var(--primary);font-size:20px;}
   .swipe-hint{text-align:center;font-size:11px;color:var(--muted);margin-bottom:10px;}
-  .live-next-btn{width:100%;padding:22px;border-radius:16px;border:none;background:var(--primary);color:#fff;
-    font-size:19px;font-weight:800;margin-top:8px;}
-  .live-next-btn:active{background:var(--primary-dark);}
-  .live-actions{display:flex;gap:8px;margin-top:10px;}
-  .undo-btn{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;font-weight:700;color:var(--muted);}
-  .undo-btn:disabled{opacity:.4;}
+  .undo-btn-big{width:100%;padding:16px;border-radius:14px;border:2px solid var(--warn);background:var(--lv2-bg);
+    color:var(--warn);font-size:15px;font-weight:800;margin-top:4px;}
+  .undo-btn-big:active{background:var(--warn);color:#fff;}
+  .undo-btn-big:disabled{opacity:.35;border-color:var(--border);background:var(--bg);color:var(--muted);}
   .move-nav{display:flex;gap:8px;margin-top:14px;}
   .move-nav button{flex:1;padding:13px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:14px;font-weight:700;}
   .move-nav button.primary{background:var(--primary);color:#fff;border-color:var(--primary);}
@@ -1021,12 +1019,8 @@ function renderLiveBody(moves){
         <div class="miss-dots">${dots}</div>
         <div class="live-score-line">실수 ${clicks}회 → <b>${liveScore}점</b></div>
       </div>
-      <p class="swipe-hint">💡 화면을 좌우로 스와이프해도 동작이 넘어갑니다</p>
-      <button class="live-next-btn" id="btnNextMove">${i<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
-      <div class="live-actions">
-        <button id="btnPrevMove" class="undo-btn" ${i<=0?"disabled":""}>◀ 이전 동작</button>
-        <button class="undo-btn" id="btnUndo" ${clicks<=0?"disabled":""}>↩️ 되돌리기</button>
-      </div>`;
+      <p class="swipe-hint">💡 화면을 좌우로 스와이프하면 다음/이전 동작으로 이동합니다</p>
+      <button class="undo-btn-big" id="btnUndo" ${clicks<=0?"disabled":""}>↩️ 잘못 눌렀다면 되돌리기</button>`;
   }
   // liveStep === MOVES.length : 8동작 종료
   return `<div class="live-wrap-title">✅ 8개 동작 완료!</div>
@@ -1087,9 +1081,6 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
       const clicks = Math.max(0, clicksFromLevel(level) - 1);
       saveMovePatch(cls, no, rec, roundNo, i, levelFromClicks(clicks));
     });
-    const prevMoveBtn = card.querySelector("#btnPrevMove");
-    if (prevMoveBtn) prevMoveBtn.addEventListener("click", goPrev);
-    card.querySelector("#btnNextMove").addEventListener("click", goNext);
     attachSwipeNav(card.querySelector("#liveGestureZone"), goNext, goPrev);
   } else {
     card.querySelector("#btnPrevMove").addEventListener("click", () => {
