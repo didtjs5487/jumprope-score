@@ -401,12 +401,17 @@ function finalScoreFromRaw(raw){
   if (raw <= 34) return 35;
   return 40;
 }
-// 다회차(도전 차수) 지원: rounds = {1:{moves:{...}}, 2:{moves:{...}}, ...}
+// 다회차(도전 차수) 지원: rounds = {r1:{moves:{...}}, r2:{moves:{...}}, ...}
 // 옛 기록(rounds 없이 moves만 있던 시절 데이터)은 1차로 취급해 그대로 읽는다.
+// 키를 "r1","r2"처럼 문자로 시작하게 만드는 이유: Firebase RTDB는 객체의 키가 전부
+// 정수 문자열("1","2"...)이면 저장/조회 시 자동으로 배열로 바꿔버려("0"번 인덱스에 null이
+// 채워짐) 회차 목록이 깨진다. 접두어를 붙이면 이 자동 변환을 피할 수 있다.
+function roundKey(n){ return "r" + n; }
+function roundNumFromKey(k){ return Number(String(k).replace(/^r/, "")); }
 function getRounds(record){
   if (record && record.rounds && Object.keys(record.rounds).length) return record.rounds;
-  if (record && record.moves && Object.keys(record.moves).length) return { 1: { moves: record.moves } };
-  return { 1: { moves: {} } };
+  if (record && record.moves && Object.keys(record.moves).length) return { [roundKey(1)]: { moves: record.moves } };
+  return { [roundKey(1)]: { moves: {} } };
 }
 function computeRoundStats(moves){
   moves = moves || {};
@@ -416,10 +421,10 @@ function computeRoundStats(moves){
 }
 function computeScores(record){
   const rounds = getRounds(record);
-  const roundNos = Object.keys(rounds).map(Number).sort((x,y) => x - y);
+  const roundNos = Object.keys(rounds).map(roundNumFromKey).sort((x,y) => x - y);
   let best = null;
   roundNos.forEach(rn => {
-    const stats = computeRoundStats(rounds[rn] && rounds[rn].moves);
+    const stats = computeRoundStats(rounds[roundKey(rn)] && rounds[roundKey(rn)].moves);
     if (!best || stats.a > best.a) best = Object.assign({roundNo: rn}, stats);
   });
   const tasks = (record && record.tasks) || {};
@@ -818,12 +823,12 @@ function renderScoreCard(){
   const count = getRoster(cls).count || 30;
 
   const rounds = getRounds(rec);
-  const roundNos = Object.keys(rounds).map(Number).sort((a,b) => a - b);
+  const roundNos = Object.keys(rounds).map(roundNumFromKey).sort((a,b) => a - b);
   if (State.activeRound == null || roundNos.indexOf(State.activeRound) === -1){
     State.activeRound = roundNos[roundNos.length - 1];
   }
   const activeRound = State.activeRound;
-  const activeMoves = (rounds[activeRound] && rounds[activeRound].moves) || {};
+  const activeMoves = (rounds[roundKey(activeRound)] && rounds[roundKey(activeRound)].moves) || {};
   const activeStats = computeRoundStats(activeMoves);
 
   let html = `<h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>
@@ -863,8 +868,8 @@ function renderScoreCard(){
       if (!confirm(rn + "차 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
       const remaining = roundNos.filter(k => k !== rn);
       const newRounds = {};
-      remaining.forEach((k, idx) => { newRounds[idx+1] = rounds[k]; });
-      if (!Object.keys(newRounds).length) newRounds[1] = {moves:{}};
+      remaining.forEach((k, idx) => { newRounds[roundKey(idx+1)] = rounds[roundKey(k)]; });
+      if (!Object.keys(newRounds).length) newRounds[roundKey(1)] = {moves:{}};
       State.activeRound = null;
       State.liveStep = 0;
       saveRecord(cls, no, {rounds: newRounds, moves: null});
@@ -874,7 +879,7 @@ function renderScoreCard(){
   if (addRoundBtn) addRoundBtn.addEventListener("click", () => {
     const newRounds = Object.assign({}, rounds);
     const nextNo = (roundNos.length ? Math.max(...roundNos) : 0) + 1;
-    newRounds[nextNo] = {moves:{}};
+    newRounds[roundKey(nextNo)] = {moves:{}};
     State.activeRound = nextNo;
     State.liveStep = 0;
     saveRecord(cls, no, {rounds: newRounds, moves: null});
@@ -904,9 +909,10 @@ function renderRoundTabs(rounds, roundNos, cs, activeRound){
 /* 라이브/상세 공통: 활성 차수의 동작 하나를 저장 (다른 차수 기록은 보존) */
 function saveMovePatch(cls, no, rec, roundNo, moveIdx, level){
   const rounds = Object.assign({}, getRounds(rec));
-  const curMoves = Object.assign({}, (rounds[roundNo] && rounds[roundNo].moves) || {});
+  const key = roundKey(roundNo);
+  const curMoves = Object.assign({}, (rounds[key] && rounds[key].moves) || {});
   curMoves[moveIdx] = level;
-  rounds[roundNo] = {moves: curMoves};
+  rounds[key] = {moves: curMoves};
   saveRecord(cls, no, {rounds, moves: null});
 }
 
@@ -1280,7 +1286,7 @@ document.getElementById("btnExportCsv").addEventListener("click", () => {
       if (!rec) continue;
       const cs = computeScores(rec);
       if (cs.scoredMoves === 0 && cs.b === 0) continue;
-      const bestMoves = (getRounds(rec)[cs.bestRoundNo] || {}).moves || {};
+      const bestMoves = (getRounds(rec)[roundKey(cs.bestRoundNo)] || {}).moves || {};
       const moveVals = MOVES.map((_,i) => bestMoves[i] || "");
       lines.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + "차", cs.roundCount, rec.scoredBy||""]);
     }
