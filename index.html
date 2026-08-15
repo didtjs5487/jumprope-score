@@ -141,16 +141,22 @@
     font-size:12px;font-weight:700;color:var(--muted);}
   .mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
   .live-step-label{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px;}
-  .live-move-name{font-size:22px;font-weight:800;margin-bottom:18px;line-height:1.3;}
-  .miss-btn{width:100%;padding:34px 10px;border-radius:16px;border:none;background:var(--lv1);color:#fff;
-    font-size:20px;font-weight:800;}
-  .miss-btn:active{opacity:.85;}
+  .live-move-name{font-size:22px;font-weight:800;margin-bottom:14px;line-height:1.3;}
+  .live-gesture-zone{touch-action:pan-y;user-select:none;-webkit-user-select:none;}
+  .miss-btn{width:100%;min-height:32vh;padding:20px 10px;border-radius:20px;border:none;background:var(--lv1);color:#fff;
+    font-size:26px;font-weight:800;line-height:1.5;}
+  .miss-btn:active{opacity:.85;transform:scale(.98);}
+  .miss-btn-sub{display:block;font-size:13px;font-weight:600;opacity:.9;margin-top:6px;}
   .miss-dots{display:flex;gap:8px;justify-content:center;margin:14px 0;}
   .miss-dot{width:14px;height:14px;border-radius:50%;background:#e5e7eb;border:2px solid var(--border);}
   .miss-dot.on{background:var(--lv1);border-color:var(--lv1);}
-  .live-score-line{text-align:center;font-size:15px;font-weight:700;margin-bottom:16px;}
+  .live-score-line{text-align:center;font-size:15px;font-weight:700;margin-bottom:6px;}
   .live-score-line b{color:var(--primary);font-size:20px;}
-  .live-actions{display:flex;gap:8px;margin-top:6px;}
+  .swipe-hint{text-align:center;font-size:11px;color:var(--muted);margin-bottom:10px;}
+  .live-next-btn{width:100%;padding:22px;border-radius:16px;border:none;background:var(--primary);color:#fff;
+    font-size:19px;font-weight:800;margin-top:8px;}
+  .live-next-btn:active{background:var(--primary-dark);}
+  .live-actions{display:flex;gap:8px;margin-top:10px;}
   .undo-btn{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;font-weight:700;color:var(--muted);}
   .undo-btn:disabled{opacity:.4;}
   .move-nav{display:flex;gap:8px;margin-top:14px;}
@@ -162,6 +168,11 @@
   .next-student-btn{width:100%;padding:18px;border-radius:14px;border:none;background:var(--ok);color:#fff;
     font-size:16px;font-weight:800;margin-top:16px;}
   .next-student-btn:disabled{opacity:.4;}
+  /* ---- 채점 화면 하단 과제수행 가산점 ---- */
+  .task-section{margin-top:18px;border-top:1px solid var(--border);padding-top:14px;}
+  .task-section-title{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:8px;}
+  .task-section .task-item{display:flex;align-items:center;gap:10px;padding:8px 2px;font-size:14px;}
+  .task-section .task-item input{width:20px;height:20px;flex:none;}
 
   .summary-bar{position:sticky;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);
     padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 -2px 10px rgba(0,0,0,.05);
@@ -840,6 +851,7 @@ function renderScoreCard(){
     </div>`;
 
   html += State.viewMode === "live" ? renderLiveBody(activeMoves) : renderDetailBody(activeMoves);
+  html += renderTaskSection(rec);
 
   html += `<div class="summary-bar">
     <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
@@ -887,11 +899,34 @@ function renderScoreCard(){
 
   if (State.viewMode === "live") wireLiveBody(cls, no, rec, activeRound, activeMoves);
   else wireDetailBody(cls, no, rec, activeRound, activeMoves);
+  wireTaskSection(cls, no, rec);
 
   const prevBtn = document.getElementById("btnPrevStu");
   const nextBtn = document.getElementById("btnNextStu");
   if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
   if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+}
+
+/* 채점(라이브/상세) 화면 하단 과제수행 가산점 — 학생 목록 옆 체크와 별개로 여기서도 체크 가능 */
+function renderTaskSection(rec){
+  const tasks = (rec && rec.tasks) || {};
+  let html = `<div class="task-section"><div class="task-section-title">과제수행 가산점Ⓑ (항목당 1점)</div>`;
+  TASKS.forEach((t, i) => {
+    html += `<label class="task-item"><input type="checkbox" data-task="${i}" ${tasks[i]?"checked":""}> ${esc(t)}</label>`;
+  });
+  html += `</div>`;
+  return html;
+}
+function wireTaskSection(cls, no, rec){
+  const card = document.getElementById("scoreCard");
+  card.querySelectorAll(".task-section [data-task]").forEach(chk => {
+    chk.addEventListener("change", () => {
+      const idx = chk.dataset.task;
+      const patch = {tasks: Object.assign({}, rec.tasks)};
+      patch.tasks[idx] = chk.checked;
+      saveRecord(cls, no, patch);
+    });
+  });
 }
 
 /* ---- 도전 차수(회차) 탭 ---- */
@@ -951,28 +986,49 @@ function renderLiveBody(moves){
     const level = moves ? moves[i] : null;
     const clicks = clicksFromLevel(level);
     const liveScore = level || 5;
+    const atFloor = clicks >= 4;
     const dots = [0,1,2,3].map(d => `<span class="miss-dot ${d < clicks ? 'on':''}"></span>`).join("");
     return `
       <div class="live-step-label">${i+1}/${MOVES.length}번째 동작</div>
       <div class="live-move-name">${esc(MOVES[i])}</div>
-      <button class="miss-btn" id="btnMiss">❌ 실수</button>
-      <div class="miss-dots">${dots}</div>
-      <div class="live-score-line">실수 ${clicks}회 → <b>${liveScore}점</b></div>
-      <div class="live-actions">
-        <button class="undo-btn" id="btnUndo" ${clicks<=0?"disabled":""}>↩️ 되돌리기</button>
+      <div class="live-gesture-zone" id="liveGestureZone">
+        <button class="miss-btn" id="btnMiss">❌ 실수${atFloor ? '<span class="miss-btn-sub">한 번 더 탭하면 다음 동작으로</span>' : ''}</button>
+        <div class="miss-dots">${dots}</div>
+        <div class="live-score-line">실수 ${clicks}회 → <b>${liveScore}점</b></div>
       </div>
-      <div class="move-nav">
-        <button id="btnPrevMove" ${i<=0?"disabled":""}>◀ 이전 동작</button>
-        <button class="primary" id="btnNextMove">${i<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
+      <p class="swipe-hint">💡 화면을 좌우로 스와이프해도 동작이 넘어갑니다</p>
+      <button class="live-next-btn" id="btnNextMove">${i<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
+      <div class="live-actions">
+        <button id="btnPrevMove" class="undo-btn" ${i<=0?"disabled":""}>◀ 이전 동작</button>
+        <button class="undo-btn" id="btnUndo" ${clicks<=0?"disabled":""}>↩️ 되돌리기</button>
       </div>`;
   }
   // liveStep === MOVES.length : 8동작 종료
   return `<div class="live-wrap-title">✅ 8개 동작 완료!</div>
-    <p class="live-done-hint">과제수행 가산점은 왼쪽 학생 목록에서 바로 체크할 수 있어요.</p>
+    <p class="live-done-hint">과제수행 가산점은 아래(또는 학생 목록)에서 바로 체크할 수 있어요.</p>
     <div class="move-nav">
       <button id="btnPrevMove">◀ 동작 다시 보기</button>
     </div>
     <button class="next-student-btn" id="btnNextStudentLive">🎉 이 학생 완료 → 다음 학생 ▶</button>`;
+}
+// 좌우 스와이프 감지: 세로 스크롤은 방해하지 않도록 가로 이동이 세로 이동보다
+// 뚜렷하게 클 때만(60px 이상) 스와이프로 인식한다.
+function attachSwipeNav(el, onSwipeLeft, onSwipeRight){
+  if (!el) return;
+  let startX = null, startY = null;
+  el.addEventListener("touchstart", (e) => {
+    const t = e.touches[0];
+    startX = t.clientX; startY = t.clientY;
+  }, {passive:true});
+  el.addEventListener("touchend", (e) => {
+    if (startX == null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - startX, dy = t.clientY - startY;
+    startX = null;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5){
+      if (dx < 0) onSwipeLeft(); else onSwipeRight();
+    }
+  });
 }
 function wireLiveBody(cls, no, rec, roundNo, moves){
   const card = document.getElementById("scoreCard");
@@ -980,10 +1036,26 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
 
   if (State.liveStep < MOVES.length){
     const i = State.liveStep;
+    const goNext = () => {
+      const level = moves ? moves[i] : null;
+      if (level == null){
+        saveMovePatch(cls, no, rec, roundNo, i, 5); // 탭 없음 = 클리어로 확정 저장
+      }
+      State.liveStep = i + 1;
+      renderScoreCard();
+    };
+    const goPrev = () => {
+      if (i > 0){ State.liveStep = i - 1; renderScoreCard(); }
+    };
     card.querySelector("#btnMiss").addEventListener("click", () => {
       const level = moves ? moves[i] : null;
-      const clicks = Math.min(4, clicksFromLevel(level) + 1);
-      saveMovePatch(cls, no, rec, roundNo, i, levelFromClicks(clicks));
+      const curClicks = clicksFromLevel(level);
+      if (curClicks >= 4){
+        // 이미 최저점(1점)에 도달 — 한 번 더 탭하면 다음 동작으로 자동 진행
+        goNext();
+        return;
+      }
+      saveMovePatch(cls, no, rec, roundNo, i, levelFromClicks(curClicks + 1));
     });
     card.querySelector("#btnUndo").addEventListener("click", () => {
       const level = moves ? moves[i] : null;
@@ -991,17 +1063,9 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
       saveMovePatch(cls, no, rec, roundNo, i, levelFromClicks(clicks));
     });
     const prevMoveBtn = card.querySelector("#btnPrevMove");
-    if (prevMoveBtn) prevMoveBtn.addEventListener("click", () => {
-      if (i > 0){ State.liveStep = i - 1; renderScoreCard(); }
-    });
-    card.querySelector("#btnNextMove").addEventListener("click", () => {
-      const level = moves ? moves[i] : null;
-      if (level == null){
-        saveMovePatch(cls, no, rec, roundNo, i, 5); // 탭 없음 = 클리어로 확정 저장
-      }
-      State.liveStep = i + 1;
-      renderScoreCard();
-    });
+    if (prevMoveBtn) prevMoveBtn.addEventListener("click", goPrev);
+    card.querySelector("#btnNextMove").addEventListener("click", goNext);
+    attachSwipeNav(card.querySelector("#liveGestureZone"), goNext, goPrev);
   } else {
     card.querySelector("#btnPrevMove").addEventListener("click", () => {
       State.liveStep = MOVES.length - 1; renderScoreCard();
