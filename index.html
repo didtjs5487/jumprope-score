@@ -899,6 +899,9 @@ function renderScoreCard(){
     State.activeRound = nextNo;
     State.liveStep = 0;
     saveRecord(cls, no, {rounds: newRounds, moves: null});
+    // 새 차수 탭은 화면 위쪽 작은 영역에만 추가되어 눈에 잘 안 띌 수 있어,
+    // 눌렸다는 걸 확실히 알 수 있도록 화면 어디서든 보이는 알림을 띄운다.
+    toast(`🆕 ${nextNo}차 시작! 위쪽 탭에서 회차를 확인하세요.`);
   });
 
   if (State.viewMode === "live") wireLiveBody(cls, no, rec, activeRound, activeMoves);
