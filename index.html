@@ -221,12 +221,14 @@
   table.dash-table td.final-cell{font-weight:800;color:var(--primary);}
   .table-scroll{overflow-x:auto;border-radius:var(--radius);}
 
-  #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:6px;
-    align-items:center;pointer-events:none;}
-  .toast-msg{background:#1c1e26;color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;box-shadow:0 4px 12px rgba(0,0,0,.2);
-    animation:toastIn .15s ease-out;}
+  /* 화면 정중앙에 띄운다 — 맨 위에 두면 아이폰 노치/카메라 부분과 겹쳐 가려지는
+     기기가 있었다. */
+  #toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;display:flex;flex-direction:column;gap:6px;
+    align-items:center;pointer-events:none;width:calc(100% - 32px);max-width:360px;}
+  .toast-msg{background:#1c1e26;color:#fff;padding:12px 18px;border-radius:20px;font-size:14px;font-weight:600;text-align:center;
+    box-shadow:0 4px 16px rgba(0,0,0,.3);animation:toastIn .15s ease-out;}
   .toast-msg.err{background:var(--danger);}
-  @keyframes toastIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes toastIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
 </style>
 </head>
 <body>
@@ -900,8 +902,8 @@ function renderScoreCard(){
     State.liveStep = 0;
     saveRecord(cls, no, {rounds: newRounds, moves: null});
     // 새 차수 탭은 화면 위쪽 작은 영역에만 추가되어 눈에 잘 안 띌 수 있어,
-    // 눌렸다는 걸 확실히 알 수 있도록 화면 어디서든 보이는 알림을 띄운다.
-    toast(`🆕 ${nextNo}차 시작! 위쪽 탭에서 회차를 확인하세요.`);
+    // 눌렸다는 걸 확실히 알 수 있도록 화면 정중앙에 알림을 띄운다.
+    toast(`🆕 ${nextNo}차 시작!`);
   });
 
   if (State.viewMode === "live") wireLiveBody(cls, no, rec, activeRound, activeMoves);
