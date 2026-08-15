@@ -434,9 +434,18 @@ function finalScoreFromRaw(raw){
 // 채워짐) 회차 목록이 깨진다. 접두어를 붙이면 이 자동 변환을 피할 수 있다.
 function roundKey(n){ return "r" + n; }
 function roundNumFromKey(k){ return Number(String(k).replace(/^r/, "")); }
-function getRounds(record){
+// 실제로 저장된 회차만 반환한다(화면 표시용 "1차" 기본값은 포함하지 않음).
+// 저장 시에는 반드시 이 함수를 기준으로 삼아야 한다 — getRounds()가 화면
+// 표시를 위해 돌려주는 빈 "1차" 기본값을 그대로 다시 저장하면, 빈 객체는
+// Firebase가 저장하지 않고 조용히 지워버려 실제 회차가 사라질 수 있다.
+function getStoredRounds(record){
   if (record && record.rounds && Object.keys(record.rounds).length) return record.rounds;
   if (record && record.moves && Object.keys(record.moves).length) return { [roundKey(1)]: { moves: record.moves } };
+  return {};
+}
+function getRounds(record){
+  const stored = getStoredRounds(record);
+  if (Object.keys(stored).length) return stored;
   return { [roundKey(1)]: { moves: {} } };
 }
 function computeRoundStats(moves){
@@ -884,10 +893,11 @@ function renderScoreCard(){
       e.stopPropagation();
       const rn = Number(span.dataset.delRound);
       if (!confirm(rn + "차 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
+      const stored = getStoredRounds(rec);
       const remaining = roundNos.filter(k => k !== rn);
       const newRounds = {};
-      remaining.forEach((k, idx) => { newRounds[roundKey(idx+1)] = rounds[roundKey(k)]; });
-      if (!Object.keys(newRounds).length) newRounds[roundKey(1)] = {moves:{}};
+      remaining.forEach((k, idx) => { newRounds[roundKey(idx+1)] = stored[roundKey(k)]; });
+      if (!Object.keys(newRounds).length) newRounds[roundKey(1)] = {createdAt: Date.now()};
       State.activeRound = null;
       State.liveStep = 0;
       saveRecord(cls, no, {rounds: newRounds, moves: null});
@@ -895,9 +905,9 @@ function renderScoreCard(){
   });
   const addRoundBtn = document.getElementById("btnAddRound");
   if (addRoundBtn) addRoundBtn.addEventListener("click", () => {
-    const newRounds = Object.assign({}, rounds);
+    const newRounds = Object.assign({}, getStoredRounds(rec));
     const nextNo = (roundNos.length ? Math.max(...roundNos) : 0) + 1;
-    newRounds[roundKey(nextNo)] = {moves:{}};
+    newRounds[roundKey(nextNo)] = {createdAt: Date.now()};
     State.activeRound = nextNo;
     State.liveStep = 0;
     saveRecord(cls, no, {rounds: newRounds, moves: null});
@@ -955,11 +965,14 @@ function renderRoundTabs(rounds, roundNos, cs, activeRound){
 
 /* 라이브/상세 공통: 활성 차수의 동작 하나를 저장 (다른 차수 기록은 보존) */
 function saveMovePatch(cls, no, rec, roundNo, moveIdx, level){
-  const rounds = Object.assign({}, getRounds(rec));
+  const rounds = Object.assign({}, getStoredRounds(rec));
   const key = roundKey(roundNo);
-  const curMoves = Object.assign({}, (rounds[key] && rounds[key].moves) || {});
+  const curRound = rounds[key] || {};
+  const curMoves = Object.assign({}, curRound.moves || {});
   curMoves[moveIdx] = level;
-  rounds[key] = {moves: curMoves};
+  // createdAt을 항상 유지/부여해, 이 회차의 모든 동작 점수가 취소되어 moves가
+  // 비어도 회차 자체는 Firebase에서 지워지지 않고 남아있도록 한다.
+  rounds[key] = Object.assign({}, curRound, {moves: curMoves, createdAt: curRound.createdAt || Date.now()});
   saveRecord(cls, no, {rounds, moves: null});
 }
 
