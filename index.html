@@ -181,6 +181,8 @@
 
   /* ---- roster tab ---- */
   .roster-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .roster-card.danger-zone{border:1px solid var(--danger);}
+  .roster-card.danger-zone .roster-title{color:var(--danger);}
   .roster-card > summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;}
   .roster-card > summary::-webkit-details-marker{display:none;}
   .roster-card > summary::after{content:"▾";color:var(--muted);font-size:13px;transition:transform .15s;flex:none;margin-left:8px;}
@@ -353,6 +355,15 @@
           <span class="save-state" id="oneStuResult"></span>
         </div>
       </details>
+
+      <div class="roster-card danger-zone">
+        <h3 class="roster-title">⚠️ 자료 초기화</h3>
+        <p class="roster-help">모든 반의 학생 명단과 채점 기록(완성도·과제수행·회차 기록 전부)을 영구적으로 삭제합니다. 테스트 데이터를 정리할 때만 사용하세요. <b>되돌릴 수 없습니다.</b></p>
+        <div class="roster-actions">
+          <button class="btn" id="btnResetAll" style="width:auto;background:var(--danger);color:#fff;">🗑️ 자료 초기화</button>
+          <span class="save-state" id="resetAllResult"></span>
+        </div>
+      </div>
     </section>
   </main>
 </div>
@@ -521,6 +532,9 @@ const Backend = (function(){
       setRoster(cls, rosterObj){
         return db.ref("rosters/" + cls).set(rosterObj);
       },
+      resetAllData(){
+        return Promise.all([db.ref("scores").remove(), db.ref("rosters").remove()]);
+      },
     };
   }
 
@@ -566,6 +580,11 @@ const Backend = (function(){
       all[cls] = rosterObj;
       writeAll(LS_ROSTERS, all);
       (rosterListeners[cls]||[]).forEach(cb => cb(rosterObj));
+      return Promise.resolve();
+    },
+    resetAllData(){
+      localStorage.removeItem(LS_SCORES);
+      localStorage.removeItem(LS_ROSTERS);
       return Promise.resolve();
     },
   };
@@ -1250,6 +1269,23 @@ document.getElementById("btnOneStuAdd").addEventListener("click", () => {
   }).catch(err => {
     resultEl.textContent = "저장 실패: " + err.message;
     resultEl.classList.add("err");
+  });
+});
+
+// 자료 초기화: 모든 반의 학생 명단·채점 기록을 영구 삭제한다. 실수로 누르는 것을
+// 막기 위해 확인창을 반드시 거치고, 삭제 후에는 앱을 새로고침해 깨끗한 상태로 만든다.
+document.getElementById("btnResetAll").addEventListener("click", () => {
+  if (!confirm("정말 초기화하시겠습니까?\n\n모든 반의 학생 명단과 채점 기록이 전부 삭제되며, 되돌릴 수 없습니다.")) return;
+  const resultEl = document.getElementById("resetAllResult");
+  resultEl.classList.remove("err");
+  resultEl.textContent = "초기화 중…";
+  Backend.resetAllData().then(() => {
+    toast("모든 데이터가 초기화되었습니다.");
+    location.reload();
+  }).catch(err => {
+    resultEl.textContent = "초기화 실패: " + err.message;
+    resultEl.classList.add("err");
+    toast("초기화 실패: " + err.message, true);
   });
 });
 
