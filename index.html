@@ -93,20 +93,13 @@
   }
   .student-grid{display:flex;flex-wrap:wrap;gap:6px;}
   @media(min-width:860px){.student-grid{flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
-  .stu-item{flex:none;width:84px;display:flex;flex-direction:column;gap:3px;}
-  @media(min-width:860px){.stu-item{width:100%;flex-direction:row;align-items:center;gap:6px;}}
-  .stu-chip{width:100%;padding:7px 4px;border-radius:10px;background:var(--card);border:1px solid var(--border);
+  .stu-chip{flex:none;width:84px;padding:7px 4px;border-radius:10px;background:var(--card);border:1px solid var(--border);
     text-align:center;position:relative;}
-  @media(min-width:860px){.stu-chip{flex:1;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
+  @media(min-width:860px){.stu-chip{width:100%;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
   .stu-chip.active{border-color:var(--primary);background:var(--primary-light);}
   .stu-chip .no{font-size:11px;color:var(--muted);}
   .stu-chip .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .stu-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:3px;background:#d1d5db;}
-  .task-mini{display:flex;gap:2px;justify-content:center;flex:none;}
-  @media(min-width:860px){.task-mini{justify-content:flex-end;}}
-  .task-dot{width:17px;height:17px;border-radius:4px;font-size:9px;font-weight:700;line-height:1;
-    border:1px solid var(--border);background:#fff;color:var(--muted);padding:0;}
-  .task-dot.on{background:var(--ok);border-color:var(--ok);color:#fff;}
   .stu-dot.partial{background:var(--warn);}
   .stu-dot.done{background:var(--ok);}
 
@@ -772,16 +765,10 @@ function renderStudentGrid(){
     if (cs.allMovesScored) dotClass = "done";
     const active = State.scoreNo === no ? "active" : "";
     const customName = roster.names && roster.names[no];
-    const tasks = (rec && rec.tasks) || {};
-    html += `<div class="stu-item">
-      <button class="stu-chip ${active}" data-no="${no}">
-        <span><span class="stu-dot ${dotClass}"></span><span class="no">${no}번</span></span>
-        ${customName ? `<span class="name">${esc(customName)}</span>` : ""}
-      </button>
-      <div class="task-mini" data-no="${no}">
-        ${TASKS.map((t,i) => `<button type="button" class="task-dot ${tasks[i]?'on':''}" data-task="${i}" title="${esc(t)}">${i+1}</button>`).join("")}
-      </div>
-    </div>`;
+    html += `<button class="stu-chip ${active}" data-no="${no}">
+      <span><span class="stu-dot ${dotClass}"></span><span class="no">${no}번</span></span>
+      ${customName ? `<span class="name">${esc(customName)}</span>` : ""}
+    </button>`;
   }
   grid.innerHTML = html;
   grid.querySelectorAll(".stu-chip").forEach(btn => {
@@ -798,17 +785,6 @@ function renderStudentGrid(){
         const wrap = document.getElementById("scoreCardWrap");
         if (wrap) wrap.scrollIntoView({behavior:"smooth", block:"start"});
       }
-    });
-  });
-  grid.querySelectorAll(".task-dot").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const no = Number(btn.closest(".task-mini").dataset.no);
-      const idx = Number(btn.dataset.task);
-      const rec = scores[no] || {};
-      const patch = {tasks: Object.assign({}, rec.tasks)};
-      patch.tasks[idx] = !patch.tasks[idx];
-      saveRecord(State.scoreCls, no, patch);
     });
   });
 }
