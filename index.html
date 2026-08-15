@@ -17,8 +17,9 @@
     --primary:#4a5fd9; --primary-dark:#3a4bc0; --primary-light:#eef0fd;
     --lv1:#e5484d; --lv1-bg:#fdecec;
     --lv2:#c9770a; --lv2-bg:#fdf1de;
-    --lv3:#2563eb; --lv3-bg:#e8f0fe;
-    --lv4:#16a34a; --lv4-bg:#e7f7ed;
+    --lv3:#a16207; --lv3-bg:#fdf6e3;
+    --lv4:#2563eb; --lv4-bg:#e8f0fe;
+    --lv5:#16a34a; --lv5-bg:#e7f7ed;
     --danger:#dc2626; --ok:#16a34a; --warn:#c9770a;
     --radius:14px;
   }
@@ -64,6 +65,15 @@
   .offline-banner{background:#fef3c7;color:#92400e;font-size:12px;text-align:center;padding:5px;display:none;}
   .offline-banner.show{display:block;}
 
+  /* ---- PWA 설치 배너 ---- */
+  .install-banner{display:none;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;
+    background:var(--primary-light);color:var(--primary-dark);font-size:13px;padding:8px 14px;text-align:center;}
+  .install-banner.show{display:flex;}
+  .install-banner .install-btn{background:var(--primary);color:#fff;border:none;border-radius:8px;
+    padding:7px 14px;font-size:13px;font-weight:700;white-space:nowrap;}
+  .install-banner .install-close{background:none;border:none;color:var(--primary-dark);opacity:.6;
+    font-size:15px;line-height:1;padding:4px 6px;}
+
   main{padding:12px 12px 90px;}
 
   /* ---- class selector ---- */
@@ -76,12 +86,13 @@
   /* ---- score layout ---- */
   #tab-score{display:flex;flex-direction:column;gap:10px;}
   @media(min-width:860px){
-    #tab-score{display:grid;grid-template-columns:220px 1fr;align-items:start;}
-    #studentPickerWrap{grid-column:1;grid-row:1 / span 2;}
-    #scoreCardWrap{grid-column:2;grid-row:1;}
+    #tab-score{display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto 1fr;align-items:start;}
+    #clsRowScore{grid-column:1 / -1;grid-row:1;}
+    #studentGrid{grid-column:1;grid-row:2;}
+    #scoreCardWrap{grid-column:2;grid-row:2;}
   }
   .student-grid{display:flex;flex-wrap:wrap;gap:6px;}
-  @media(min-width:860px){.student-grid{flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 160px);overflow-y:auto;}}
+  @media(min-width:860px){.student-grid{flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
   .stu-chip{flex:none;width:78px;padding:7px 4px;border-radius:10px;background:var(--card);border:1px solid var(--border);
     text-align:center;position:relative;}
   @media(min-width:860px){.stu-chip{width:100%;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
@@ -97,7 +108,7 @@
   .score-card .sub{color:var(--muted);font-size:12px;margin-bottom:14px;}
   .move-row{margin-bottom:12px;}
   .move-row .move-name{font-size:13px;font-weight:600;margin-bottom:6px;}
-  .lv-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+  .lv-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
   .lv-btn{padding:9px 2px;border-radius:9px;border:1px solid var(--border);background:#fafafa;
     font-size:11px;font-weight:600;color:var(--muted);line-height:1.3;}
   .lv-btn b{display:block;font-size:13px;}
@@ -105,6 +116,7 @@
   .lv-btn[data-lv="2"].sel{background:var(--lv2-bg);border-color:var(--lv2);color:var(--lv2);}
   .lv-btn[data-lv="3"].sel{background:var(--lv3-bg);border-color:var(--lv3);color:var(--lv3);}
   .lv-btn[data-lv="4"].sel{background:var(--lv4-bg);border-color:var(--lv4);color:var(--lv4);}
+  .lv-btn[data-lv="5"].sel{background:var(--lv5-bg);border-color:var(--lv5);color:var(--lv5);}
 
   .task-list{margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
   .task-item{display:flex;align-items:center;gap:10px;padding:9px 2px;font-size:14px;}
@@ -188,6 +200,12 @@
 </head>
 <body>
 
+<div class="install-banner" id="installBanner">
+  <span id="installBannerText"></span>
+  <button class="install-btn hidden" id="btnInstallApp">📲 앱 설치</button>
+  <button class="install-close" id="btnInstallClose" aria-label="닫기">✕</button>
+</div>
+
 <div id="loginScreen">
   <div class="login-card">
     <h1>🎵 음악줄넘기 채점</h1>
@@ -227,10 +245,8 @@
   <main class="container">
     <!-- 채점 -->
     <section id="tab-score">
-      <div id="studentPickerWrap">
-        <div class="cls-row" id="clsRowScore"></div>
-        <div class="student-grid" id="studentGrid"></div>
-      </div>
+      <div class="cls-row" id="clsRowScore"></div>
+      <div class="student-grid" id="studentGrid"></div>
       <div id="scoreCardWrap">
         <div id="scoreCardEmpty" class="empty-state">반과 학생 번호를 선택하면 채점 화면이 나타납니다.</div>
         <div id="scoreCard" class="score-card hidden"></div>
@@ -342,9 +358,10 @@ const MOVES = [
 ];
 const LEVELS = [
   {v:1, label:"실패"},
-  {v:2, label:"8박자"},
-  {v:3, label:"8박자↑"},
-  {v:4, label:"Clear"},
+  {v:2, label:"4박자"},
+  {v:3, label:"8박자"},
+  {v:4, label:"8박자↑"},
+  {v:5, label:"Clear"},
 ];
 const TASKS = [
   "개인 연습 철저",
@@ -353,16 +370,16 @@ const TASKS = [
   "음악과 잘 어울리며 리듬감이 우수",
 ];
 const CLASSES = Array.from({length:10}, (_,i)=>i+1);
-const A_MAX = MOVES.length * 4;   // 32
+const A_MAX = MOVES.length * 5;   // 40
 const B_MAX = TASKS.length;       // 4
 
 function finalScoreFromRaw(raw){
   if (raw <= 9) return 10;
-  if (raw <= 13) return 15;
-  if (raw <= 17) return 20;
-  if (raw <= 21) return 25;
-  if (raw <= 25) return 30;
-  if (raw <= 29) return 35;
+  if (raw <= 14) return 15;
+  if (raw <= 19) return 20;
+  if (raw <= 24) return 25;
+  if (raw <= 29) return 30;
+  if (raw <= 34) return 35;
   return 40;
 }
 function computeScores(record){
@@ -377,13 +394,13 @@ function computeScores(record){
   return { a, b, raw, final, scoredMoves, allMovesScored: scoredMoves === MOVES.length };
 }
 
-// 라이브 모드: "실수" 탭 횟수 <-> 저장된 1~4점 레벨을 서로 변환한다.
-// 0회→4점, 1회→3점, 2회→2점, 3회 이상→1점 (score = max(1, 4-clicks))
+// 라이브 모드: "실수" 탭 횟수 <-> 저장된 1~5점 레벨을 서로 변환한다.
+// 0회→5점, 1회→4점, 2회→3점, 3회→2점, 4회 이상→1점 (score = max(1, 5-clicks))
 function clicksFromLevel(level){
-  return level ? Math.max(0, 4 - level) : 0;
+  return level ? Math.max(0, 5 - level) : 0;
 }
 function levelFromClicks(clicks){
-  return Math.max(1, 4 - clicks);
+  return Math.max(1, 5 - clicks);
 }
 
 const TEACHER_NAMES = {
@@ -813,8 +830,8 @@ function renderLiveBody(rec){
     const i = State.liveStep;
     const level = rec.moves ? rec.moves[i] : null;
     const clicks = clicksFromLevel(level);
-    const liveScore = level || 4;
-    const dots = [0,1,2].map(d => `<span class="miss-dot ${d < clicks ? 'on':''}"></span>`).join("");
+    const liveScore = level || 5;
+    const dots = [0,1,2,3].map(d => `<span class="miss-dot ${d < clicks ? 'on':''}"></span>`).join("");
     return `
       <div class="live-step-label">${i+1}/${MOVES.length}번째 동작</div>
       <div class="live-move-name">${esc(MOVES[i])}</div>
@@ -851,7 +868,7 @@ function wireLiveBody(cls, no, rec){
     const i = State.liveStep;
     card.querySelector("#btnMiss").addEventListener("click", () => {
       const level = rec.moves ? rec.moves[i] : null;
-      const clicks = Math.min(3, clicksFromLevel(level) + 1);
+      const clicks = Math.min(4, clicksFromLevel(level) + 1);
       const patch = {moves: Object.assign({}, rec.moves)};
       patch.moves[i] = levelFromClicks(clicks);
       saveRecord(cls, no, patch);
@@ -872,7 +889,7 @@ function wireLiveBody(cls, no, rec){
       if (level == null){
         // 탭 없음 = 클리어로 확정 저장
         const patch = {moves: Object.assign({}, rec.moves)};
-        patch.moves[i] = 4;
+        patch.moves[i] = 5;
         saveRecord(cls, no, patch);
       }
       State.liveStep = i + 1;
@@ -1188,13 +1205,69 @@ document.getElementById("btnExportCsv").addEventListener("click", () => {
 });
 
 /* =========================================================
-   14. PWA — 서비스워커 등록
+   14. PWA — 서비스워커 등록 + 설치 배너
    ========================================================= */
 if ("serviceWorker" in navigator){
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(()=>{});
   });
 }
+
+(function initInstallBanner(){
+  const DISMISS_KEY = "installBannerDismissed";
+  const banner = document.getElementById("installBanner");
+  const textEl = document.getElementById("installBannerText");
+  const installBtn = document.getElementById("btnInstallApp");
+  const closeBtn = document.getElementById("btnInstallClose");
+  if (!banner) return;
+
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+    || window.navigator.standalone === true;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    && !window.MSStream;
+
+  if (isStandalone || localStorage.getItem(DISMISS_KEY) === "1"){
+    return; // 이미 설치됐거나 사용자가 닫은 적 있으면 표시 안 함
+  }
+
+  let deferredPrompt = null;
+
+  function showBanner(){ banner.classList.add("show"); }
+  function hideBanner(){ banner.classList.remove("show"); }
+  function dismiss(){ hideBanner(); localStorage.setItem(DISMISS_KEY, "1"); }
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    textEl.textContent = "홈 화면에 앱을 설치하면 더 빠르게 열 수 있어요";
+    installBtn.classList.remove("hidden");
+    showBanner();
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredPrompt = null;
+    dismiss();
+  });
+
+  installBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    installBtn.disabled = true;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    hideBanner();
+    installBtn.disabled = false;
+  });
+
+  closeBtn.addEventListener("click", dismiss);
+
+  // 안드로이드(Chrome 등)는 beforeinstallprompt로 자동 처리됨.
+  // iOS Safari/Chrome은 이 이벤트를 지원하지 않으므로 수동 안내를 띄운다.
+  if (isIOS){
+    textEl.textContent = "Safari 하단 공유 버튼 → \"홈 화면에 추가\"로 앱처럼 설치할 수 있어요";
+    showBanner();
+  }
+})();
 
 })();
 </script>
