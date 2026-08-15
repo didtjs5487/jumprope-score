@@ -404,10 +404,11 @@ const TASKS = [
   "기본자세의 우수성",
   "스텝·기술동작의 우수성",
   "음악과의 조화 및 리듬감",
+  "자신감 있는 표현",
 ];
 const CLASSES = Array.from({length:10}, (_,i)=>i+1);
 const A_MAX = MOVES.length * 5;   // 40
-const B_MAX = TASKS.length;       // 4
+const B_MAX = TASKS.length;       // 5
 
 function finalScoreFromRaw(raw){
   if (raw <= 9) return 10;
@@ -896,7 +897,7 @@ function renderScoreCard(){
 
   if (State.viewMode === "live") wireLiveBody(cls, no, rec, activeRound, activeMoves);
   else wireDetailBody(cls, no, rec, activeRound, activeMoves);
-  wireTaskSection(cls, no, rec);
+  wireTaskSection(cls, no);
 
   const prevBtn = document.getElementById("btnPrevStu");
   const nextBtn = document.getElementById("btnNextStu");
@@ -914,12 +915,15 @@ function renderTaskSection(rec){
   html += `</div>`;
   return html;
 }
-function wireTaskSection(cls, no, rec){
+function wireTaskSection(cls, no){
   const card = document.getElementById("scoreCard");
   card.querySelectorAll(".task-section [data-task]").forEach(chk => {
     chk.addEventListener("change", () => {
       const idx = chk.dataset.task;
-      const patch = {tasks: Object.assign({}, rec.tasks)};
+      // 항상 State의 최신값 위에서 병합해, 여러 항목을 연달아 체크해도 이전 체크가
+      // 유실되지 않도록 한다 (낙관적 업데이트로 렌더가 매번 새로 일어나기 때문).
+      const curTasks = (State.scoresByClass[cls] && State.scoresByClass[cls][no] && State.scoresByClass[cls][no].tasks) || {};
+      const patch = {tasks: Object.assign({}, curTasks)};
       patch.tasks[idx] = chk.checked;
       saveRecord(cls, no, patch);
     });
