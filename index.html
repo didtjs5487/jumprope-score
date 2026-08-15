@@ -119,14 +119,17 @@
   .lv-btn[data-lv="5"].sel{background:var(--lv5-bg);border-color:var(--lv5);color:var(--lv5);}
 
   /* ---- 도전 차수(회차) 탭 ---- */
-  .round-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center;}
-  .round-tab{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);
-    font-size:12px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:5px;}
+  /* 손가락 탭 오차로 바로 옆 버튼(특히 이미 선택된 회차)을 잘못 누르는 일이 없도록
+     최소 44px 터치 영역(애플 권장 기준)과 넉넉한 간격을 확보한다. */
+  .round-tabs{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center;}
+  .round-tab{min-height:44px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);
+    font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px;}
   .round-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-  .round-del{font-size:11px;opacity:.7;padding:1px 3px;border-radius:4px;}
+  .round-tab:active,.round-add:active{opacity:.6;}
+  .round-del{font-size:13px;opacity:.7;padding:4px 6px;border-radius:6px;}
   .round-del:hover{opacity:1;background:rgba(0,0,0,.15);}
-  .round-add{padding:7px 10px;border-radius:8px;border:1px dashed var(--primary);background:none;
-    font-size:12px;font-weight:700;color:var(--primary);}
+  .round-add{min-height:44px;padding:10px 14px;border-radius:10px;border:1px dashed var(--primary);background:none;
+    font-size:13px;font-weight:700;color:var(--primary);}
 
   /* ---- 라이브 채점 모드 ---- */
   .mode-toggle{display:flex;gap:6px;margin-bottom:14px;}
