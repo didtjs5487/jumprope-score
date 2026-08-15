@@ -1062,8 +1062,18 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
   }
 }
 
+// 낙관적(optimistic) 업데이트: Firebase 응답을 기다리지 않고 화면을 즉시 갱신한다.
+// 실제 서버 왕복(수백ms~1초 이상, 특히 학교 와이파이)을 기다려야만 버튼이 반응하면
+// 실수/다음 동작/새 차수 같은 실시간 채점 조작이 "먹통"처럼 느껴지기 때문이다.
+// 서버 응답은 그 뒤에 별도로 처리해 저장 성공/실패만 알려준다.
 function saveRecord(cls, no, patch){
   patch.scoredBy = teacherDisplayName(State.user && State.user.email);
+
+  State.scoresByClass[cls] = State.scoresByClass[cls] || {};
+  State.scoresByClass[cls][no] = Object.assign({}, State.scoresByClass[cls][no], patch);
+  if (State.currentTab === "score"){ renderStudentGrid(); renderScoreCard(); }
+  else if (State.currentTab === "dashboard"){ renderDashboard(); }
+
   const stateEl = () => document.getElementById("saveState");
   if (stateEl()){ stateEl().textContent = " · 저장 중…"; stateEl().classList.remove("err"); }
   Backend.setScore(cls, no, patch).then(() => {
