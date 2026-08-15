@@ -93,13 +93,20 @@
   }
   .student-grid{display:flex;flex-wrap:wrap;gap:6px;}
   @media(min-width:860px){.student-grid{flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
-  .stu-chip{flex:none;width:78px;padding:7px 4px;border-radius:10px;background:var(--card);border:1px solid var(--border);
+  .stu-item{flex:none;width:84px;display:flex;flex-direction:column;gap:3px;}
+  @media(min-width:860px){.stu-item{width:100%;flex-direction:row;align-items:center;gap:6px;}}
+  .stu-chip{width:100%;padding:7px 4px;border-radius:10px;background:var(--card);border:1px solid var(--border);
     text-align:center;position:relative;}
-  @media(min-width:860px){.stu-chip{width:100%;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
+  @media(min-width:860px){.stu-chip{flex:1;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
   .stu-chip.active{border-color:var(--primary);background:var(--primary-light);}
   .stu-chip .no{font-size:11px;color:var(--muted);}
   .stu-chip .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .stu-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:3px;background:#d1d5db;}
+  .task-mini{display:flex;gap:2px;justify-content:center;flex:none;}
+  @media(min-width:860px){.task-mini{justify-content:flex-end;}}
+  .task-dot{width:17px;height:17px;border-radius:4px;font-size:9px;font-weight:700;line-height:1;
+    border:1px solid var(--border);background:#fff;color:var(--muted);padding:0;}
+  .task-dot.on{background:var(--ok);border-color:var(--ok);color:#fff;}
   .stu-dot.partial{background:var(--warn);}
   .stu-dot.done{background:var(--ok);}
 
@@ -118,9 +125,15 @@
   .lv-btn[data-lv="4"].sel{background:var(--lv4-bg);border-color:var(--lv4);color:var(--lv4);}
   .lv-btn[data-lv="5"].sel{background:var(--lv5-bg);border-color:var(--lv5);color:var(--lv5);}
 
-  .task-list{margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
-  .task-item{display:flex;align-items:center;gap:10px;padding:9px 2px;font-size:14px;}
-  .task-item input{width:20px;height:20px;flex:none;}
+  /* ---- 도전 차수(회차) 탭 ---- */
+  .round-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;align-items:center;}
+  .round-tab{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);
+    font-size:12px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:5px;}
+  .round-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .round-del{font-size:11px;opacity:.7;padding:1px 3px;border-radius:4px;}
+  .round-del:hover{opacity:1;background:rgba(0,0,0,.15);}
+  .round-add{padding:7px 10px;border-radius:8px;border:1px dashed var(--primary);background:none;
+    font-size:12px;font-weight:700;color:var(--primary);}
 
   /* ---- 라이브 채점 모드 ---- */
   .mode-toggle{display:flex;gap:6px;margin-bottom:14px;}
@@ -145,6 +158,7 @@
   .move-nav button.primary{background:var(--primary);color:#fff;border-color:var(--primary);}
   .move-nav button:disabled{opacity:.4;}
   .live-wrap-title{font-size:16px;font-weight:800;margin-bottom:14px;text-align:center;}
+  .live-done-hint{font-size:12px;color:var(--muted);text-align:center;margin:-8px 0 16px;}
   .next-student-btn{width:100%;padding:18px;border-radius:14px;border:none;background:var(--ok);color:#fff;
     font-size:16px;font-weight:800;margin-top:16px;}
   .next-student-btn:disabled{opacity:.4;}
@@ -382,16 +396,36 @@ function finalScoreFromRaw(raw){
   if (raw <= 34) return 35;
   return 40;
 }
-function computeScores(record){
-  const moves = (record && record.moves) || {};
-  const tasks = (record && record.tasks) || {};
+// 다회차(도전 차수) 지원: rounds = {1:{moves:{...}}, 2:{moves:{...}}, ...}
+// 옛 기록(rounds 없이 moves만 있던 시절 데이터)은 1차로 취급해 그대로 읽는다.
+function getRounds(record){
+  if (record && record.rounds && Object.keys(record.rounds).length) return record.rounds;
+  if (record && record.moves && Object.keys(record.moves).length) return { 1: { moves: record.moves } };
+  return { 1: { moves: {} } };
+}
+function computeRoundStats(moves){
+  moves = moves || {};
   let a = 0, scoredMoves = 0;
   MOVES.forEach((_, i) => { const v = moves[i]; if (v) { a += v; scoredMoves++; } });
+  return { a, scoredMoves, allMovesScored: scoredMoves === MOVES.length };
+}
+function computeScores(record){
+  const rounds = getRounds(record);
+  const roundNos = Object.keys(rounds).map(Number).sort((x,y) => x - y);
+  let best = null;
+  roundNos.forEach(rn => {
+    const stats = computeRoundStats(rounds[rn] && rounds[rn].moves);
+    if (!best || stats.a > best.a) best = Object.assign({roundNo: rn}, stats);
+  });
+  const tasks = (record && record.tasks) || {};
   let b = 0;
   TASKS.forEach((_, i) => { if (tasks[i]) b++; });
-  const raw = a + b;
+  const raw = best.a + b;
   const final = finalScoreFromRaw(raw);
-  return { a, b, raw, final, scoredMoves, allMovesScored: scoredMoves === MOVES.length };
+  return {
+    a: best.a, b, raw, final, scoredMoves: best.scoredMoves, allMovesScored: best.allMovesScored,
+    bestRoundNo: best.roundNo, roundCount: roundNos.length, roundNos,
+  };
 }
 
 // 라이브 모드: "실수" 탭 횟수 <-> 저장된 1~5점 레벨을 서로 변환한다.
@@ -541,7 +575,8 @@ const State = {
   scoreCls: 1,
   scoreNo: null,
   viewMode: "live",   // 'live' | 'detail'
-  liveStep: 0,        // 0~7 = 동작 인덱스, 8 = 과제수행 마무리 단계
+  liveStep: 0,        // 0~7 = 동작 인덱스, 8 = 완료 화면
+  activeRound: null,  // 현재 보고 있는 도전 차수 (null이면 최신 차수)
   rosterCls: 1,
   dashCls: "all",
   dashSort: {key:"cls", dir:1},
@@ -706,6 +741,7 @@ function renderStudentGrid(){
   const grid = document.getElementById("studentGrid");
   const count = getRoster(State.scoreCls).count || 30;
   const scores = State.scoresByClass[State.scoreCls] || {};
+  const roster = getRoster(State.scoreCls);
   let html = "";
   for (let no = 1; no <= count; no++){
     const rec = scores[no];
@@ -714,18 +750,44 @@ function renderStudentGrid(){
     if (cs.scoredMoves > 0 && !cs.allMovesScored) dotClass = "partial";
     if (cs.allMovesScored) dotClass = "done";
     const active = State.scoreNo === no ? "active" : "";
-    html += `<button class="stu-chip ${active}" data-no="${no}">
-      <span><span class="stu-dot ${dotClass}"></span><span class="no">${no}번</span></span>
-      <span class="name">${esc(studentName(State.scoreCls, no))}</span>
-    </button>`;
+    const customName = roster.names && roster.names[no];
+    const tasks = (rec && rec.tasks) || {};
+    html += `<div class="stu-item">
+      <button class="stu-chip ${active}" data-no="${no}">
+        <span><span class="stu-dot ${dotClass}"></span><span class="no">${no}번</span></span>
+        ${customName ? `<span class="name">${esc(customName)}</span>` : ""}
+      </button>
+      <div class="task-mini" data-no="${no}">
+        ${TASKS.map((t,i) => `<button type="button" class="task-dot ${tasks[i]?'on':''}" data-task="${i}" title="${esc(t)}">${i+1}</button>`).join("")}
+      </div>
+    </div>`;
   }
   grid.innerHTML = html;
   grid.querySelectorAll(".stu-chip").forEach(btn => {
     btn.addEventListener("click", () => {
       State.scoreNo = Number(btn.dataset.no);
       State.liveStep = 0;
+      State.activeRound = null;
       renderStudentGrid();
       renderScoreCard();
+      // 좁은 화면(모바일 세로 레이아웃)에서는 번호 선택 후 채점 영역까지
+      // 스크롤을 내려야 했던 불편을 없애기 위해 자동으로 스크롤 이동.
+      // 데스크톱(≥860px)은 번호 목록/채점 영역이 이미 좌우로 함께 보이므로 생략.
+      if (window.innerWidth < 860){
+        const wrap = document.getElementById("scoreCardWrap");
+        if (wrap) wrap.scrollIntoView({behavior:"smooth", block:"start"});
+      }
+    });
+  });
+  grid.querySelectorAll(".task-dot").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const no = Number(btn.closest(".task-mini").dataset.no);
+      const idx = Number(btn.dataset.task);
+      const rec = scores[no] || {};
+      const patch = {tasks: Object.assign({}, rec.tasks)};
+      patch.tasks[idx] = !patch.tasks[idx];
+      saveRecord(State.scoreCls, no, patch);
     });
   });
 }
@@ -746,18 +808,28 @@ function renderScoreCard(){
 
   const cls = State.scoreCls, no = State.scoreNo;
   const scores = State.scoresByClass[cls] || {};
-  const rec = scores[no] || {moves:{}, tasks:{}};
+  const rec = scores[no] || {tasks:{}};
   const cs = computeScores(rec);
   const count = getRoster(cls).count || 30;
 
+  const rounds = getRounds(rec);
+  const roundNos = Object.keys(rounds).map(Number).sort((a,b) => a - b);
+  if (State.activeRound == null || roundNos.indexOf(State.activeRound) === -1){
+    State.activeRound = roundNos[roundNos.length - 1];
+  }
+  const activeRound = State.activeRound;
+  const activeMoves = (rounds[activeRound] && rounds[activeRound].moves) || {};
+  const activeStats = computeRoundStats(activeMoves);
+
   let html = `<h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>
-    <p class="sub">${cs.scoredMoves}/${MOVES.length}개 동작 채점됨${rec.scoredBy ? " · 마지막 채점: " + esc(rec.scoredBy) : ""}</p>
-    <div class="mode-toggle">
+    <p class="sub">${activeRound}차 · ${activeStats.scoredMoves}/${MOVES.length}개 동작 채점됨${cs.roundCount>1 ? ` · 최고 기록 ${cs.bestRoundNo}차 반영` : ""}${rec.scoredBy ? " · 마지막 채점: " + esc(rec.scoredBy) : ""}</p>`;
+  html += renderRoundTabs(rounds, roundNos, cs, activeRound);
+  html += `<div class="mode-toggle">
       <button class="mode-btn ${State.viewMode==='live'?'active':''}" id="btnModeLive">🎯 라이브</button>
       <button class="mode-btn ${State.viewMode==='detail'?'active':''}" id="btnModeDetail">📋 상세</button>
     </div>`;
 
-  html += State.viewMode === "live" ? renderLiveBody(rec) : renderDetailBody(rec);
+  html += State.viewMode === "live" ? renderLiveBody(activeMoves) : renderDetailBody(activeMoves);
 
   html += `<div class="summary-bar">
     <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
@@ -771,20 +843,73 @@ function renderScoreCard(){
   document.getElementById("btnModeLive").addEventListener("click", () => { State.viewMode = "live"; renderScoreCard(); });
   document.getElementById("btnModeDetail").addEventListener("click", () => { State.viewMode = "detail"; renderScoreCard(); });
 
-  if (State.viewMode === "live") wireLiveBody(cls, no, rec);
-  else wireDetailBody(cls, no, rec);
+  card.querySelectorAll(".round-tab").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      if (e.target.closest(".round-del")) return;
+      State.activeRound = Number(btn.dataset.round);
+      State.liveStep = 0;
+      renderScoreCard();
+    });
+  });
+  card.querySelectorAll(".round-del").forEach(span => {
+    span.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const rn = Number(span.dataset.delRound);
+      if (!confirm(rn + "차 기록을 삭제할까요? 되돌릴 수 없습니다.")) return;
+      const remaining = roundNos.filter(k => k !== rn);
+      const newRounds = {};
+      remaining.forEach((k, idx) => { newRounds[idx+1] = rounds[k]; });
+      if (!Object.keys(newRounds).length) newRounds[1] = {moves:{}};
+      State.activeRound = null;
+      State.liveStep = 0;
+      saveRecord(cls, no, {rounds: newRounds, moves: null});
+    });
+  });
+  const addRoundBtn = document.getElementById("btnAddRound");
+  if (addRoundBtn) addRoundBtn.addEventListener("click", () => {
+    const newRounds = Object.assign({}, rounds);
+    const nextNo = (roundNos.length ? Math.max(...roundNos) : 0) + 1;
+    newRounds[nextNo] = {moves:{}};
+    State.activeRound = nextNo;
+    State.liveStep = 0;
+    saveRecord(cls, no, {rounds: newRounds, moves: null});
+  });
+
+  if (State.viewMode === "live") wireLiveBody(cls, no, rec, activeRound, activeMoves);
+  else wireDetailBody(cls, no, rec, activeRound, activeMoves);
 
   const prevBtn = document.getElementById("btnPrevStu");
   const nextBtn = document.getElementById("btnNextStu");
-  if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = 0; renderStudentGrid(); renderScoreCard(); }});
-  if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = 0; renderStudentGrid(); renderScoreCard(); }});
+  if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+  if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+}
+
+/* ---- 도전 차수(회차) 탭 ---- */
+function renderRoundTabs(rounds, roundNos, cs, activeRound){
+  let html = `<div class="round-tabs">`;
+  html += roundNos.map(rn => {
+    const isBest = rn === cs.bestRoundNo;
+    return `<button class="round-tab ${rn===activeRound?'active':''}" data-round="${rn}">${rn}차${isBest && roundNos.length>1 ? " ⭐" : ""}${roundNos.length>1 ? `<span class="round-del" data-del-round="${rn}" title="이 차수 삭제">✕</span>` : ""}</button>`;
+  }).join("");
+  html += `<button type="button" class="round-add" id="btnAddRound">➕ 새 차수</button>`;
+  html += `</div>`;
+  return html;
+}
+
+/* 라이브/상세 공통: 활성 차수의 동작 하나를 저장 (다른 차수 기록은 보존) */
+function saveMovePatch(cls, no, rec, roundNo, moveIdx, level){
+  const rounds = Object.assign({}, getRounds(rec));
+  const curMoves = Object.assign({}, (rounds[roundNo] && rounds[roundNo].moves) || {});
+  curMoves[moveIdx] = level;
+  rounds[roundNo] = {moves: curMoves};
+  saveRecord(cls, no, {rounds, moves: null});
 }
 
 /* ---- 상세보기: 8동작 전체 나열 (기존 방식, 검토·수정용) ---- */
-function renderDetailBody(rec){
+function renderDetailBody(moves){
   let html = "";
   MOVES.forEach((name, i) => {
-    const v = rec.moves ? rec.moves[i] : null;
+    const v = moves ? moves[i] : null;
     html += `<div class="move-row">
       <div class="move-name">${esc(name)}</div>
       <div class="lv-btns" data-move="${i}">
@@ -792,15 +917,9 @@ function renderDetailBody(rec){
       </div>
     </div>`;
   });
-  html += `<div class="task-list">`;
-  TASKS.forEach((t, i) => {
-    const checked = rec.tasks && rec.tasks[i];
-    html += `<label class="task-item"><input type="checkbox" data-task="${i}" ${checked?"checked":""}> ${esc(t)} (1점)</label>`;
-  });
-  html += `</div>`;
   return html;
 }
-function wireDetailBody(cls, no, rec){
+function wireDetailBody(cls, no, rec, roundNo, moves){
   const card = document.getElementById("scoreCard");
   card.querySelectorAll(".lv-btns").forEach(wrap => {
     wrap.addEventListener("click", e => {
@@ -808,27 +927,17 @@ function wireDetailBody(cls, no, rec){
       if (!btn) return;
       const moveIdx = wrap.dataset.move;
       const lv = Number(btn.dataset.lv);
-      const cur = rec.moves ? rec.moves[moveIdx] : null;
-      const patch = {moves: Object.assign({}, rec.moves)};
-      patch.moves[moveIdx] = (cur === lv) ? null : lv; // 같은 값 다시 탭하면 취소
-      saveRecord(cls, no, patch);
-    });
-  });
-  card.querySelectorAll('[data-task]').forEach(chk => {
-    chk.addEventListener("change", () => {
-      const idx = chk.dataset.task;
-      const patch = {tasks: Object.assign({}, rec.tasks)};
-      patch.tasks[idx] = chk.checked;
-      saveRecord(cls, no, patch);
+      const cur = moves ? moves[moveIdx] : null;
+      saveMovePatch(cls, no, rec, roundNo, moveIdx, (cur === lv) ? null : lv); // 같은 값 다시 탭하면 취소
     });
   });
 }
 
 /* ---- 라이브 채점: 동작 하나씩, "실수" 탭만으로 채점 ---- */
-function renderLiveBody(rec){
+function renderLiveBody(moves){
   if (State.liveStep < MOVES.length){
     const i = State.liveStep;
-    const level = rec.moves ? rec.moves[i] : null;
+    const level = moves ? moves[i] : null;
     const clicks = clicksFromLevel(level);
     const liveScore = level || 5;
     const dots = [0,1,2,3].map(d => `<span class="miss-dot ${d < clicks ? 'on':''}"></span>`).join("");
@@ -843,67 +952,46 @@ function renderLiveBody(rec){
       </div>
       <div class="move-nav">
         <button id="btnPrevMove" ${i<=0?"disabled":""}>◀ 이전 동작</button>
-        <button class="primary" id="btnNextMove">${i<MOVES.length-1 ? "다음 동작 ▶" : "과제수행 확인 ▶"}</button>
+        <button class="primary" id="btnNextMove">${i<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
       </div>`;
   }
-  // liveStep === MOVES.length : 8동작 종료, 과제수행 마무리 화면
-  let html = `<div class="live-wrap-title">✅ 8개 동작 완료 — 과제수행을 체크하세요</div>
-    <div class="task-list" style="margin-top:0;border-top:none;padding-top:0;">`;
-  TASKS.forEach((t, i) => {
-    const checked = rec.tasks && rec.tasks[i];
-    html += `<label class="task-item"><input type="checkbox" data-task="${i}" ${checked?"checked":""}> ${esc(t)} (1점)</label>`;
-  });
-  html += `</div>
+  // liveStep === MOVES.length : 8동작 종료
+  return `<div class="live-wrap-title">✅ 8개 동작 완료!</div>
+    <p class="live-done-hint">과제수행 가산점은 왼쪽 학생 목록에서 바로 체크할 수 있어요.</p>
     <div class="move-nav">
       <button id="btnPrevMove">◀ 동작 다시 보기</button>
     </div>
     <button class="next-student-btn" id="btnNextStudentLive">🎉 이 학생 완료 → 다음 학생 ▶</button>`;
-  return html;
 }
-function wireLiveBody(cls, no, rec){
+function wireLiveBody(cls, no, rec, roundNo, moves){
   const card = document.getElementById("scoreCard");
   const count = getRoster(cls).count || 30;
 
   if (State.liveStep < MOVES.length){
     const i = State.liveStep;
     card.querySelector("#btnMiss").addEventListener("click", () => {
-      const level = rec.moves ? rec.moves[i] : null;
+      const level = moves ? moves[i] : null;
       const clicks = Math.min(4, clicksFromLevel(level) + 1);
-      const patch = {moves: Object.assign({}, rec.moves)};
-      patch.moves[i] = levelFromClicks(clicks);
-      saveRecord(cls, no, patch);
+      saveMovePatch(cls, no, rec, roundNo, i, levelFromClicks(clicks));
     });
     card.querySelector("#btnUndo").addEventListener("click", () => {
-      const level = rec.moves ? rec.moves[i] : null;
+      const level = moves ? moves[i] : null;
       const clicks = Math.max(0, clicksFromLevel(level) - 1);
-      const patch = {moves: Object.assign({}, rec.moves)};
-      patch.moves[i] = levelFromClicks(clicks);
-      saveRecord(cls, no, patch);
+      saveMovePatch(cls, no, rec, roundNo, i, levelFromClicks(clicks));
     });
     const prevMoveBtn = card.querySelector("#btnPrevMove");
     if (prevMoveBtn) prevMoveBtn.addEventListener("click", () => {
       if (i > 0){ State.liveStep = i - 1; renderScoreCard(); }
     });
     card.querySelector("#btnNextMove").addEventListener("click", () => {
-      const level = rec.moves ? rec.moves[i] : null;
+      const level = moves ? moves[i] : null;
       if (level == null){
-        // 탭 없음 = 클리어로 확정 저장
-        const patch = {moves: Object.assign({}, rec.moves)};
-        patch.moves[i] = 5;
-        saveRecord(cls, no, patch);
+        saveMovePatch(cls, no, rec, roundNo, i, 5); // 탭 없음 = 클리어로 확정 저장
       }
       State.liveStep = i + 1;
       renderScoreCard();
     });
   } else {
-    card.querySelectorAll('[data-task]').forEach(chk => {
-      chk.addEventListener("change", () => {
-        const idx = chk.dataset.task;
-        const patch = {tasks: Object.assign({}, rec.tasks)};
-        patch.tasks[idx] = chk.checked;
-        saveRecord(cls, no, patch);
-      });
-    });
     card.querySelector("#btnPrevMove").addEventListener("click", () => {
       State.liveStep = MOVES.length - 1; renderScoreCard();
     });
@@ -915,6 +1003,7 @@ function wireLiveBody(cls, no, rec){
       nextStuBtn.addEventListener("click", () => {
         State.scoreNo = no + 1;
         State.liveStep = 0;
+        State.activeRound = null;
         renderStudentGrid();
         renderScoreCard();
       });
@@ -1175,7 +1264,7 @@ document.querySelectorAll("#dashTable th[data-sort]").forEach(th => {
 document.getElementById("btnExportCsv").addEventListener("click", () => {
   let rows = allRecordsFlat();
   if (State.dashCls !== "all") rows = rows.filter(r => r.cls === State.dashCls);
-  const header = ["반","번호","이름", ...MOVES, "완성도(Ⓐ)","과제수행(Ⓑ)","원점수","환산점수","채점교사"];
+  const header = ["반","번호","이름", ...MOVES, "완성도(Ⓐ)","과제수행(Ⓑ)","원점수","환산점수","반영 차수","총 시도 차수","채점교사"];
   const lines = [header];
   CLASSES.forEach(cls => {
     if (State.dashCls !== "all" && State.dashCls !== cls) return;
@@ -1186,8 +1275,9 @@ document.getElementById("btnExportCsv").addEventListener("click", () => {
       if (!rec) continue;
       const cs = computeScores(rec);
       if (cs.scoredMoves === 0 && cs.b === 0) continue;
-      const moveVals = MOVES.map((_,i) => (rec.moves && rec.moves[i]) || "");
-      lines.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, rec.scoredBy||""]);
+      const bestMoves = (getRounds(rec)[cs.bestRoundNo] || {}).moves || {};
+      const moveVals = MOVES.map((_,i) => bestMoves[i] || "");
+      lines.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + "차", cs.roundCount, rec.scoredBy||""]);
     }
   });
   const csv = "﻿" + lines.map(row => row.map(cell => {
