@@ -146,6 +146,7 @@
     font-size:26px;font-weight:800;line-height:1.5;}
   .miss-btn:active{opacity:.85;transform:scale(.98);}
   .miss-btn-sub{display:block;font-size:13px;font-weight:600;opacity:.9;margin-top:6px;}
+  .miss-btn-sub.hide{visibility:hidden;}
   .miss-dots{display:flex;gap:8px;justify-content:center;margin:14px 0;}
   .miss-dot{width:14px;height:14px;border-radius:50%;background:#e5e7eb;border:2px solid var(--border);}
   .miss-dot.on{background:var(--lv1);border-color:var(--lv1);}
@@ -1018,7 +1019,7 @@ function renderLiveBody(moves){
       <div class="live-score-line">실수 ${clicks}회 → <b>${liveScore}점</b></div>
       <p class="swipe-hint">💡 화면을 좌우로 스와이프하면 다음/이전 동작으로 이동합니다</p>
       <div class="live-gesture-zone" id="liveGestureZone">
-        <button class="miss-btn" id="btnMiss">❌ 실수${atFloor ? '<span class="miss-btn-sub">한 번 더 탭하면 다음 동작으로</span>' : ''}</button>
+        <button class="miss-btn" id="btnMiss">❌ 실수<span class="miss-btn-sub ${atFloor ? '' : 'hide'}">한 번 더 탭하면 다음 동작으로</span></button>
       </div>
       <button class="undo-btn-big" id="btnUndo" ${clicks<=0?"disabled":""}>↩️ 잘못 눌렀다면 되돌리기</button>`;
   }
