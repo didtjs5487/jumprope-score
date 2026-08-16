@@ -729,7 +729,19 @@ function startAppData(){
   dataStarted = true;
   Backend.onAllScores(all => {
     State.scoresByClass = all || {};
-    if (State.currentTab === "score") { renderStudentGrid(); renderScoreCard(); }
+    if (State.currentTab === "score"){
+      // 라이브 채점 중(한 동작을 보고 있는 상태)에 서버 응답(우리 자신의 저장이든,
+      // 다른 교사의 동시 저장이든)이 돌아오면 화면 전체를 다시 그리지 않는다 —
+      // 실수/되돌리기 버튼 DOM이 매번 교체되면서 빠른 연타가 씹히던 문제의
+      // 근본 원인이었다. 대신 점/점수 등 필요한 부분만 갱신한다.
+      const liveActive = State.viewMode === "live" && State.scoreNo != null
+        && State.liveStep < MOVES.length && document.getElementById("liveGestureZone");
+      if (liveActive){
+        refreshLiveDisplay(State.scoreCls, State.scoreNo, State.activeRound, State.liveStep);
+      } else {
+        renderStudentGrid(); renderScoreCard();
+      }
+    }
     if (State.currentTab === "dashboard") renderDashboard();
   });
   renderClassRow("clsRowScore", State.scoreCls, cls => {
@@ -869,8 +881,8 @@ function renderScoreCard(){
 
   html += `<div class="summary-bar">
     <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
-    <div class="scores">완성도Ⓐ ${cs.a}/${A_MAX} · 과제Ⓑ ${cs.b}/${B_MAX}<br>원점수 ${cs.raw}<span id="saveState" class="save-state"></span></div>
-    <div class="final">${cs.final}<small>점</small></div>
+    <div class="scores"><span id="scoresText">완성도Ⓐ ${cs.a}/${A_MAX} · 과제Ⓑ ${cs.b}/${B_MAX}<br>원점수 ${cs.raw}</span><span id="saveState" class="save-state"></span></div>
+    <div class="final" id="finalScore">${cs.final}<small>점</small></div>
     <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 학생 ▶</button>
   </div>`;
 
@@ -1056,10 +1068,13 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
 
   if (State.liveStep < MOVES.length){
     const i = State.liveStep;
+    // 실수/되돌리기를 연타해도 화면을 다시 그리지 않으므로(saveMoveQuiet),
+    // 클로저로 캡처된 moves는 금방 낡은 값이 된다 — 매번 State에서 최신값을
+    // 직접 읽는다.
+    const currentLevel = () => getCurrentLiveLevel(cls, no, roundNo, i);
     const goNext = () => {
-      const level = moves ? moves[i] : null;
-      if (level == null){
-        saveMovePatch(cls, no, rec, roundNo, i, 5); // 탭 없음 = 클리어로 확정 저장
+      if (currentLevel() == null){
+        saveMoveQuiet(cls, no, roundNo, i, 5); // 탭 없음 = 클리어로 확정 저장
       }
       State.liveStep = i + 1;
       renderScoreCard();
@@ -1068,19 +1083,17 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
       if (i > 0){ State.liveStep = i - 1; renderScoreCard(); }
     };
     card.querySelector("#btnMiss").addEventListener("click", () => {
-      const level = moves ? moves[i] : null;
-      const curClicks = clicksFromLevel(level);
+      const curClicks = clicksFromLevel(currentLevel());
       if (curClicks >= 4){
         // 이미 최저점(1점)에 도달 — 한 번 더 탭하면 다음 동작으로 자동 진행
         goNext();
         return;
       }
-      saveMovePatch(cls, no, rec, roundNo, i, levelFromClicks(curClicks + 1));
+      saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(curClicks + 1));
     });
     card.querySelector("#btnUndo").addEventListener("click", () => {
-      const level = moves ? moves[i] : null;
-      const clicks = Math.max(0, clicksFromLevel(level) - 1);
-      saveMovePatch(cls, no, rec, roundNo, i, levelFromClicks(clicks));
+      const clicks = Math.max(0, clicksFromLevel(currentLevel()) - 1);
+      saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(clicks));
     });
     attachSwipeNav(card.querySelector("#liveGestureZone"), goNext, goPrev);
   } else {
@@ -1107,13 +1120,12 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
 // 실제 서버 왕복(수백ms~1초 이상, 특히 학교 와이파이)을 기다려야만 버튼이 반응하면
 // 실수/다음 동작/새 차수 같은 실시간 채점 조작이 "먹통"처럼 느껴지기 때문이다.
 // 서버 응답은 그 뒤에 별도로 처리해 저장 성공/실패만 알려준다.
-function saveRecord(cls, no, patch){
+// 상태 병합 + 서버 저장만 담당 (화면은 그리지 않는다). saveRecord와
+// saveMoveQuiet이 공통으로 사용한다.
+function mergeScorePatch(cls, no, patch){
   patch.scoredBy = teacherDisplayName(State.user && State.user.email);
-
   State.scoresByClass[cls] = State.scoresByClass[cls] || {};
   State.scoresByClass[cls][no] = Object.assign({}, State.scoresByClass[cls][no], patch);
-  if (State.currentTab === "score"){ renderStudentGrid(); renderScoreCard(); }
-  else if (State.currentTab === "dashboard"){ renderDashboard(); }
 
   const stateEl = () => document.getElementById("saveState");
   if (stateEl()){ stateEl().textContent = " · 저장 중…"; stateEl().classList.remove("err"); }
@@ -1123,6 +1135,60 @@ function saveRecord(cls, no, patch){
     if (stateEl()){ stateEl().textContent = " · 저장 실패! 인터넷을 확인하세요"; stateEl().classList.add("err"); }
     toast("저장 실패: " + err.message, true);
   });
+}
+function saveRecord(cls, no, patch){
+  mergeScorePatch(cls, no, patch);
+  if (State.currentTab === "score"){ renderStudentGrid(); renderScoreCard(); }
+  else if (State.currentTab === "dashboard"){ renderDashboard(); }
+}
+
+// 실수/되돌리기처럼 같은 동작 안에서 빠르게 연타되는 조작 전용: 화면 전체를
+// 다시 그리지 않고 점/점수/되돌리기 버튼 상태만 직접 갱신한다. 매 탭마다
+// innerHTML을 통째로 교체하면, 손가락이 버튼에 닿는 순간과 화면이 다시
+// 그려지는 순간이 겹쳐 실제 기기에서 탭이 씹히는 문제가 있었다(첫 탭이
+// 무시되고 두 번째 탭부터 반응). 버튼 DOM 자체를 그대로 유지해 이 문제를
+// 없앤다.
+function getCurrentLiveLevel(cls, no, roundNo, moveIdx){
+  const rec = (State.scoresByClass[cls] && State.scoresByClass[cls][no]) || {};
+  const rounds = getStoredRounds(rec);
+  const m = (rounds[roundKey(roundNo)] && rounds[roundKey(roundNo)].moves) || {};
+  return m[moveIdx];
+}
+function saveMoveQuiet(cls, no, roundNo, moveIdx, level){
+  const rec = (State.scoresByClass[cls] && State.scoresByClass[cls][no]) || {};
+  const rounds = Object.assign({}, getStoredRounds(rec));
+  const key = roundKey(roundNo);
+  const curRound = rounds[key] || {};
+  const curMoves = Object.assign({}, curRound.moves || {});
+  curMoves[moveIdx] = level;
+  rounds[key] = Object.assign({}, curRound, {moves: curMoves, createdAt: curRound.createdAt || Date.now()});
+  mergeScorePatch(cls, no, {rounds, moves: null});
+  refreshLiveDisplay(cls, no, roundNo, moveIdx);
+}
+function refreshLiveDisplay(cls, no, roundNo, moveIdx){
+  const card = document.getElementById("scoreCard");
+  if (!card || State.scoreCls !== cls || State.scoreNo !== no || State.liveStep !== moveIdx) return;
+  const rec = (State.scoresByClass[cls] && State.scoresByClass[cls][no]) || {};
+  const cs = computeScores(rec);
+  const rounds = getStoredRounds(rec);
+  const activeMoves = (rounds[roundKey(roundNo)] && rounds[roundKey(roundNo)].moves) || {};
+  const level = activeMoves[moveIdx];
+  const clicks = clicksFromLevel(level);
+  const liveScore = level || 5;
+  const atFloor = clicks >= 4;
+
+  const dotsEl = card.querySelector(".miss-dots");
+  if (dotsEl) dotsEl.innerHTML = [0,1,2,3].map(d => `<span class="miss-dot ${d < clicks ? 'on':''}"></span>`).join("");
+  const scoreLineEl = card.querySelector(".live-score-line");
+  if (scoreLineEl) scoreLineEl.innerHTML = `실수 ${clicks}회 → <b>${liveScore}점</b>`;
+  const subEl = card.querySelector(".miss-btn-sub");
+  if (subEl) subEl.classList.toggle("hide", !atFloor);
+  const undoBtn = document.getElementById("btnUndo");
+  if (undoBtn) undoBtn.disabled = clicks <= 0;
+  const scoresText = document.getElementById("scoresText");
+  if (scoresText) scoresText.innerHTML = `완성도Ⓐ ${cs.a}/${A_MAX} · 과제Ⓑ ${cs.b}/${B_MAX}<br>원점수 ${cs.raw}`;
+  const finalEl = document.getElementById("finalScore");
+  if (finalEl) finalEl.innerHTML = `${cs.final}<small>점</small>`;
 }
 
 /* =========================================================
