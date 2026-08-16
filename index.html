@@ -94,9 +94,11 @@
     #studentGrid{grid-column:1;grid-row:2;}
     #scoreCardWrap{grid-column:2;grid-row:2;}
   }
-  .student-grid{display:flex;flex-wrap:wrap;gap:5px;}
-  @media(min-width:860px){.student-grid{flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
-  .stu-chip{flex:none;width:64px;padding:5px 3px;border-radius:9px;background:var(--card);border:1px solid var(--border);
+  /* grid를 써서 5칸이 항상 컨테이너 폭에 꽉 차게 균등 분배되도록 한다
+     (flex-wrap은 마지막 줄/나머지 칸이 남으면 오른쪽에 빈 여백이 생김). */
+  .student-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
+  @media(min-width:860px){.student-grid{display:flex;flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
+  .stu-chip{padding:5px 3px;border-radius:9px;background:var(--card);border:1px solid var(--border);
     text-align:center;position:relative;}
   @media(min-width:860px){.stu-chip{width:100%;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
   .stu-chip.active{border-color:var(--primary);background:var(--primary-light);}
@@ -124,15 +126,18 @@
   /* ---- 도전 차수(회차) 탭 ---- */
   /* 손가락 탭 오차로 바로 옆 버튼(특히 이미 선택된 회차)을 잘못 누르는 일이 없도록
      최소 44px 터치 영역(애플 권장 기준)과 넉넉한 간격을 확보한다. */
-  .round-tabs{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;align-items:center;}
-  .round-tab{min-height:44px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);
-    font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px;}
+  /* 회차가 늘어나도 세로로 줄바꿈되지 않고 가로 스크롤되도록 한다(반 선택
+     줄과 같은 방식) — 그렇지 않으면 재도전을 거듭할수록 이 영역이 계속
+     길어져 보기 불편해진다. */
+  .round-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:10px;margin-bottom:12px;align-items:center;}
+  .round-tab{flex:none;min-height:44px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);
+    font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap;}
   .round-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
   .round-tab:active,.round-add:active{opacity:.6;}
   .round-del{font-size:13px;opacity:.7;padding:4px 6px;border-radius:6px;}
   .round-del:hover{opacity:1;background:rgba(0,0,0,.15);}
-  .round-add{min-height:44px;padding:10px 14px;border-radius:10px;border:1px dashed var(--primary);background:none;
-    font-size:13px;font-weight:700;color:var(--primary);}
+  .round-add{flex:none;min-height:44px;padding:10px 14px;border-radius:10px;border:1px dashed var(--primary);background:none;
+    font-size:13px;font-weight:700;color:var(--primary);white-space:nowrap;}
 
   /* ---- 라이브 채점 모드 ---- */
   .mode-toggle{display:flex;gap:6px;margin-bottom:14px;}
@@ -973,7 +978,7 @@ function renderRoundTabs(rounds, roundNos, cs, activeRound){
     const isBest = rn === cs.bestRoundNo;
     return `<button class="round-tab ${rn===activeRound?'active':''}" data-round="${rn}">${rn}차${isBest && roundNos.length>1 ? " ⭐" : ""}${roundNos.length>1 ? `<span class="round-del" data-del-round="${rn}" title="이 차수 삭제">✕</span>` : ""}</button>`;
   }).join("");
-  html += `<button type="button" class="round-add" id="btnAddRound">➕ 새 차수</button>`;
+  html += `<button type="button" class="round-add" id="btnAddRound">➕ 재도전</button>`;
   html += `</div>`;
   return html;
 }
