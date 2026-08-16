@@ -746,11 +746,11 @@ function startAppData(){
   });
   renderClassRow("clsRowScore", State.scoreCls, cls => {
     State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
-    renderClassRow("clsRowScore", State.scoreCls, arguments.callee);
+    renderClassRow("clsRowScore", State.scoreCls, arguments.callee, false);
     loadRosterFor(cls);
     renderStudentGrid();
     renderScoreCard();
-  });
+  }, false);
   loadRosterFor(State.scoreCls);
   renderStudentGrid();
   renderScoreCard();
@@ -776,16 +776,20 @@ function studentName(cls, no){
 /* =========================================================
    9. 반 선택 바 (공용)
    ========================================================= */
-function renderClassRow(elId, activeCls, onPick){
+function renderClassRow(elId, activeCls, onPick, showBadge){
   const row = document.getElementById(elId);
   row.innerHTML = CLASSES.map(c => {
-    const scores = (State.scoresByClass[c] || {});
-    const count = getRoster(c).count || 30;
-    const done = Object.keys(scores).filter(no => {
-      const cs = computeScores(scores[no]);
-      return cs.allMovesScored;
-    }).length;
-    return `<button class="cls-btn ${c===activeCls?'active':''}" data-cls="${c}">${c}반<span class="badge">${done}/${count}</span></button>`;
+    let badge = "";
+    if (showBadge !== false){
+      const scores = (State.scoresByClass[c] || {});
+      const count = getRoster(c).count || 30;
+      const done = Object.keys(scores).filter(no => {
+        const cs = computeScores(scores[no]);
+        return cs.allMovesScored;
+      }).length;
+      badge = `<span class="badge">${done}/${count}</span>`;
+    }
+    return `<button class="cls-btn ${c===activeCls?'active':''}" data-cls="${c}">${c}반${badge}</button>`;
   }).join("");
   row.querySelectorAll(".cls-btn").forEach(btn => {
     btn.addEventListener("click", () => onPick(Number(btn.dataset.cls)));
@@ -801,7 +805,7 @@ function renderStudentGrid(){
     loadRosterFor(cls);
     renderStudentGrid();
     renderScoreCard();
-  });
+  }, false);
   const grid = document.getElementById("studentGrid");
   const count = getRoster(State.scoreCls).count || 30;
   const scores = State.scoresByClass[State.scoreCls] || {};
