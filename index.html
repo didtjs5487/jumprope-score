@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="줄넘기채점">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
-<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png?v=2">
+<link rel="icon" href="icon-192.png?v=2">
 <style>
   :root{
     --bg:#f2f3f7; --card:#ffffff; --text:#1c1e26; --muted:#6b7280; --border:#e5e7eb;
@@ -158,6 +158,16 @@
   .live-score-line{text-align:center;font-size:15px;font-weight:700;margin-bottom:6px;}
   .live-score-line b{color:var(--primary);font-size:20px;}
   .swipe-hint{text-align:center;font-size:11px;color:var(--muted);margin-bottom:8px;}
+  /* 데스크톱은 터치 스와이프가 없어 이동 수단이 없어지므로, 이전/다음 동작
+     버튼을 데스크톱에서만 보여준다(모바일은 스와이프+실수 버튼 자동진행). */
+  .desktop-move-nav{display:none;}
+  @media(min-width:860px){
+    .swipe-hint{display:none;}
+    .desktop-move-nav{display:flex;gap:8px;margin-bottom:10px;}
+    .desktop-move-nav button{flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);
+      background:#fff;font-size:14px;font-weight:700;color:var(--text);}
+    .desktop-move-nav button:disabled{opacity:.4;}
+  }
   .undo-btn-big{width:100%;min-height:96px;padding:20px;border-radius:18px;border:3px solid var(--warn);background:var(--lv2-bg);
     color:var(--warn);font-size:22px;font-weight:800;margin-top:2px;}
   .undo-btn-big:active{background:var(--warn);color:#fff;}
@@ -1041,6 +1051,10 @@ function renderLiveBody(moves){
       <div class="miss-dots">${dots}</div>
       <div class="live-score-line">실수 ${clicks}회 → <b>${liveScore}점</b></div>
       <p class="swipe-hint">💡 화면을 좌우로 스와이프하면 다음/이전 동작으로 이동합니다</p>
+      <div class="desktop-move-nav">
+        <button id="btnPrevMoveDesktop" ${i<=0?"disabled":""}>◀ 이전 동작</button>
+        <button id="btnNextMoveDesktop">${i<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
+      </div>
       <div class="live-gesture-zone" id="liveGestureZone">
         <button class="miss-btn" id="btnMiss">❌ 실수<span class="miss-btn-sub ${atFloor ? '' : 'hide'}">한 번 더 탭하면 다음 동작으로</span></button>
       </div>
@@ -1107,6 +1121,10 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
       saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(clicks));
     });
     attachSwipeNav(card.querySelector("#liveGestureZone"), goNext, goPrev);
+    const prevDesktopBtn = card.querySelector("#btnPrevMoveDesktop");
+    if (prevDesktopBtn) prevDesktopBtn.addEventListener("click", goPrev);
+    const nextDesktopBtn = card.querySelector("#btnNextMoveDesktop");
+    if (nextDesktopBtn) nextDesktopBtn.addEventListener("click", goNext);
   } else {
     card.querySelector("#btnPrevMove").addEventListener("click", () => {
       State.liveStep = MOVES.length - 1; renderScoreCard();
