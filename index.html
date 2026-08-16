@@ -158,8 +158,8 @@
   .live-score-line{text-align:center;font-size:15px;font-weight:700;margin-bottom:6px;}
   .live-score-line b{color:var(--primary);font-size:20px;}
   .swipe-hint{text-align:center;font-size:11px;color:var(--muted);margin-bottom:8px;}
-  .undo-btn-big{width:100%;min-height:64px;padding:18px;border-radius:16px;border:2px solid var(--warn);background:var(--lv2-bg);
-    color:var(--warn);font-size:18px;font-weight:800;margin-top:2px;}
+  .undo-btn-big{width:100%;min-height:96px;padding:20px;border-radius:18px;border:3px solid var(--warn);background:var(--lv2-bg);
+    color:var(--warn);font-size:22px;font-weight:800;margin-top:2px;}
   .undo-btn-big:active{background:var(--warn);color:#fff;}
   .undo-btn-big:disabled{opacity:.35;border-color:var(--border);background:var(--bg);color:var(--muted);}
   .move-nav{display:flex;gap:8px;margin-top:14px;}
@@ -973,12 +973,14 @@ function wireTaskSection(cls, no){
 
 /* ---- 도전 차수(회차) 탭 ---- */
 function renderRoundTabs(rounds, roundNos, cs, activeRound){
+  // 재도전 버튼을 맨 앞에 고정 — 회차가 늘어나 목록이 옆으로 길어져도
+  // 스크롤 없이 항상 바로 보이고 눌리도록 한다.
   let html = `<div class="round-tabs">`;
+  html += `<button type="button" class="round-add" id="btnAddRound">➕ 재도전</button>`;
   html += roundNos.map(rn => {
     const isBest = rn === cs.bestRoundNo;
     return `<button class="round-tab ${rn===activeRound?'active':''}" data-round="${rn}">${rn}차${isBest && roundNos.length>1 ? " ⭐" : ""}${roundNos.length>1 ? `<span class="round-del" data-del-round="${rn}" title="이 차수 삭제">✕</span>` : ""}</button>`;
   }).join("");
-  html += `<button type="button" class="round-add" id="btnAddRound">➕ 재도전</button>`;
   html += `</div>`;
   return html;
 }
