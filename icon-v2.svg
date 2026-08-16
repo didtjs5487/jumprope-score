@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5b6ee8"/>
+      <stop offset="100%" stop-color="#3547b8"/>
+    </linearGradient>
+    <linearGradient id="rope" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d7deff"/>
+    </linearGradient>
+    <linearGradient id="handleL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffe9a8"/>
+      <stop offset="100%" stop-color="#f5a623"/>
+    </linearGradient>
+    <linearGradient id="handleR" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe9a8"/>
+      <stop offset="100%" stop-color="#f5a623"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="url(#bg)"/>
+
+  <path d="M60 148 C18 142, 14 66, 52 40 C90 14, 148 30, 150 76 C151 100, 128 116, 108 108"
+        fill="none" stroke="#22308f" stroke-width="10" stroke-linecap="round" opacity="0.3"/>
+  <path d="M60 148 C18 142, 14 66, 52 40 C90 14, 148 30, 150 76 C151 100, 128 116, 108 108"
+        fill="none" stroke="url(#rope)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M108 108 C96 100, 84 92, 78 84"
+        fill="none" stroke="url(#rope)" stroke-width="8" stroke-linecap="round"/>
+  <path d="M78 84 C88 96, 104 130, 116 148"
+        fill="none" stroke="#22308f" stroke-width="10" stroke-linecap="round" opacity="0.3"/>
+  <path d="M78 84 C88 96, 104 130, 116 148"
+        fill="none" stroke="url(#rope)" stroke-width="8" stroke-linecap="round"/>
+
+  <g transform="rotate(-20 60 160)">
+    <rect x="30" y="152" width="58" height="16" rx="8" fill="url(#handleL)"/>
+    <ellipse cx="34" cy="160" rx="4.2" ry="8" fill="#c9761a"/>
+  </g>
+  <g transform="rotate(18 116 160)">
+    <rect x="88" y="152" width="58" height="16" rx="8" fill="url(#handleR)"/>
+    <ellipse cx="142" cy="160" rx="4.2" ry="8" fill="#c9761a"/>
+  </g>
+
+  <g transform="translate(148,30)">
+    <circle r="20" fill="#1c2a70"/>
+    <g transform="translate(-7.5,-11)" fill="#ffffff">
+      <rect x="7.5" y="0" width="3.8" height="18.5" rx="1.9"/>
+      <path d="M11.3 1 C19.7 3.8, 20.7 10.9, 11.3 11.9 Z"/>
+      <circle cx="5.5" cy="18.5" r="5.5"/>
+    </g>
+  </g>
+</svg>
