@@ -102,8 +102,11 @@
     text-align:center;position:relative;}
   @media(min-width:860px){.stu-chip{width:100%;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
   .stu-chip.active{border-color:var(--primary);background:var(--primary-light);}
+  .stu-chip.inactive{opacity:.55;border-style:dashed;}
+  .stu-chip.inactive.active{opacity:.85;}
   .stu-chip .no{font-size:10.5px;color:var(--muted);}
   .stu-chip .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stu-chip .status-tag{font-size:10px;font-weight:700;color:var(--danger);white-space:nowrap;}
   .stu-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:3px;background:#d1d5db;}
   .stu-dot.partial{background:var(--warn);}
   .stu-dot.done{background:var(--ok);}
@@ -198,6 +201,11 @@
   .save-state.err{color:var(--danger);font-weight:700;}
 
   .empty-state{text-align:center;color:var(--muted);padding:40px 16px;font-size:14px;}
+
+  .status-block{text-align:center;padding:40px 16px;}
+  .status-block .status-icon{font-size:36px;margin-bottom:8px;}
+  .status-block .status-big{font-size:18px;font-weight:800;color:var(--danger);margin-bottom:6px;}
+  .status-block .roster-help{margin:0;}
 
   /* ---- roster tab ---- */
   .roster-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
@@ -371,12 +379,26 @@
             <label>이름</label>
             <input type="text" id="oneStuName" placeholder="이름">
           </div>
+          <div class="field" style="margin:0;flex:1;">
+            <label>학적변동</label>
+            <input type="text" id="oneStuStatus" placeholder="재학중이면 비워두세요 (예: 자퇴, 전출)">
+          </div>
         </div>
+        <p class="roster-help">학적변동을 입력하면 그 학생은 채점 화면에서 채점이 막히고 사유가 표시됩니다.</p>
         <div class="roster-actions">
           <button class="btn btn-primary" id="btnOneStuAdd" style="width:auto;">추가·수정</button>
           <span class="save-state" id="oneStuResult"></span>
         </div>
       </details>
+
+      <div class="roster-card danger-zone">
+        <h3 class="roster-title">⚠️ 채점 기록만 초기화</h3>
+        <p class="roster-help">학생 명단(반·번호·이름·학적변동)은 그대로 두고, 모든 반의 채점 기록(완성도·과제수행·회차 기록)만 영구적으로 삭제합니다. <b>되돌릴 수 없습니다.</b></p>
+        <div class="roster-actions">
+          <button class="btn" id="btnResetScores" style="width:auto;background:var(--danger);color:#fff;">🗑️ 채점 기록만 초기화</button>
+          <span class="save-state" id="resetScoresResult"></span>
+        </div>
+      </div>
 
       <div class="roster-card danger-zone">
         <h3 class="roster-title">⚠️ 자료 초기화</h3>
@@ -567,6 +589,9 @@ const Backend = (function(){
       resetAllData(){
         return Promise.all([db.ref("scores").remove(), db.ref("rosters").remove()]);
       },
+      resetScoresOnly(){
+        return db.ref("scores").remove();
+      },
     };
   }
 
@@ -617,6 +642,11 @@ const Backend = (function(){
     resetAllData(){
       localStorage.removeItem(LS_SCORES);
       localStorage.removeItem(LS_ROSTERS);
+      return Promise.resolve();
+    },
+    resetScoresOnly(){
+      localStorage.removeItem(LS_SCORES);
+      scoreListeners.forEach(cb => cb({}));
       return Promise.resolve();
     },
   };
@@ -787,6 +817,11 @@ function studentName(cls, no){
   const r = getRoster(cls);
   return (r.names && r.names[no]) ? r.names[no] : (no + "번");
 }
+// 학적변동(자퇴·전출·공석 등) 상태 문자열. 재학 중이면 빈 문자열.
+function studentStatus(cls, no){
+  const r = getRoster(cls);
+  return (r.status && r.status[no]) || "";
+}
 
 /* =========================================================
    9. 반 선택 바 (공용)
@@ -834,9 +869,11 @@ function renderStudentGrid(){
     if (cs.allMovesScored) dotClass = "done";
     const active = State.scoreNo === no ? "active" : "";
     const customName = roster.names && roster.names[no];
-    html += `<button class="stu-chip ${active}" data-no="${no}">
+    const status = roster.status && roster.status[no];
+    html += `<button class="stu-chip ${active} ${status?'inactive':''}" data-no="${no}">
       <span><span class="stu-dot ${dotClass}"></span><span class="no">${no}번</span></span>
       ${customName ? `<span class="name">${esc(customName)}</span>` : ""}
+      ${status ? `<span class="status-tag">${esc(status)}</span>` : ""}
     </button>`;
   }
   grid.innerHTML = html;
@@ -873,10 +910,31 @@ function renderScoreCard(){
   card.classList.remove("hidden");
 
   const cls = State.scoreCls, no = State.scoreNo;
+  const count = getRoster(cls).count || 30;
+  const status = studentStatus(cls, no);
+  if (status){
+    card.innerHTML = `
+      <h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>
+      <div class="status-block">
+        <div class="status-icon">🚫</div>
+        <p class="status-big">학적변동: ${esc(status)}</p>
+        <p class="roster-help">이 학생은 "${esc(status)}" 상태라 채점할 수 없습니다.</p>
+      </div>
+      <div class="summary-bar">
+        <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
+        <div class="scores"></div>
+        <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 학생 ▶</button>
+      </div>`;
+    const prevBtn = document.getElementById("btnPrevStu");
+    const nextBtn = document.getElementById("btnNextStu");
+    if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+    if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+    return;
+  }
+
   const scores = State.scoresByClass[cls] || {};
   const rec = scores[no] || {tasks:{}};
   const cs = computeScores(rec);
-  const count = getRoster(cls).count || 30;
 
   const rounds = getRounds(rec);
   const roundNos = Object.keys(rounds).map(roundNumFromKey).sort((a,b) => a - b);
@@ -1296,6 +1354,8 @@ function parseBulkRoster(text){
   const hdr = rows[headerRow];
   const noCols = [];
   hdr.forEach((cell, c) => { if (norm(cell) === "번호" || norm(cell).includes("번호")) noCols.push(c); });
+  const genderCols = [];
+  hdr.forEach((cell, c) => { if (norm(cell) === "성별") genderCols.push(c); });
 
   function extractClassNo(raw){
     const v = (raw || "").trim();
@@ -1310,6 +1370,8 @@ function parseBulkRoster(text){
   nameCols.forEach(nameCol => {
     let noCol = -1;
     noCols.forEach(c => { if (c < nameCol && (noCol < 0 || c > noCol)) noCol = c; });
+    let genderCol = -1;
+    genderCols.forEach(c => { if (c > nameCol && (genderCol < 0 || c < genderCol)) genderCol = c; });
 
     let cls = null;
     for (let up = headerRow - 1; up >= 0 && cls == null; up--){
@@ -1321,6 +1383,7 @@ function parseBulkRoster(text){
     if (cls == null || cls < 1 || cls > CLASSES.length) return;
 
     const names = {};
+    const status = {};
     let maxNo = 0, seq = 0;
     for (let dr = headerRow + 1; dr < rows.length; dr++){
       const name = (rows[dr][nameCol] || "").trim();
@@ -1331,8 +1394,12 @@ function parseBulkRoster(text){
       const no = noCol >= 0 && /^\d+$/.test(noRaw) ? Number(noRaw) : seq;
       names[no] = name;
       if (no > maxNo) maxNo = no;
+      // 성별 칸에 "남"/"여"가 아닌 값(자퇴·전출·공석 등)이 있으면 학적변동으로 인식해
+      // 채점 대상에서 제외한다.
+      const genderRaw = genderCol >= 0 ? (rows[dr][genderCol] || "").trim() : "";
+      if (genderRaw && genderRaw !== "남" && genderRaw !== "여") status[no] = genderRaw;
     }
-    if (Object.keys(names).length) result[cls] = {count: maxNo, names};
+    if (Object.keys(names).length) result[cls] = {count: maxNo, names, status};
   });
 
   return {rosters: result};
@@ -1352,9 +1419,12 @@ document.getElementById("btnBulkRosterAdd").addEventListener("click", () => {
   resultEl.textContent = "저장 중…";
   Promise.all(clsList.map(cls => Backend.setRoster(cls, parsed[cls]))).then(() => {
     const total = clsList.reduce((s, c) => s + Object.keys(parsed[c].names).length, 0);
-    resultEl.textContent = `${clsList.map(c => c + "반").join(", ")} — 총 ${clsList.length}개 반 ${total}명 등록 완료`;
+    const statusTotal = clsList.reduce((s, c) => s + Object.keys(parsed[c].status || {}).length, 0);
+    resultEl.textContent = `${clsList.map(c => c + "반").join(", ")} — 총 ${clsList.length}개 반 ${total}명 등록 완료`
+      + (statusTotal ? ` (학적변동 ${statusTotal}명 감지 — 채점 제외 처리됨)` : "");
     document.getElementById("bulkRosterPaste").value = "";
-    toast(`일괄 등록 완료: ${clsList.length}개 반 ${total}명`);
+    toast(`일괄 등록 완료: ${clsList.length}개 반 ${total}명`
+      + (statusTotal ? ` · 학적변동 ${statusTotal}명 제외` : ""));
   }).catch(err => {
     resultEl.textContent = "저장 실패: " + err.message;
     resultEl.classList.add("err");
@@ -1367,6 +1437,7 @@ document.getElementById("btnOneStuAdd").addEventListener("click", () => {
   const cls = Number(document.getElementById("oneStuCls").value);
   const no = Number(document.getElementById("oneStuNo").value);
   const name = document.getElementById("oneStuName").value.trim();
+  const statusVal = document.getElementById("oneStuStatus").value.trim();
   const resultEl = document.getElementById("oneStuResult");
   resultEl.classList.remove("err");
   if (!no || no < 1 || no > 60){ resultEl.textContent = "번호를 정확히 입력하세요."; resultEl.classList.add("err"); return; }
@@ -1374,16 +1445,35 @@ document.getElementById("btnOneStuAdd").addEventListener("click", () => {
   resultEl.textContent = "저장 중…";
   fetchRosterOnce(cls).then(roster => {
     const names = Object.assign({}, roster.names, {[no]: name});
+    const status = Object.assign({}, roster.status);
+    if (statusVal) status[no] = statusVal; else delete status[no];
     const count = Math.max(roster.count || 30, no);
-    return Backend.setRoster(cls, {count, names});
+    return Backend.setRoster(cls, {count, names, status});
   }).then(() => {
-    resultEl.textContent = `✓ ${cls}반 ${no}번 ${esc(name)} 저장됨`;
+    resultEl.textContent = `✓ ${cls}반 ${no}번 ${esc(name)} 저장됨` + (statusVal ? ` (학적변동: ${esc(statusVal)})` : "");
     document.getElementById("oneStuNo").value = "";
     document.getElementById("oneStuName").value = "";
+    document.getElementById("oneStuStatus").value = "";
     toast(`${cls}반 ${no}번 ${name} 등록됨`);
   }).catch(err => {
     resultEl.textContent = "저장 실패: " + err.message;
     resultEl.classList.add("err");
+  });
+});
+
+// 채점 기록만 초기화: 명단(반·번호·이름·학적변동)은 남기고 채점 기록만 영구 삭제한다.
+document.getElementById("btnResetScores").addEventListener("click", () => {
+  if (!confirm("정말 채점 기록만 초기화하시겠습니까?\n\n학생 명단은 그대로 남고, 모든 반의 채점 기록만 삭제되며 되돌릴 수 없습니다.")) return;
+  const resultEl = document.getElementById("resetScoresResult");
+  resultEl.classList.remove("err");
+  resultEl.textContent = "초기화 중…";
+  Backend.resetScoresOnly().then(() => {
+    toast("채점 기록이 초기화되었습니다.");
+    location.reload();
+  }).catch(err => {
+    resultEl.textContent = "초기화 실패: " + err.message;
+    resultEl.classList.add("err");
+    toast("초기화 실패: " + err.message, true);
   });
 });
 
@@ -1478,20 +1568,27 @@ document.querySelectorAll("#dashTable th[data-sort]").forEach(th => {
 document.getElementById("btnExportCsv").addEventListener("click", () => {
   let rows = allRecordsFlat();
   if (State.dashCls !== "all") rows = rows.filter(r => r.cls === State.dashCls);
-  const header = ["반","번호","이름", ...MOVES, "완성도(Ⓐ)","과제수행(Ⓑ)","원점수","환산점수","반영 차수","총 시도 차수","채점교사"];
+  const header = ["반","번호","이름", ...MOVES, "완성도(Ⓐ)","과제수행(Ⓑ)","원점수","환산점수","반영 차수","총 시도 차수","채점교사","비고"];
   const lines = [header];
   CLASSES.forEach(cls => {
     if (State.dashCls !== "all" && State.dashCls !== cls) return;
     const scores = State.scoresByClass[cls] || {};
-    const count = getRoster(cls).count || 30;
+    const roster = getRoster(cls);
+    const count = roster.count || 30;
     for (let no=1; no<=count; no++){
+      const status = roster.status && roster.status[no];
+      if (status){
+        // 학적변동 학생: 번호·이름은 남기되 성적은 비워 채점 대상이 아님을 표시한다.
+        lines.push([cls, no, studentName(cls,no), ...MOVES.map(()=>""), "", "", "", "", "", "", "", status]);
+        continue;
+      }
       const rec = scores[no];
       if (!rec) continue;
       const cs = computeScores(rec);
       if (cs.scoredMoves === 0 && cs.b === 0) continue;
       const bestMoves = (getRounds(rec)[roundKey(cs.bestRoundNo)] || {}).moves || {};
       const moveVals = MOVES.map((_,i) => bestMoves[i] || "");
-      lines.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + "차", cs.roundCount, rec.scoredBy||""]);
+      lines.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + "차", cs.roundCount, rec.scoredBy||"", ""]);
     }
   });
   const csv = "﻿" + lines.map(row => row.map(cell => {
