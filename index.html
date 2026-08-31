@@ -424,6 +424,10 @@
 /* =========================================================
    1. 평가 기준 상수 (2026학년도 2학기 체육2 음악줄넘기 채점표)
    ========================================================= */
+// 이번 학기 실제로 도전하는 영상("오늘만 음악줄넘기 수행평가", BOYNEXTDOOR
+// "오늘만 I LOVE YOU")도 아래 8개 동작을 같은 순서로 그대로 사용함을 확인함
+// (영상 후반부의 턴·되돌리기·앞멈춤은 마무리 프리스타일 구간이라 평가계획서
+// 대로 채점 동작 8개에는 포함하지 않음).
 const MOVES = [
   "① 양발모아뛰기 1도약",
   "② 번갈아 뛰기",
@@ -1066,7 +1070,7 @@ function saveMovePatch(cls, no, rec, roundNo, moveIdx, level){
   saveRecord(cls, no, {rounds, moves: null});
 }
 
-/* ---- 상세보기: 8동작 전체 나열 (기존 방식, 검토·수정용) ---- */
+/* ---- 상세보기: 전체 동작 나열 (기존 방식, 검토·수정용) ---- */
 function renderDetailBody(moves){
   let html = "";
   MOVES.forEach((name, i) => {
@@ -1118,8 +1122,8 @@ function renderLiveBody(moves){
       </div>
       <button class="undo-btn-big" id="btnUndo" ${clicks<=0?"disabled":""}>↩️ 잘못 눌렀다면 되돌리기</button>`;
   }
-  // liveStep === MOVES.length : 8동작 종료
-  return `<div class="live-wrap-title">✅ 8개 동작 완료!</div>
+  // liveStep === MOVES.length : 전체 동작 종료
+  return `<div class="live-wrap-title">✅ ${MOVES.length}개 동작 완료!</div>
     <p class="live-done-hint">과제수행 가산점은 아래(또는 학생 목록)에서 바로 체크할 수 있어요.</p>
     <div class="move-nav">
       <button id="btnPrevMove">◀ 동작 다시 보기</button>
