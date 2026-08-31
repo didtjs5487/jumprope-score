@@ -99,8 +99,9 @@
   .student-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
   @media(min-width:860px){.student-grid{display:flex;flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
   .stu-chip{padding:5px 3px;border-radius:9px;background:var(--card);border:1px solid var(--border);
-    text-align:center;position:relative;}
-  @media(min-width:860px){.stu-chip{width:100%;text-align:left;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;}}
+    text-align:center;position:relative;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:46px;}
+  @media(min-width:860px){.stu-chip{width:100%;text-align:left;padding:8px 10px;flex-direction:row;align-items:center;justify-content:space-between;min-height:40px;}}
   .stu-chip.active{border-color:var(--primary);background:var(--primary-light);}
   .stu-chip.inactive{opacity:.55;border-style:dashed;}
   .stu-chip.inactive.active{opacity:.85;}
