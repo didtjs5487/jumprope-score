@@ -988,7 +988,7 @@ function renderScoreCard(){
   const modeToggleHtml = `<div class="mode-toggle">
       <button class="mode-btn ${State.viewMode==='challenge'?'active':''}" id="btnModeChallenge">🏆 개인진도표</button>
       <button class="mode-btn ${State.viewMode==='live'?'active':''}" id="btnModeLive">🎯 음악줄넘기</button>
-      <button class="mode-btn ${State.viewMode==='detail'?'active':''}" id="btnModeDetail">✏️ 직접 입력</button>
+      <button class="mode-btn ${State.viewMode==='detail'?'active':''}" id="btnModeDetail">✏️ 점수 수정</button>
     </div>`;
 
   let html = `<h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>`;
