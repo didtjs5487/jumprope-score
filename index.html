@@ -115,6 +115,9 @@
   .stu-chip .name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     max-width:100%;min-width:0;}
   .stu-chip.inactive .name{color:var(--danger);font-weight:700;}
+  .stu-chip.full{background:var(--ok);border-color:var(--ok);}
+  .stu-chip.full .no,.stu-chip.full .name{color:#fff;}
+  .stu-chip.full.active{box-shadow:0 0 0 3px var(--primary);}
 
   .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
   .score-card h2{font-size:18px;margin-bottom:2px;}
@@ -497,6 +500,7 @@ function computeChallenge(rec){
   return { count, total: CHALLENGE_MAX, b };
 }
 
+const FINAL_MAX = 40;
 function finalScoreFromRaw(raw){
   if (raw <= 9) return 10;
   if (raw <= 14) return 15;
@@ -901,6 +905,9 @@ function renderStudentGrid(){
   const count = getRoster(State.scoreCls).count || 30;
   const scores = State.scoresByClass[State.scoreCls] || {};
   const roster = getRoster(State.scoreCls);
+  // 만점 학생은 칸을 초록색으로 채워, 아직 시험을 봐야 하는 학생이 한눈에 보이게 한다.
+  // 기준은 지금 열어둔 모드를 따른다(개인진도표 → 가산점Ⓑ 만점, 그 외 → 환산점수 만점).
+  const challengeMode = State.viewMode === "challenge";
   let html = "";
   for (let no = 1; no <= count; no++){
     const rec = scores[no];
@@ -912,7 +919,8 @@ function renderStudentGrid(){
     const customName = (roster.names && roster.names[no]) || "";
     const status = roster.status && roster.status[no];
     const label = status || customName;
-    html += `<button class="stu-chip ${active} ${dotClass} ${status?'inactive':''}" data-no="${no}" title="${esc(no + "번 " + customName + (status ? " (" + status + ")" : ""))}">
+    const full = !status && (challengeMode ? computeChallenge(rec).b === B_MAX : cs.final === FINAL_MAX);
+    html += `<button class="stu-chip ${active} ${dotClass} ${full?'full':''} ${status?'inactive':''}" data-no="${no}" title="${esc(no + "번 " + customName + (status ? " (" + status + ")" : ""))}">
       <span class="no">${no}</span>${label ? `<span class="name">${esc(label)}</span>` : ""}
     </button>`;
   }
@@ -1031,9 +1039,9 @@ function renderScoreCard(){
 
   card.innerHTML = html;
 
-  document.getElementById("btnModeChallenge").addEventListener("click", () => { State.viewMode = "challenge"; renderScoreCard(); });
-  document.getElementById("btnModeLive").addEventListener("click", () => { State.viewMode = "live"; renderScoreCard(); });
-  document.getElementById("btnModeDetail").addEventListener("click", () => { State.viewMode = "detail"; renderScoreCard(); });
+  document.getElementById("btnModeChallenge").addEventListener("click", () => { State.viewMode = "challenge"; renderStudentGrid(); renderScoreCard(); });
+  document.getElementById("btnModeLive").addEventListener("click", () => { State.viewMode = "live"; renderStudentGrid(); renderScoreCard(); });
+  document.getElementById("btnModeDetail").addEventListener("click", () => { State.viewMode = "detail"; renderStudentGrid(); renderScoreCard(); });
 
   if (State.viewMode === "challenge"){
     card.querySelectorAll(".challenge-move-row").forEach(btn => {
@@ -1115,7 +1123,7 @@ function renderTaskSection(rec){
 }
 function wireTaskSection(){
   const btn = document.getElementById("btnGoChallenge");
-  if (btn) btn.addEventListener("click", () => { State.viewMode = "challenge"; renderScoreCard(); });
+  if (btn) btn.addEventListener("click", () => { State.viewMode = "challenge"; renderStudentGrid(); renderScoreCard(); });
 }
 
 /* ---- 도전 차수(회차) 탭 ---- */
@@ -1125,11 +1133,17 @@ function renderRoundTabs(rounds, roundNos, cs, activeRound){
   let html = `<div class="round-tabs">`;
   html += `<button type="button" class="round-add" id="btnAddRound">➕ 재도전</button>`;
   html += roundNos.map(rn => {
-    const isBest = rn === cs.bestRoundNo;
-    return `<button class="round-tab ${rn===activeRound?'active':''}" data-round="${rn}">${rn}차${isBest && roundNos.length>1 ? " ⭐" : ""}${roundNos.length>1 ? `<span class="round-del" data-del-round="${rn}" title="이 차수 삭제">✕</span>` : ""}</button>`;
+    return `<button class="round-tab ${rn===activeRound?'active':''}" data-round="${rn}">${rn}차<span class="round-pts">${roundTabPts(rn, rounds, cs, roundNos.length)}</span>${roundNos.length>1 ? `<span class="round-del" data-del-round="${rn}" title="이 차수 삭제">✕</span>` : ""}</button>`;
   }).join("");
   html += `</div>`;
   return html;
+}
+// 차수별 완성도Ⓐ 점수를 탭에 함께 표시 — 여러 번 도전했을 때 각각 몇 점이었는지,
+// 어느 차수가 반영(⭐)됐는지 한눈에 비교할 수 있게 한다.
+function roundTabPts(rn, rounds, cs, roundCount){
+  const st = computeRoundStats(rounds[roundKey(rn)] && rounds[roundKey(rn)].moves);
+  const pts = st.scoredMoves ? ` ${st.a}점` : "";
+  return pts + (rn === cs.bestRoundNo && roundCount > 1 ? " ⭐" : "");
 }
 
 /* 라이브/상세 공통: 활성 차수의 동작 하나를 저장 (다른 차수 기록은 보존) */
@@ -1313,6 +1327,7 @@ function saveChallenge(cls, no, passed){
   const patch = {challenge: passed, challengeBy: teacherDisplayName(State.user && State.user.email)};
   State.scoresByClass[cls] = State.scoresByClass[cls] || {};
   State.scoresByClass[cls][no] = Object.assign({}, State.scoresByClass[cls][no], patch);
+  renderStudentGrid();
   renderScoreCard();
   Backend.setScore(cls, no, patch).catch(err => toast("저장 실패: " + err.message, true));
 }
@@ -1364,6 +1379,13 @@ function refreshLiveDisplay(cls, no, roundNo, moveIdx){
   if (scoresText) scoresText.innerHTML = `완성도Ⓐ ${cs.a}/${A_MAX} · 과제Ⓑ ${cs.b}/${B_MAX}<br>원점수 ${cs.raw}`;
   const finalEl = document.getElementById("finalScore");
   if (finalEl) finalEl.innerHTML = `${cs.final}<small>점</small>`;
+  const allRounds = getRounds(rec);
+  card.querySelectorAll(".round-tab").forEach(tab => {
+    const ptsEl = tab.querySelector(".round-pts");
+    if (ptsEl) ptsEl.textContent = roundTabPts(Number(tab.dataset.round), allRounds, cs, cs.roundCount);
+  });
+  const chip = document.querySelector(`#studentGrid .stu-chip[data-no="${no}"]`);
+  if (chip && !chip.classList.contains("inactive")) chip.classList.toggle("full", cs.final === FINAL_MAX);
 }
 
 /* =========================================================
