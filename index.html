@@ -208,6 +208,14 @@
   .challenge-move-row.passed{border-color:var(--ok);background:#effaf1;}
   .challenge-move-row .move-state{font-size:13px;font-weight:700;color:var(--muted);flex:none;margin-left:10px;}
   .challenge-move-row.passed .move-state{color:var(--ok);}
+  .bonus-box{margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
+  .bonus-title{font-size:16px;font-weight:700;margin-bottom:4px;}
+  .bonus-help{font-size:14px;color:var(--muted);line-height:1.45;margin:0 0 10px;}
+  .bonus-stepper{display:flex;align-items:center;justify-content:center;gap:18px;}
+  .bonus-btn{width:56px;height:56px;border-radius:14px;border:1px solid var(--border);background:var(--bg);
+    font-size:28px;font-weight:700;line-height:1;}
+  .bonus-btn:disabled{opacity:.35;}
+  .bonus-val{font-size:24px;font-weight:800;color:var(--primary);min-width:64px;text-align:center;}
 
   .summary-bar{position:sticky;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);
     padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 -2px 10px rgba(0,0,0,.05);
@@ -496,8 +504,11 @@ function computeChallenge(rec){
   let count = 0;
   CHALLENGE_MOVES.forEach((_, i) => { if (passed[chKey(i)]) count++; });
   // 5개 통과부터 1점, 이후 1개마다 1점씩: 5→1, 6→2, 7→3, 8→4, 9개 이상→5(만점)
-  const b = Math.max(0, Math.min(B_MAX, count - 4));
-  return { count, total: CHALLENGE_MAX, b };
+  const passB = Math.max(0, Math.min(B_MAX, count - 4));
+  // 교사 재량(노력) 점수: 통과를 못 했어도 열심히 한 학생에게 교사가 더해 줌. 합계는 B_MAX로 제한.
+  const bonus = Math.max(0, Math.min(B_MAX, Number(rec && rec.challengeBonus) || 0));
+  const b = Math.min(B_MAX, passB + bonus);
+  return { count, total: CHALLENGE_MAX, passB, bonus, b };
 }
 
 const FINAL_MAX = 40;
@@ -1017,9 +1028,18 @@ function renderScoreCard(){
       </button>`;
     });
     html += `</div>`;
+    html += `<div class="bonus-box">
+      <div class="bonus-title">교사 재량 노력 점수</div>
+      <p class="bonus-help">통과하지 못했어도 열심히 한 학생에게 점수를 더해 줍니다.<br>통과 점수 ${ch.passB}점 + 노력 점수 ${ch.bonus}점 = 과제수행Ⓑ ${ch.b}점 (최대 ${B_MAX}점)</p>
+      <div class="bonus-stepper">
+        <button type="button" class="bonus-btn" id="btnBonusMinus" ${ch.bonus<=0?"disabled":""} aria-label="노력 점수 1점 빼기">−</button>
+        <span class="bonus-val">${ch.bonus}점</span>
+        <button type="button" class="bonus-btn" id="btnBonusPlus" ${ch.passB+ch.bonus>=B_MAX?"disabled":""} aria-label="노력 점수 1점 더하기">+</button>
+      </div>
+    </div>`;
     html += `<div class="summary-bar">
       <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
-      <div class="scores">과제수행Ⓑ<br>통과 ${ch.count}/${ch.total}개</div>
+      <div class="scores">과제수행Ⓑ<br>통과 ${ch.count}/${ch.total}개${ch.bonus ? ` · 노력 +${ch.bonus}` : ""}</div>
       <div class="final">${ch.b}<small>/${B_MAX}점</small></div>
       <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 학생 ▶</button>
     </div>`;
@@ -1053,9 +1073,16 @@ function renderScoreCard(){
         const curPassed = Object.assign({}, curRec.challenge);
         if (curPassed[chKey(i)]) delete curPassed[chKey(i)];
         else curPassed[chKey(i)] = true;
-        saveChallenge(cls, no, curPassed);
+        saveChallenge(cls, no, {challenge: curPassed});
       });
     });
+    const changeBonus = delta => {
+      const cur = computeChallenge((State.scoresByClass[cls] && State.scoresByClass[cls][no]) || {});
+      const next = Math.max(0, Math.min(B_MAX - cur.passB, cur.bonus + delta));
+      if (next !== cur.bonus) saveChallenge(cls, no, {challengeBonus: next});
+    };
+    document.getElementById("btnBonusMinus").addEventListener("click", () => changeBonus(-1));
+    document.getElementById("btnBonusPlus").addEventListener("click", () => changeBonus(1));
   } else {
     wireScoringControls(cls, no, rec, roundNos, activeRound, activeMoves);
   }
@@ -1117,7 +1144,7 @@ function renderTaskSection(rec){
   return `<div class="task-section">
     <div class="task-section-title">과제수행 가산점Ⓑ (개인진도표 통과 개수로 자동 계산)</div>
     <button type="button" class="task-link" id="btnGoChallenge">
-      <span>개인진도표 ${ch.count}/${ch.total}개 통과</span><b>${ch.b}/${B_MAX}점 ▶</b>
+      <span>개인진도표 ${ch.count}/${ch.total}개 통과${ch.bonus ? ` · 노력 +${ch.bonus}` : ""}</span><b>${ch.b}/${B_MAX}점 ▶</b>
     </button>
   </div>`;
 }
@@ -1321,10 +1348,10 @@ function saveRecord(cls, no, patch){
   if (State.currentTab === "score"){ renderStudentGrid(); renderScoreCard(); }
   else if (State.currentTab === "dashboard"){ renderDashboard(); }
 }
-// 개인진도표 체크 저장: "마지막 채점 교사"(scoredBy)를 덮어쓰지 않도록
-// mergeScorePatch를 거치지 않고 challenge 필드만 낙관적으로 갱신한다.
-function saveChallenge(cls, no, passed){
-  const patch = {challenge: passed, challengeBy: teacherDisplayName(State.user && State.user.email)};
+// 개인진도표 저장(통과 체크·노력 점수): "마지막 채점 교사"(scoredBy)를 덮어쓰지
+// 않도록 mergeScorePatch를 거치지 않고 해당 필드만 낙관적으로 갱신한다.
+function saveChallenge(cls, no, fields){
+  const patch = Object.assign({}, fields, {challengeBy: teacherDisplayName(State.user && State.user.email)});
   State.scoresByClass[cls] = State.scoresByClass[cls] || {};
   State.scoresByClass[cls][no] = Object.assign({}, State.scoresByClass[cls][no], patch);
   renderStudentGrid();
