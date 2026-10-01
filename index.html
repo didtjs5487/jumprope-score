@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>음악줄넘기 채점</title>
-<meta name="theme-color" content="#4a5fd9">
+<meta name="theme-color" content="#E9E7F8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="줄넘기채점">
@@ -13,33 +16,34 @@
 <link rel="icon" href="icon-192-v2.png">
 <style>
   :root{
-    --bg:#f2f3f7; --card:#ffffff; --text:#1c1e26; --muted:#6b7280; --border:#e5e7eb;
-    --primary:#4a5fd9; --primary-dark:#3a4bc0; --primary-light:#eef0fd;
-    --lv1:#e5484d; --lv1-bg:#fdecec;
-    --lv2:#c9770a; --lv2-bg:#fdf1de;
-    --lv3:#a16207; --lv3-bg:#fdf6e3;
-    --lv4:#2563eb; --lv4-bg:#e8f0fe;
-    --lv5:#16a34a; --lv5-bg:#e7f7ed;
-    --danger:#dc2626; --ok:#16a34a; --warn:#c9770a;
-    --radius:14px;
+    /* 타바타 앱과 같은 디자인 언어 (2026-10-01) — 연보라 바탕 · 남색 글자 · 보라 강조 */
+    --bg:#E9E7F8; --card:#ffffff; --text:#2B3160; --muted:#5E6493; --border:#E4E1F5;
+    --primary:#5B51E8; --primary-dark:#4A40D4; --primary-light:#ECEAFD;
+    --lv1:#E5485A; --lv1-bg:#FDE7EA;
+    --lv2:#C97A00; --lv2-bg:#FFF1DC;
+    --lv3:#A87400; --lv3-bg:#FFF3D1;
+    --lv4:#5B51E8; --lv4-bg:#ECEAFD;
+    --lv5:#2E9E60; --lv5-bg:#E3F6EB;
+    --danger:#E5485A; --ok:#2E9E60; --warn:#C97A00;
+    --radius:16px;
   }
   /* touch-action:manipulation — 더블탭 시 화면이 확대되는 iOS Safari 기본 동작을 꺼서,
      버튼을 두 번 이상 눌렀을 때 클릭 대신 확대/축소가 일어나던 문제를 막는다.
      (핀치 확대는 그대로 허용되고, 더블탭 확대 제스처만 꺼진다.) */
   *{box-sizing:border-box;touch-action:manipulation;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Malgun Gothic",sans-serif;
+    font-family:"Barlow","Noto Sans KR",-apple-system,"Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;
     -webkit-tap-highlight-color:transparent;touch-action:manipulation;}
   button{font-family:inherit;cursor:pointer;touch-action:manipulation;}
   input,textarea{font-family:inherit;}
-  h1,h2,h3{margin:0;}
+  h1,h2,h3{margin:0;font-family:"Barlow Condensed","Noto Sans KR",sans-serif;letter-spacing:.3px;}
   .hidden{display:none !important;}
   .container{max-width:1100px;margin:0 auto;padding:0 12px;}
 
   /* ---- login ---- */
   #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
   .login-card{background:var(--card);border-radius:var(--radius);padding:32px 24px;width:100%;max-width:360px;
-    box-shadow:0 4px 24px rgba(0,0,0,.08);}
+    box-shadow:0 8px 24px rgba(91,81,232,.10);border:1px solid var(--border);}
   .login-card h1{font-size:22px;margin-bottom:4px;text-align:center;}
   .login-card p.sub{color:var(--muted);font-size:13px;text-align:center;margin:0 0 20px;}
   .field{margin-bottom:14px;}
@@ -54,7 +58,7 @@
   .dev-mode-btn{margin-top:14px;width:100%;background:#fff;border:1px dashed var(--muted);color:var(--muted);}
 
   /* ---- app shell ---- */
-  #app header{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--border);}
+  #app header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);}
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px;}
   .topbar .title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px;}
   .conn-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none;}
@@ -64,7 +68,7 @@
   .tabs{display:flex;border-top:1px solid var(--border);}
   .tab-btn{flex:1;padding:11px 4px;text-align:center;background:none;border:none;font-size:13px;font-weight:600;
     color:var(--muted);border-bottom:3px solid transparent;}
-  .tab-btn.active{color:var(--primary);border-bottom-color:var(--primary);}
+  .tab-btn.active{color:#fff;background:var(--primary);border-bottom-color:var(--primary);border-radius:10px 10px 0 0;}
   .offline-banner{background:#fef3c7;color:#92400e;font-size:12px;text-align:center;padding:5px;display:none;}
   .offline-banner.show{display:block;}
 
@@ -119,13 +123,13 @@
   .stu-chip.full .no,.stu-chip.full .name{color:#fff;}
   .stu-chip.full.active{box-shadow:0 0 0 3px var(--primary);}
 
-  .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 8px 24px rgba(91,81,232,.08);border:1px solid var(--border);}
   .score-card h2{font-size:18px;margin-bottom:2px;}
   .score-card .sub{color:var(--muted);font-size:14px;line-height:1.45;margin-bottom:14px;}
   .move-row{margin-bottom:12px;}
   .move-row .move-name{font-size:13px;font-weight:600;margin-bottom:6px;}
   .lv-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
-  .lv-btn{padding:9px 2px;border-radius:9px;border:1px solid var(--border);background:#fafafa;
+  .lv-btn{padding:9px 2px;border-radius:9px;border:1px solid var(--border);background:#F3F1FD;
     font-size:11px;font-weight:600;color:var(--muted);line-height:1.3;}
   .lv-btn b{display:block;font-size:13px;}
   .lv-btn[data-lv="1"].sel{background:var(--lv1-bg);border-color:var(--lv1);color:var(--lv1);}
@@ -164,7 +168,7 @@
   .miss-btn-sub{display:block;font-size:13px;font-weight:600;opacity:.9;margin-top:6px;}
   .miss-btn-sub.hide{visibility:hidden;}
   .miss-dots{display:flex;gap:8px;justify-content:center;margin:14px 0;}
-  .miss-dot{width:14px;height:14px;border-radius:50%;background:#e5e7eb;border:2px solid var(--border);}
+  .miss-dot{width:14px;height:14px;border-radius:50%;background:#E4E1F5;border:2px solid var(--border);}
   .miss-dot.on{background:var(--lv1);border-color:var(--lv1);}
   .live-score-line{text-align:center;font-size:15px;font-weight:700;margin-bottom:6px;}
   .live-score-line b{color:var(--primary);font-size:20px;}
@@ -205,7 +209,7 @@
   .challenge-move-row{width:100%;display:flex;align-items:center;justify-content:space-between;
     padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);
     font-size:14px;font-weight:600;text-align:left;min-height:48px;}
-  .challenge-move-row.passed{border-color:var(--ok);background:#effaf1;}
+  .challenge-move-row.passed{border-color:var(--ok);background:#E3F6EB;}
   .challenge-move-row .move-state{font-size:13px;font-weight:700;color:var(--muted);flex:none;margin-left:10px;}
   .challenge-move-row.passed .move-state{color:var(--ok);}
   .bonus-box{margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
@@ -265,7 +269,7 @@
   .export-btn{background:var(--ok);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;}
   table.dash-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;font-size:13px;}
   table.dash-table th,table.dash-table td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);}
-  table.dash-table th{background:#fafbfc;color:var(--muted);font-size:11px;cursor:pointer;user-select:none;white-space:nowrap;}
+  table.dash-table th{background:#F3F1FD;color:var(--muted);font-size:11px;cursor:pointer;user-select:none;white-space:nowrap;}
   table.dash-table td.name-cell{text-align:left;font-weight:600;}
   table.dash-table td.final-cell{font-weight:800;color:var(--primary);}
   .table-scroll{overflow-x:auto;border-radius:var(--radius);}
@@ -274,7 +278,7 @@
      기기가 있었다. */
   #toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;display:flex;flex-direction:column;gap:6px;
     align-items:center;pointer-events:none;width:calc(100% - 32px);max-width:360px;}
-  .toast-msg{background:#1c1e26;color:#fff;padding:12px 18px;border-radius:20px;font-size:14px;font-weight:600;text-align:center;
+  .toast-msg{background:#2B3160;color:#fff;padding:12px 18px;border-radius:20px;font-size:14px;font-weight:600;text-align:center;
     box-shadow:0 4px 16px rgba(0,0,0,.3);animation:toastIn .15s ease-out;}
   .toast-msg.err{background:var(--danger);}
   @keyframes toastIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
@@ -368,7 +372,7 @@
         <p class="roster-help">엑셀에서 여러 반이 나란히 있는 명렬표를 통째로 선택해 복사(Ctrl+C)한 뒤 아래에 붙여넣으세요. <b>번호·성명(또는 이름)</b> 열이 있는 머리글 줄과, 그 위에 반 이름(예: <b>3반</b>, <b>1-3</b>)이 적힌 줄까지 함께 복사되어 있어야 합니다.</p>
         <textarea id="bulkRosterPaste" placeholder="엑셀 표를 여기에 붙여넣으세요 (Ctrl+V)"></textarea>
         <div class="roster-actions">
-          <button class="btn" id="btnBulkRosterAdd" style="width:auto;background:#0d9488;color:#fff;">표 전체 일괄 등록</button>
+          <button class="btn" id="btnBulkRosterAdd" style="width:auto;background:#2EC4B6;color:#08423D;">표 전체 일괄 등록</button>
           <span class="save-state" id="bulkRosterResult"></span>
         </div>
       </details>
