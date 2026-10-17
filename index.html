@@ -344,7 +344,7 @@
       <div class="cls-summary-row" id="clsSummaryRow"></div>
       <div class="dash-toolbar">
         <div id="dashFilterLabel" style="font-size:13px;color:var(--muted);font-weight:600;">전체 반</div>
-        <button class="export-btn" id="btnExportCsv">⬇️ CSV로 내보내기</button>
+        <button class="export-btn" id="btnExportXlsx">⬇️ 엑셀로 내보내기 (반별 시트)</button>
       </div>
       <div class="table-scroll">
         <table class="dash-table" id="dashTable">
@@ -1706,44 +1706,129 @@ document.querySelectorAll("#dashTable th[data-sort]").forEach(th => {
   });
 });
 
-document.getElementById("btnExportCsv").addEventListener("click", () => {
-  let rows = allRecordsFlat();
-  if (State.dashCls !== "all") rows = rows.filter(r => r.cls === State.dashCls);
-  const header = ["반","번호","이름", ...MOVES, "완성도(Ⓐ)","과제수행(Ⓑ)","원점수","환산점수","반영 차수","총 시도 차수","채점교사","비고"];
-  const lines = [header];
-  CLASSES.forEach(cls => {
-    if (State.dashCls !== "all" && State.dashCls !== cls) return;
-    const scores = State.scoresByClass[cls] || {};
-    const roster = getRoster(cls);
-    const count = roster.count || 30;
-    for (let no=1; no<=count; no++){
-      const status = roster.status && roster.status[no];
-      if (status){
-        // 학적변동 학생: 번호·이름은 남기되 성적은 비워 채점 대상이 아님을 표시한다.
-        lines.push([cls, no, studentName(cls,no), ...MOVES.map(()=>""), "", "", "", "", "", "", "", status]);
-        continue;
-      }
-      const rec = scores[no];
-      if (!rec) continue;
-      const cs = computeScores(rec);
-      if (cs.scoredMoves === 0 && cs.b === 0) continue;
-      const bestMoves = (getRounds(rec)[roundKey(cs.bestRoundNo)] || {}).moves || {};
-      const moveVals = MOVES.map((_,i) => bestMoves[i] || "");
-      lines.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + "차", cs.roundCount, rec.scoredBy||"", ""]);
+const EXPORT_HEADER = ["반","번호","이름", ...MOVES, "완성도(Ⓐ)","과제수행(Ⓑ)","원점수","환산점수","반영 차수","총 시도 차수","채점교사","비고"];
+// 한 반의 성적 줄을 만든다(머리글 제외).
+function exportRows(cls){
+  const out = [];
+  const scores = State.scoresByClass[cls] || {};
+  const roster = getRoster(cls);
+  const count = roster.count || 30;
+  for (let no=1; no<=count; no++){
+    const status = roster.status && roster.status[no];
+    if (status){
+      // 학적변동 학생: 번호·이름은 남기되 성적은 비워 채점 대상이 아님을 표시한다.
+      out.push([cls, no, studentName(cls,no), ...MOVES.map(()=>""), "", "", "", "", "", "", "", status]);
+      continue;
     }
+    const rec = scores[no];
+    if (!rec) continue;
+    const cs = computeScores(rec);
+    if (cs.scoredMoves === 0 && cs.b === 0) continue;
+    const bestMoves = (getRounds(rec)[roundKey(cs.bestRoundNo)] || {}).moves || {};
+    const moveVals = MOVES.map((_,i) => bestMoves[i] || "");
+    out.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + "차", cs.roundCount, rec.scoredBy||"", ""]);
+  }
+  return out;
+}
+
+
+/* ---- 성적 내보내기(.xlsx) — 반마다 시트 하나 ----
+   예전엔 CSV였으나 시트를 하나밖에 못 담아 모든 반이 한 장에 섞였다(2026-10-17 변경).
+   학교 와이파이가 끊겨도 써야 하므로 외부 라이브러리를 받아오지 않고
+   xlsx(= 압축 없는 zip + XML)를 직접 만든다. */
+const crcTable = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes){
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function zipStore(files){           // files: [{name, data(Uint8Array)}]
+  const enc = new TextEncoder();
+  const chunks = [], central = [];
+  let offset = 0;
+  const u16 = n => [n & 0xFF, (n >>> 8) & 0xFF];
+  const u32 = n => [n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF];
+  files.forEach(f => {
+    const name = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const local = [...u32(0x04034b50), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0),
+                   ...u32(crc), ...u32(size), ...u32(size), ...u16(name.length), ...u16(0)];
+    chunks.push(new Uint8Array(local), name, f.data);
+    central.push([...u32(0x02014b50), ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0),
+                  ...u32(crc), ...u32(size), ...u32(size), ...u16(name.length), ...u16(0), ...u16(0),
+                  ...u16(0), ...u16(0), ...u32(0), ...u32(offset)], name);
+    offset += local.length + name.length + size;
   });
-  const csv = "﻿" + lines.map(row => row.map(cell => {
-    const s = String(cell);
-    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
-  }).join(",")).join("\r\n");
-  const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
-  const a = document.createElement("a");
+  const cdStart = offset;
+  const cdParts = [];
+  for (let i = 0; i < central.length; i += 2) {
+    cdParts.push(new Uint8Array(central[i]), central[i + 1]);
+    offset += central[i].length + central[i + 1].length;
+  }
+  const end = new Uint8Array([...u32(0x06054b50), ...u16(0), ...u16(0),
+    ...u16(files.length), ...u16(files.length), ...u32(offset - cdStart), ...u32(cdStart), ...u16(0)]);
+  return new Blob([...chunks, ...cdParts, end], {type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
+const xmlEsc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));
+function sheetXml(rows){
+  const colLetter = i => { let s = "", n = i + 1; while (n > 0){ const r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = Math.floor((n - 1) / 26); } return s; };
+  const body = rows.map((row, ri) => {
+    const cells = row.map((v, ci) => {
+      const ref = colLetter(ci) + (ri + 1);
+      if (v === "" || v == null) return "";
+      if (typeof v === "number" && isFinite(v)) return `<c r="${ref}"><v>${v}</v></c>`;
+      return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
+    }).join("");
+    return `<row r="${ri + 1}">${cells}</row>`;
+  }).join("");
+  const widths = `<cols><col min="1" max="1" width="6"/><col min="2" max="2" width="7"/><col min="3" max="3" width="12"/>`
+    + `<col min="4" max="${3 + MOVES.length}" width="17"/><col min="${4 + MOVES.length}" max="${11 + MOVES.length}" width="12"/></cols>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${widths}<sheetData>${body}</sheetData></worksheet>`;
+}
+function makeXlsx(sheets){           // sheets: [{name, rows}]
+  const enc = new TextEncoder();
+  const files = [];
+  const add = (name, text) => files.push({name, data: enc.encode(text)});
+  add("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${
+    sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`);
+  add("_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+  add("xl/workbook.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${
+    sheets.map((s, i) => `<sheet name="${xmlEsc(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets></workbook>`);
+  add("xl/_rels/workbook.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${
+    sheets.map((_, i) => `<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}</Relationships>`);
+  sheets.forEach((s, i) => add(`xl/worksheets/sheet${i+1}.xml`, sheetXml(s.rows)));
+  return zipStore(files);
+}
+
+document.getElementById("btnExportXlsx").addEventListener("click", () => {
+  const sheets = [];
+  const all = [EXPORT_HEADER];
+  CLASSES.forEach(cls => {
+    const rows = exportRows(cls);
+    if (!rows.length) return;                       // 기록이 없는 반은 시트를 만들지 않는다
+    rows.forEach(r => all.push(r));
+    sheets.push({name: cls + "반", rows: [EXPORT_HEADER, ...rows]});
+  });
+  if (!sheets.length){ toast("내보낼 성적이 아직 없습니다.", true); return; }
+  sheets.unshift({name: "전체", rows: all});
   const now = new Date();
-  const fname = `음악줄넘기_${State.dashCls==='all'?'전체':State.dashCls+'반'}_${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}.csv`;
-  a.href = URL.createObjectURL(blob);
-  a.download = fname;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(makeXlsx(sheets));
+  a.download = `음악줄넘기_성적_${now.getFullYear()}${pad2(now.getMonth()+1)}${pad2(now.getDate())}.xlsx`;
   document.body.appendChild(a); a.click(); a.remove();
-  toast("CSV 파일을 내려받았습니다.");
+  toast(`엑셀 파일을 내려받았습니다 (시트 ${sheets.length}개).`);
 });
 
 /* =========================================================
