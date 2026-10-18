@@ -638,6 +638,12 @@ const Backend = (function(){
         ref.on("value", handler);
         return () => ref.off("value", handler);
       },
+      onAllRosters(cb){
+        const ref = db.ref("rosters");
+        const handler = snap => cb(snap.val() || {});
+        ref.on("value", handler);
+        return () => ref.off("value", handler);
+      },
       setScore(cls, no, patch){
         return db.ref(`scores/${cls}/${no}`).update(Object.assign({}, patch, {
           updatedAt: firebase.database.ServerValue.TIMESTAMP,
@@ -684,6 +690,12 @@ const Backend = (function(){
       rosterListeners[cls].push(cb);
       return () => { rosterListeners[cls] = (rosterListeners[cls]||[]).filter(f => f !== cb); };
     },
+    onAllRosters(cb){
+      cb(readAll(LS_ROSTERS));
+      rosterListeners.all = rosterListeners.all || [];
+      rosterListeners.all.push(cb);
+      return () => { rosterListeners.all = (rosterListeners.all||[]).filter(f => f !== cb); };
+    },
     setScore(cls, no, patch){
       const all = readAll(LS_SCORES);
       all[cls] = all[cls] || {};
@@ -697,6 +709,7 @@ const Backend = (function(){
       all[cls] = rosterObj;
       writeAll(LS_ROSTERS, all);
       (rosterListeners[cls]||[]).forEach(cb => cb(rosterObj));
+      (rosterListeners.all||[]).forEach(cb => cb(readAll(LS_ROSTERS)));
       return Promise.resolve();
     },
     resetAllData(){
@@ -852,21 +865,24 @@ function startAppData(){
   renderClassRow("clsRowScore", State.scoreCls, cls => {
     State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
     renderClassRow("clsRowScore", State.scoreCls, arguments.callee, false);
-    loadRosterFor(cls);
+    loadRosterFor();
     renderStudentGrid();
     renderScoreCard();
   }, false);
-  loadRosterFor(State.scoreCls);
+  loadRosterFor();
   renderStudentGrid();
   renderScoreCard();
 }
 
-function loadRosterFor(cls){
-  if (State.rosterUnsub) State.rosterUnsub();
-  State.rosterUnsub = Backend.onRoster(cls, roster => {
-    State.rosterCache[cls] = roster || {count: 30, names: {}};
-    if (State.scoreCls === cls){ renderStudentGrid(); renderScoreCard(); }
-    if (State.rosterCls === cls) renderRosterTab();
+// 예전에는 보고 있는 반 하나만 명단을 구독해서, 한 번도 열어보지 않은 반은
+// 현황판·내보내기에 이름이 "n번"으로 나왔다. 모든 반 명단을 한 번에 받아 캐시한다.
+function loadRosterFor(){
+  if (State.rosterUnsub) return;
+  State.rosterUnsub = Backend.onAllRosters(all => {
+    CLASSES.forEach(cls => { State.rosterCache[cls] = (all && all[cls]) || {count: 30, names: {}}; });
+    if (State.currentTab === "score"){ renderStudentGrid(); renderScoreCard(); }
+    if (State.currentTab === "roster") renderRosterTab();
+    if (State.currentTab === "dashboard") renderDashboard();
   });
 }
 
@@ -912,7 +928,7 @@ function renderClassRow(elId, activeCls, onPick, showBadge){
 function renderStudentGrid(){
   renderClassRow("clsRowScore", State.scoreCls, cls => {
     State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
-    loadRosterFor(cls);
+    loadRosterFor();
     renderStudentGrid();
     renderScoreCard();
   }, false);
@@ -1425,7 +1441,7 @@ function refreshLiveDisplay(cls, no, roundNo, moveIdx){
 function renderRosterTabClassRow(){
   renderClassRow("clsRowRoster", State.rosterCls, cls => {
     State.rosterCls = cls;
-    loadRosterFor(cls);
+    loadRosterFor();
     renderRosterTab();
   });
 }
@@ -1647,7 +1663,9 @@ function allRecordsFlat(){
       const rec = scores[no];
       if (!rec) continue;
       const cs = computeScores(rec);
-      if (cs.scoredMoves === 0 && cs.b === 0) continue;
+      // 개인진도표만 체크한 학생도 보여준다 — 4개 이하 통과면 Ⓑ가 0점이라
+      // 예전에는 아무것도 안 한 학생과 똑같이 목록에서 빠졌다.
+      if (cs.scoredMoves === 0 && cs.b === 0 && computeChallenge(rec).count === 0) continue;
       rows.push({
         cls, no, name: studentName(cls,no),
         a: cs.a, b: cs.b, raw: cs.raw, final: cs.final,
@@ -1723,7 +1741,8 @@ function exportRows(cls){
     const rec = scores[no];
     if (!rec) continue;
     const cs = computeScores(rec);
-    if (cs.scoredMoves === 0 && cs.b === 0) continue;
+    // 개인진도표만 체크한 학생도 내보낸다(4개 이하 통과면 Ⓑ가 0점이라 예전에는 빠졌다)
+    if (cs.scoredMoves === 0 && cs.b === 0 && computeChallenge(rec).count === 0) continue;
     const bestMoves = (getRounds(rec)[roundKey(cs.bestRoundNo)] || {}).moves || {};
     const moveVals = MOVES.map((_,i) => bestMoves[i] || "");
     out.push([cls, no, studentName(cls,no), ...moveVals, cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + "차", cs.roundCount, rec.scoredBy||"", ""]);
