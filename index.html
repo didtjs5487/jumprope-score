@@ -92,7 +92,10 @@
 
   /* ---- score layout ---- */
   #tab-score{display:flex;flex-direction:column;gap:10px;}
-  @media(min-width:860px){
+  /* 좌우 2단(번호 목록 + 채점) 배치는 "진짜 데스크톱"에서만 쓴다. 폰을 눕히면
+     폭은 860px을 넘지만 높이가 낮아 번호 목록이 왼쪽을 다 차지해 채점이 불편했다
+     → 높이 조건(620px)을 함께 걸어 가로모드 폰은 한 단 배치를 유지한다. */
+  @media(min-width:860px) and (min-height:620px){
     #tab-score{display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto auto 1fr;align-items:start;}
     #scoreMode{grid-column:1 / -1;grid-row:1;}
     #clsRowScore{grid-column:1 / -1;grid-row:2;}
@@ -102,13 +105,13 @@
   /* grid를 써서 5칸이 항상 컨테이너 폭에 꽉 차게 균등 분배되도록 한다
      (flex-wrap은 마지막 줄/나머지 칸이 남으면 오른쪽에 빈 여백이 생김). */
   .student-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;}
-  @media(min-width:860px){.student-grid{display:flex;flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
+  @media(min-width:860px) and (min-height:620px){.student-grid{display:flex;flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
   /* 한 줄 6칸 + 낮은 고정 높이로 번호 목록이 화면을 덜 차지하게 한다. 학적변동
      학생은 이름 자리에 사유만 표시해 칸 높이가 늘지 않음. 채점 진행 상태는 번호 색으로 표시. */
   .stu-chip{padding:0 3px;border-radius:9px;background:var(--card);border:1px solid var(--border);
     position:relative;min-width:0;height:44px;line-height:1.15;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
-  @media(min-width:860px){.stu-chip{width:100%;flex-direction:row;justify-content:flex-start;padding:0 12px;height:42px;gap:8px;}}
+  @media(min-width:860px) and (min-height:620px){.stu-chip{width:100%;flex-direction:row;justify-content:flex-start;padding:0 12px;height:42px;gap:8px;}}
   .stu-chip.active{border-color:var(--primary);background:var(--primary-light);}
   .stu-chip.inactive{opacity:.6;border-style:dashed;}
   .stu-chip.inactive.active{opacity:.9;}
@@ -123,6 +126,22 @@
   .stu-chip.full{background:var(--ok);border-color:var(--ok);}
   .stu-chip.full .no,.stu-chip.full .name{color:#fff;}
   .stu-chip.full.active{box-shadow:0 0 0 3px var(--primary);}
+  /* 음악줄넘기 등급 색 — A빨 B주 C노 D초 E파, 아직 안 본 학생은 흰 칸.
+     개인진도표(가산점)는 색에 넣지 않는다. 칸 안에 등급 글자도 함께 보여
+     색만으로 짐작하지 않도록 한다. */
+  .stu-chip .gr{font-style:normal;font-weight:800;margin-left:3px;}
+  .stu-chip.gr-A{background:#E23B3B;border-color:#E23B3B;}
+  .stu-chip.gr-B{background:#F07A1E;border-color:#F07A1E;}
+  .stu-chip.gr-C{background:#F3C50B;border-color:#F3C50B;}
+  .stu-chip.gr-D{background:#2FA84F;border-color:#2FA84F;}
+  .stu-chip.gr-E{background:#2E6BE6;border-color:#2E6BE6;}
+  .stu-chip.gr-A .no,.stu-chip.gr-A .name,
+  .stu-chip.gr-B .no,.stu-chip.gr-B .name,
+  .stu-chip.gr-D .no,.stu-chip.gr-D .name,
+  .stu-chip.gr-E .no,.stu-chip.gr-E .name{color:#fff;}
+  .stu-chip.gr-C .no,.stu-chip.gr-C .name{color:#3B2E00;}
+  .stu-chip.gr-A.active,.stu-chip.gr-B.active,.stu-chip.gr-C.active,
+  .stu-chip.gr-D.active,.stu-chip.gr-E.active{box-shadow:0 0 0 3px var(--primary);}
   /* 2명 동시 채점에서 고른 두 학생 — 왼쪽/오른쪽 표시 */
   .stu-chip .side{position:absolute;top:-7px;left:50%;transform:translateX(-50%);
     background:var(--primary);color:#fff;font-size:11px;font-weight:800;
@@ -134,31 +153,76 @@
   .score-mode .mode-btn{flex:1;min-height:52px;font-size:16px;}
 
   /* ---- 2명 동시 채점 ---- */
-  .pair-head{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  /* 두 엄지로 좌우 실수 버튼을 동시에 눌러도 양쪽이 모두 기록되어야 한다.
+     touch-action:pan-y 로 두 손가락 터치가 핀치 줌 제스처로 가로채이는 것을
+     막는다(세로 스크롤은 그대로). 같은 영역에서 좌우 스와이프로 동작을 넘긴다. */
+  .pair-wrap{touch-action:pan-y;user-select:none;-webkit-user-select:none;
+    -webkit-tap-highlight-color:transparent;}
+  .pair-top{display:grid;grid-template-columns:1fr 1fr;grid-template-areas:"l r" "m m";
+    gap:8px;margin-bottom:10px;}
   .pair-name{background:var(--bg);border:1px solid var(--border);border-radius:12px;
-    padding:10px;text-align:center;font-size:16px;font-weight:700;}
-  .pair-name small{display:block;font-size:13px;color:var(--muted);font-weight:600;}
-  .pair-move{text-align:center;margin:6px 0 12px;}
-  .pair-move .step{font-size:14px;color:var(--muted);font-weight:600;}
-  .pair-move .name{font-size:21px;font-weight:800;}
-  .pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .pair-col{display:flex;flex-direction:column;gap:8px;}
-  .pair-score{text-align:center;font-size:16px;font-weight:700;}
-  .pair-score b{color:var(--primary);font-size:20px;}
-  .pair-miss{min-height:170px;border-radius:16px;border:none;background:var(--danger);color:#fff;
-    font-size:26px;font-weight:800;}
-  .pair-miss:active{opacity:.75;}
-  .pair-undo{min-height:58px;border-radius:12px;border:2px solid var(--warn);background:var(--card);
-    color:var(--warn);font-size:15px;font-weight:800;}
-  .pair-undo:disabled{opacity:.35;}
+    padding:7px 8px;text-align:center;font-size:16px;font-weight:700;
+    overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .pair-name.left{grid-area:l;}
+  .pair-name.right{grid-area:r;}
+  .pair-name small{display:block;font-size:12px;color:var(--muted);font-weight:600;}
+  .pair-move{grid-area:m;text-align:center;}
+  .pair-move .step{font-size:13px;color:var(--muted);font-weight:700;}
+  .pair-move .name{font-size:21px;font-weight:800;line-height:1.25;}
+  .pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .pair-col{display:flex;flex-direction:column;gap:7px;}
+  /* 실수 버튼 안에 점/점수를 넣어 세로 공간을 아끼고, 엄지가 닿는 자리에서
+     바로 결과가 보이게 한다. */
+  .pair-miss{height:min(36vh,300px);border-radius:16px;border:none;background:var(--danger);color:#fff;
+    font-size:25px;font-weight:800;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:10px;}
+  .pair-miss.pressing{opacity:.7;}
   .pair-dots{display:flex;justify-content:center;gap:6px;}
-  .pair-dots span{width:13px;height:13px;border-radius:50%;background:var(--border);}
-  .pair-dots span.on{background:var(--danger);}
-  .pair-nav{display:flex;gap:10px;margin-top:14px;}
-  .pair-nav button{flex:1;min-height:56px;border-radius:12px;border:1px solid var(--border);
+  .pair-dots span{width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.35);}
+  .pair-dots span.on{background:#fff;}
+  .pair-sc{font-size:15px;font-weight:700;opacity:.95;}
+  .pair-undo{min-height:52px;border-radius:12px;border:2px solid var(--warn);background:var(--card);
+    color:var(--warn);font-size:15px;font-weight:800;}
+  .pair-undo[disabled]{opacity:.35;}
+  .pair-undo.pressing{background:var(--warn);color:#fff;}
+  .pair-nav{display:flex;gap:10px;margin-top:12px;}
+  .pair-nav button{flex:1;min-height:54px;border-radius:12px;border:1px solid var(--border);
     background:var(--bg);font-size:16px;font-weight:800;}
   .pair-nav button.main{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .pair-nav button[disabled]{opacity:.4;}
+  .pair-hint{text-align:center;font-size:13px;color:var(--muted);font-weight:600;margin-top:10px;}
   .pair-pick{text-align:center;color:var(--muted);font-size:15px;padding:30px 16px;line-height:1.6;}
+
+  /* ---- 가로모드 집중 화면 ----
+     폰을 눕히면(높이가 낮은 가로 화면) 머리말·모드·반 선택·번호 목록을 모두
+     숨기고 실수 버튼만 화면 전체로 키운다. 오른쪽 위 "목록" 버튼으로 해제. */
+  .focus-exit{display:none;}
+  @media (orientation:landscape) and (max-height:620px){
+    body.focus-live #app header,
+    body.focus-live #scoreMode,
+    body.focus-live #clsRowScore,
+    body.focus-live #studentGrid,
+    body.focus-live .pair-hint,
+    body.focus-live .pair-nav,
+    body.focus-live .swipe-hint{display:none;}
+    body.focus-live main{padding:0;}
+    body.focus-live #tab-score{display:flex;flex-direction:column;gap:0;}
+    body.focus-live .score-card{border-radius:0;border:none;box-shadow:none;padding:6px 8px 8px;}
+    body.focus-live .focus-exit{display:block;position:fixed;top:5px;right:7px;z-index:40;
+      padding:6px 12px;border-radius:999px;border:1px solid var(--border);
+      background:rgba(255,255,255,.92);font-size:14px;font-weight:700;color:var(--muted);}
+    body.focus-live .pair-top{grid-template-columns:1fr auto 1fr;grid-template-areas:"l m r";
+      align-items:center;gap:8px;margin-bottom:6px;padding-right:76px;}
+    body.focus-live .pair-name{padding:5px 7px;font-size:15px;}
+    body.focus-live .pair-name small{display:inline;margin-left:5px;font-size:12px;}
+    body.focus-live .pair-move .name{font-size:18px;}
+    body.focus-live .pair-move .step{font-size:12px;}
+    body.focus-live .pair-grid{gap:8px;}
+    body.focus-live .pair-miss{height:calc(100vh - 122px);min-height:110px;font-size:22px;gap:6px;}
+    body.focus-live .pair-undo{min-height:42px;font-size:14px;}
+    /* 1명 채점(음악줄넘기 라이브)도 같은 이유로 버튼을 화면만큼 키운다 */
+    body.focus-live .miss-btn{min-height:calc(100vh - 215px);}
+  }
 
   .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 8px 24px rgba(91,81,232,.08);border:1px solid var(--border);}
   .score-card h2{font-size:18px;margin-bottom:2px;}
@@ -213,7 +277,7 @@
   /* 데스크톱은 터치 스와이프가 없어 이동 수단이 없어지므로, 이전/다음 동작
      버튼을 데스크톱에서만 보여준다(모바일은 스와이프+실수 버튼 자동진행). */
   .desktop-move-nav{display:none;}
-  @media(min-width:860px){
+  @media(min-width:860px) and (min-height:620px){
     .swipe-hint{display:none;}
     .desktop-move-nav{display:flex;gap:8px;margin-bottom:10px;}
     .desktop-move-nav button{flex:1;padding:12px;border-radius:10px;border:1px solid var(--border);
@@ -378,6 +442,7 @@
         <div id="scoreCardEmpty" class="empty-state">반과 학생 번호를 선택하면 채점 화면이 나타납니다.</div>
         <div id="scoreCard" class="score-card hidden"></div>
       </div>
+      <button class="focus-exit" id="btnFocusExit">목록 ▾</button>
     </section>
 
     <!-- 현황판 -->
@@ -610,6 +675,24 @@ function computeScores(record){
   };
 }
 
+// 음악줄넘기 등급 — 완성도Ⓐ(40점 만점)만으로 매긴다. 개인진도표는 가산점이므로 제외.
+// 성취평가 기준(90/80/70/60%)을 Ⓐ에 그대로 적용: 36↑A, 32↑B, 28↑C, 24↑D, 그 아래 E.
+// 8동작을 모두 채점한 학생만 등급이 나오고, 아직 안 본 학생은 흰 칸으로 남는다.
+const GRADE_CUTS = [[36,"A"],[32,"B"],[28,"C"],[24,"D"]];
+function gradeOf(cs){
+  if (!cs || !cs.allMovesScored) return null;
+  for (const [min, g] of GRADE_CUTS) if (cs.a >= min) return g;
+  return "E";
+}
+const GRADE_CLASSES = ["gr-A","gr-B","gr-C","gr-D","gr-E"];
+function applyChipGrade(chip, grade){
+  if (!chip) return;
+  chip.classList.remove.apply(chip.classList, GRADE_CLASSES);
+  if (grade) chip.classList.add("gr-" + grade);
+  const gr = chip.querySelector(".gr");
+  if (gr) gr.textContent = grade || "";
+}
+
 // 라이브 모드: "실수" 탭 횟수 <-> 저장된 1~5점 레벨을 서로 변환한다.
 // 0회→5점, 1회→4점, 2회→3점, 3회→2점, 4회 이상→1점 (score = max(1, 5-clicks))
 function clicksFromLevel(level){
@@ -777,6 +860,12 @@ function setConnDot(on){
 /* =========================================================
    4. 전역 상태
    ========================================================= */
+/* 좌우 2단 배치(번호 목록 + 채점)가 실제로 적용되는 화면인지 — CSS의
+   (min-width:860px) and (min-height:620px) 조건과 같게 유지한다. */
+function isDesktopLayout(){
+  return window.innerWidth >= 860 && window.innerHeight >= 620;
+}
+
 const State = {
   user: null,
   scoresByClass: {},     // {cls: {no: record}}
@@ -793,6 +882,7 @@ const State = {
   dashSort: {key:"cls", dir:1},
   scoreMode: "one",      // 'one' = 한 명씩, 'two' = 두 명 동시(양손 채점)
   pairNos: [],           // 2명 모드에서 고른 학생 번호 [왼쪽, 오른쪽]
+  focusOff: false,       // 가로모드 집중 화면을 사용자가 끈 상태
 };
 
 /* =========================================================
@@ -873,9 +963,17 @@ document.querySelectorAll("#scoreMode .mode-btn").forEach(btn => {
     State.scoreMode = btn.dataset.smode;
     State.pairNos = [];
     State.liveStep = 0;
+    State.focusOff = false;
     renderStudentGrid();
     renderScoreCard();
   });
+});
+
+/* 가로모드 집중 화면 해제(오른쪽 위 "목록") — 다시 켜려면 학생을 새로 고르면 된다 */
+document.getElementById("btnFocusExit").addEventListener("click", () => {
+  State.focusOff = true;
+  updateFocusMode();
+  window.scrollTo({top:0, behavior:"smooth"});
 });
 
 /* =========================================================
@@ -891,6 +989,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
     });
     if (State.currentTab === "dashboard") renderDashboard();
     if (State.currentTab === "roster") renderRosterTab();
+    updateFocusMode();
   });
 });
 
@@ -998,7 +1097,8 @@ function renderStudentGrid(){
   const roster = getRoster(State.scoreCls);
   // 만점 학생은 칸을 초록색으로 채워, 아직 시험을 봐야 하는 학생이 한눈에 보이게 한다.
   // 기준은 지금 열어둔 모드를 따른다(개인진도표 → 가산점Ⓑ 만점, 그 외 → 환산점수 만점).
-  const challengeMode = State.viewMode === "challenge";
+  // 2명 동시 채점은 항상 음악줄넘기 채점이므로 등급색을 쓴다.
+  const challengeMode = State.scoreMode !== "two" && State.viewMode === "challenge";
   let html = "";
   for (let no = 1; no <= count; no++){
     const rec = scores[no];
@@ -1013,10 +1113,12 @@ function renderStudentGrid(){
     const customName = (roster.names && roster.names[no]) || "";
     const status = roster.status && roster.status[no];
     const label = status || customName;
-    const full = !status && (challengeMode ? computeChallenge(rec).b === B_MAX : cs.final === FINAL_MAX);
-    html += `<button class="stu-chip ${active} ${dotClass} ${full?'full':''} ${status?'inactive':''}" data-no="${no}" title="${esc(no + "번 " + customName + (status ? " (" + status + ")" : ""))}">
+    // 개인진도표 모드는 가산점Ⓑ 만점을 초록으로, 그 밖의 모드는 음악줄넘기 등급색으로.
+    const full = !status && challengeMode && computeChallenge(rec).b === B_MAX;
+    const grade = (!status && !challengeMode) ? gradeOf(cs) : null;
+    html += `<button class="stu-chip ${active} ${dotClass} ${full?'full':''} ${grade?'gr-'+grade:''} ${status?'inactive':''}" data-no="${no}" title="${esc(no + "번 " + customName + (status ? " (" + status + ")" : grade ? " (" + grade + "등급)" : ""))}">
       ${pairIdx >= 0 ? `<span class="side">${pairIdx === 0 ? "왼쪽" : "오른쪽"}</span>` : ""}
-      <span class="no">${no}</span>${label ? `<span class="name">${esc(label)}</span>` : ""}
+      <span class="no">${no}<i class="gr">${grade || ""}</i></span>${label ? `<span class="name">${esc(label)}</span>` : ""}
     </button>`;
   }
   grid.innerHTML = html;
@@ -1030,9 +1132,10 @@ function renderStudentGrid(){
         else if (State.pairNos.length < 2) State.pairNos.push(no);
         else State.pairNos = [State.pairNos[1], no];
         State.liveStep = 0;
+        State.focusOff = false;
         renderStudentGrid();
         renderScoreCard();
-        if (State.pairNos.length === 2 && window.innerWidth < 860){
+        if (State.pairNos.length === 2 && !isDesktopLayout()){
           const wrap = document.getElementById("scoreCardWrap");
           if (wrap) wrap.scrollIntoView({behavior:"smooth", block:"start"});
         }
@@ -1041,12 +1144,13 @@ function renderStudentGrid(){
       State.scoreNo = no;
       State.liveStep = 0;
       State.activeRound = null;
+      State.focusOff = false;
       renderStudentGrid();
       renderScoreCard();
       // 좁은 화면(모바일 세로 레이아웃)에서는 번호 선택 후 채점 영역까지
       // 스크롤을 내려야 했던 불편을 없애기 위해 자동으로 스크롤 이동.
       // 데스크톱(≥860px)은 번호 목록/채점 영역이 이미 좌우로 함께 보이므로 생략.
-      if (window.innerWidth < 860){
+      if (!isDesktopLayout()){
         const wrap = document.getElementById("scoreCardWrap");
         if (wrap) wrap.scrollIntoView({behavior:"smooth", block:"start"});
       }
@@ -1084,16 +1188,57 @@ function savePairMiss(cls, no, delta){
   mergeScorePatch(cls, no, {rounds, moves: null});
   refreshPairSide(cls, no);
 }
+function pairDotsHtml(clicks){
+  return [0,1,2,3].map(d => `<span class="${d < clicks ? 'on' : ''}"></span>`).join("");
+}
 function refreshPairSide(cls, no){
   const col = document.querySelector(`.pair-col[data-no="${no}"]`);
   if (!col) return;
   const s = pairSide(cls, no);
   const dots = col.querySelector(".pair-dots");
-  if (dots) dots.innerHTML = [0,1,2,3].map(d => `<span class="${d < s.clicks ? 'on' : ''}"></span>`).join("");
-  const sc = col.querySelector(".pair-score");
-  if (sc) sc.innerHTML = `실수 ${s.clicks}회 → <b>${s.score}점</b>`;
+  if (dots) dots.innerHTML = pairDotsHtml(s.clicks);
+  const sc = col.querySelector(".pair-sc");
+  if (sc) sc.textContent = `실수 ${s.clicks}회 · ${s.score}점`;
   const undo = col.querySelector(".pair-undo");
   if (undo) undo.disabled = s.clicks <= 0;
+}
+/* 두 손가락 동시 탭 + 좌우 스와이프를 한 영역에서 함께 처리한다.
+   click 이벤트는 두 손가락이 겹치면 브라우저가 줌/제스처로 판단해 삼켜버려
+   "동시에 누르면 입력이 안 되는" 문제가 있었다 → 포인터별로 눌림/뗌을
+   직접 추적한다(손가락 하나하나에 pointerdown/pointerup이 따로 온다).
+   손가락이 가로로 많이 움직였으면 탭이 아니라 동작 넘기기로 본다. */
+function attachPairGestures(wrap, h){
+  if (!wrap) return;
+  const hitOf = (t) => (t && t.closest) ? t.closest("[data-miss],[data-undo]") : null;
+  if (!window.PointerEvent){   // 아주 오래된 브라우저 대비
+    wrap.querySelectorAll("[data-miss],[data-undo]").forEach(el => {
+      el.addEventListener("click", () => h.onTap(el));
+    });
+    attachSwipeNav(wrap, h.onNext, h.onPrev);
+    return;
+  }
+  const live = new Map();
+  wrap.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    const el = hitOf(e.target);
+    live.set(e.pointerId, {x:e.clientX, y:e.clientY, el});
+    if (el) el.classList.add("pressing");
+  });
+  const finish = (e, act) => {
+    const s = live.get(e.pointerId);
+    if (!s) return;
+    live.delete(e.pointerId);
+    if (s.el) s.el.classList.remove("pressing");
+    if (!act) return;
+    const dx = e.clientX - s.x, dy = e.clientY - s.y;
+    if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.3){
+      if (dx < 0) h.onNext(); else h.onPrev();
+      return;
+    }
+    if (s.el && Math.abs(dx) < 26 && Math.abs(dy) < 26) h.onTap(s.el);
+  };
+  wrap.addEventListener("pointerup", (e) => finish(e, true));
+  wrap.addEventListener("pointercancel", (e) => finish(e, false));
 }
 function renderPairCard(){
   const card = document.getElementById("scoreCard");
@@ -1101,56 +1246,95 @@ function renderPairCard(){
   const [a, b] = State.pairNos;
   const done = State.liveStep >= MOVES.length;
 
-  let html = `<div class="pair-head">
-    ${[a, b].map((no, i) => `<div class="pair-name">${esc(studentName(cls, no))}<small>${cls}반 ${no}번 · ${i === 0 ? "왼쪽" : "오른쪽"}</small></div>`).join("")}
-  </div>`;
+  const nameBox = (no, i) => `<div class="pair-name ${i === 0 ? "left" : "right"}">${esc(studentName(cls, no))}<small>${no}번 · ${i === 0 ? "왼쪽" : "오른쪽"}</small></div>`;
+
+  let html = `<div class="pair-wrap" id="pairWrap"><div class="pair-top">
+    ${nameBox(a, 0)}${nameBox(b, 1)}`;
 
   if (done){
     html += `<div class="pair-move"><div class="name">✅ ${MOVES.length}개 동작 완료!</div>
-      <div class="step">두 학생 모두 기록되었습니다</div></div>
+      <div class="step">두 학생 모두 기록되었습니다</div></div></div>
       <div class="pair-nav">
         <button id="btnPairPrev">◀ 동작 다시 보기</button>
         <button class="main" id="btnPairNew">다음 두 명 고르기 ▶</button>
-      </div>`;
+      </div></div>`;
   } else {
     html += `<div class="pair-move">
       <div class="step">${State.liveStep + 1}/${MOVES.length}번째 동작</div>
       <div class="name">${esc(MOVES[State.liveStep])}</div>
-    </div><div class="pair-grid">`;
+    </div></div><div class="pair-grid">`;
     [a, b].forEach(no => {
       const s = pairSide(cls, no);
       html += `<div class="pair-col" data-no="${no}">
-        <div class="pair-dots">${[0,1,2,3].map(d => `<span class="${d < s.clicks ? 'on' : ''}"></span>`).join("")}</div>
-        <div class="pair-score">실수 ${s.clicks}회 → <b>${s.score}점</b></div>
-        <button class="pair-miss" data-miss="${no}">❌ 실수</button>
+        <button class="pair-miss" data-miss="${no}">❌ 실수
+          <span class="pair-dots">${pairDotsHtml(s.clicks)}</span>
+          <span class="pair-sc">실수 ${s.clicks}회 · ${s.score}점</span>
+        </button>
         <button class="pair-undo" data-undo="${no}" ${s.clicks <= 0 ? "disabled" : ""}>↩️ 되돌리기</button>
       </div>`;
     });
     html += `</div><div class="pair-nav">
       <button id="btnPairPrev" ${State.liveStep <= 0 ? "disabled" : ""}>◀ 이전 동작</button>
       <button class="main" id="btnPairNext">다음 동작 ▶</button>
-    </div>`;
+    </div>
+    <p class="pair-hint">💡 화면을 좌우로 스와이프하면 다음/이전 동작으로 넘어갑니다</p></div>`;
   }
   card.innerHTML = html;
 
-  card.querySelectorAll("[data-miss]").forEach(btn => {
-    btn.addEventListener("click", () => savePairMiss(cls, Number(btn.dataset.miss), +1));
-  });
-  card.querySelectorAll("[data-undo]").forEach(btn => {
-    btn.addEventListener("click", () => savePairMiss(cls, Number(btn.dataset.undo), -1));
+  const goNext = () => {
+    if (State.liveStep >= MOVES.length) return;
+    // 실수 탭이 한 번도 없었던 학생도 "클리어(5점)"로 확정 저장한다.
+    // 저장이 없으면 그 동작은 채점하지 않은 것으로 남아 등급·현황에 반영되지 않는다
+    // (1명 채점 모드에서 동작을 넘길 때와 같은 처리).
+    State.pairNos.forEach(no => {
+      if (pairSide(cls, no).level == null) savePairMiss(cls, no, 0);
+    });
+    State.liveStep++;
+    renderPairCard(); renderStudentGrid();
+  };
+  const goPrev = () => {
+    if (State.liveStep <= 0) return;
+    State.liveStep--;
+    renderPairCard(); renderStudentGrid();
+  };
+  attachPairGestures(document.getElementById("pairWrap"), {
+    onNext: goNext,
+    onPrev: goPrev,
+    onTap: (el) => {
+      if (el.disabled) return;
+      if (el.dataset.miss != null) savePairMiss(cls, Number(el.dataset.miss), +1);
+      else savePairMiss(cls, Number(el.dataset.undo), -1);
+    },
   });
   const prev = document.getElementById("btnPairPrev");
-  if (prev) prev.addEventListener("click", () => { State.liveStep = Math.max(0, State.liveStep - 1); renderPairCard(); });
+  if (prev) prev.addEventListener("click", goPrev);
   const next = document.getElementById("btnPairNext");
-  if (next) next.addEventListener("click", () => { State.liveStep++; renderPairCard(); renderStudentGrid(); });
+  if (next) next.addEventListener("click", goNext);
   const fresh = document.getElementById("btnPairNew");
   if (fresh) fresh.addEventListener("click", () => {
-    State.pairNos = []; State.liveStep = 0;
+    State.pairNos = []; State.liveStep = 0; State.focusOff = false;
     renderStudentGrid(); renderScoreCard();
   });
+  updateFocusMode();
+}
+
+/* ---- 가로모드 집중 화면 ----
+   폰을 눕히고 실제로 채점 중일 때만 머리말·번호 목록을 숨기고 실수 버튼을
+   화면만큼 키운다(숨기는 일은 CSS가 하고, 여기서는 상태만 알려준다). */
+function focusScoringActive(){
+  if (State.currentTab !== "score") return false;
+  if (State.scoreMode === "two") return State.pairNos.length === 2 && State.liveStep < MOVES.length;
+  return State.viewMode === "live" && State.scoreNo != null && State.liveStep < MOVES.length;
+}
+function updateFocusMode(){
+  document.body.classList.toggle("focus-live", !State.focusOff && focusScoringActive());
 }
 
 function renderScoreCard(){
+  renderScoreCardBody();
+  updateFocusMode();
+}
+function renderScoreCardBody(){
   const empty = document.getElementById("scoreCardEmpty");
   const card = document.getElementById("scoreCard");
   if (State.scoreMode === "two"){
@@ -1619,7 +1803,11 @@ function refreshLiveDisplay(cls, no, roundNo, moveIdx){
     if (ptsEl) ptsEl.textContent = roundTabPts(Number(tab.dataset.round), allRounds, cs, cs.roundCount);
   });
   const chip = document.querySelector(`#studentGrid .stu-chip[data-no="${no}"]`);
-  if (chip && !chip.classList.contains("inactive")) chip.classList.toggle("full", cs.final === FINAL_MAX);
+  if (chip && !chip.classList.contains("inactive")){
+    const challengeMode = State.viewMode === "challenge";
+    chip.classList.toggle("full", challengeMode && cs.b === B_MAX);
+    applyChipGrade(chip, challengeMode ? null : gradeOf(cs));
+  }
 }
 
 /* =========================================================
