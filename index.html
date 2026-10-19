@@ -93,10 +93,11 @@
   /* ---- score layout ---- */
   #tab-score{display:flex;flex-direction:column;gap:10px;}
   @media(min-width:860px){
-    #tab-score{display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto 1fr;align-items:start;}
-    #clsRowScore{grid-column:1 / -1;grid-row:1;}
-    #studentGrid{grid-column:1;grid-row:2;}
-    #scoreCardWrap{grid-column:2;grid-row:2;}
+    #tab-score{display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto auto 1fr;align-items:start;}
+    #scoreMode{grid-column:1 / -1;grid-row:1;}
+    #clsRowScore{grid-column:1 / -1;grid-row:2;}
+    #studentGrid{grid-column:1;grid-row:3;}
+    #scoreCardWrap{grid-column:2;grid-row:3;}
   }
   /* grid를 써서 5칸이 항상 컨테이너 폭에 꽉 차게 균등 분배되도록 한다
      (flex-wrap은 마지막 줄/나머지 칸이 남으면 오른쪽에 빈 여백이 생김). */
@@ -122,6 +123,42 @@
   .stu-chip.full{background:var(--ok);border-color:var(--ok);}
   .stu-chip.full .no,.stu-chip.full .name{color:#fff;}
   .stu-chip.full.active{box-shadow:0 0 0 3px var(--primary);}
+  /* 2명 동시 채점에서 고른 두 학생 — 왼쪽/오른쪽 표시 */
+  .stu-chip .side{position:absolute;top:-7px;left:50%;transform:translateX(-50%);
+    background:var(--primary);color:#fff;font-size:11px;font-weight:800;
+    padding:1px 7px;border-radius:999px;white-space:nowrap;}
+  .stu-chip.picked{border-color:var(--primary);background:var(--primary-light);}
+
+  /* ---- 채점 모드 전환 ---- */
+  .score-mode{display:flex;gap:8px;margin-bottom:10px;}
+  .score-mode .mode-btn{flex:1;min-height:52px;font-size:16px;}
+
+  /* ---- 2명 동시 채점 ---- */
+  .pair-head{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+  .pair-name{background:var(--bg);border:1px solid var(--border);border-radius:12px;
+    padding:10px;text-align:center;font-size:16px;font-weight:700;}
+  .pair-name small{display:block;font-size:13px;color:var(--muted);font-weight:600;}
+  .pair-move{text-align:center;margin:6px 0 12px;}
+  .pair-move .step{font-size:14px;color:var(--muted);font-weight:600;}
+  .pair-move .name{font-size:21px;font-weight:800;}
+  .pair-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .pair-col{display:flex;flex-direction:column;gap:8px;}
+  .pair-score{text-align:center;font-size:16px;font-weight:700;}
+  .pair-score b{color:var(--primary);font-size:20px;}
+  .pair-miss{min-height:170px;border-radius:16px;border:none;background:var(--danger);color:#fff;
+    font-size:26px;font-weight:800;}
+  .pair-miss:active{opacity:.75;}
+  .pair-undo{min-height:58px;border-radius:12px;border:2px solid var(--warn);background:var(--card);
+    color:var(--warn);font-size:15px;font-weight:800;}
+  .pair-undo:disabled{opacity:.35;}
+  .pair-dots{display:flex;justify-content:center;gap:6px;}
+  .pair-dots span{width:13px;height:13px;border-radius:50%;background:var(--border);}
+  .pair-dots span.on{background:var(--danger);}
+  .pair-nav{display:flex;gap:10px;margin-top:14px;}
+  .pair-nav button{flex:1;min-height:56px;border-radius:12px;border:1px solid var(--border);
+    background:var(--bg);font-size:16px;font-weight:800;}
+  .pair-nav button.main{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .pair-pick{text-align:center;color:var(--muted);font-size:15px;padding:30px 16px;line-height:1.6;}
 
   .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 8px 24px rgba(91,81,232,.08);border:1px solid var(--border);}
   .score-card h2{font-size:18px;margin-bottom:2px;}
@@ -331,6 +368,10 @@
   <main class="container">
     <!-- 채점 -->
     <section id="tab-score">
+      <div class="score-mode" id="scoreMode">
+        <button class="mode-btn active" data-smode="one">👤 1명 채점</button>
+        <button class="mode-btn" data-smode="two">👥 2명 동시 채점</button>
+      </div>
       <div class="cls-row" id="clsRowScore"></div>
       <div class="student-grid" id="studentGrid"></div>
       <div id="scoreCardWrap">
@@ -750,6 +791,8 @@ const State = {
   rosterCls: 1,
   dashCls: "all",
   dashSort: {key:"cls", dir:1},
+  scoreMode: "one",      // 'one' = 한 명씩, 'two' = 두 명 동시(양손 채점)
+  pairNos: [],           // 2명 모드에서 고른 학생 번호 [왼쪽, 오른쪽]
 };
 
 /* =========================================================
@@ -822,6 +865,19 @@ Backend.onAuth(user => {
   }
 });
 
+/* 채점 모드 전환: 한 명씩 / 두 명 동시 */
+document.querySelectorAll("#scoreMode .mode-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#scoreMode .mode-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    State.scoreMode = btn.dataset.smode;
+    State.pairNos = [];
+    State.liveStep = 0;
+    renderStudentGrid();
+    renderScoreCard();
+  });
+});
+
 /* =========================================================
    7. 탭 전환
    ========================================================= */
@@ -852,9 +908,13 @@ function startAppData(){
       // 다른 교사의 동시 저장이든)이 돌아오면 화면 전체를 다시 그리지 않는다 —
       // 실수/되돌리기 버튼 DOM이 매번 교체되면서 빠른 연타가 씹히던 문제의
       // 근본 원인이었다. 대신 점/점수 등 필요한 부분만 갱신한다.
+      const pairActive = State.scoreMode === "two" && State.pairNos.length === 2
+        && document.querySelector(".pair-grid");
       const liveActive = State.viewMode === "live" && State.scoreNo != null
         && State.liveStep < MOVES.length && document.getElementById("liveGestureZone");
-      if (liveActive){
+      if (pairActive){
+        State.pairNos.forEach(no => refreshPairSide(State.scoreCls, no));
+      } else if (liveActive){
         refreshLiveDisplay(State.scoreCls, State.scoreNo, State.activeRound, State.liveStep);
       } else {
         renderStudentGrid(); renderScoreCard();
@@ -946,19 +1006,39 @@ function renderStudentGrid(){
     let dotClass = "";
     if (cs.scoredMoves > 0 && !cs.allMovesScored) dotClass = "partial";
     if (cs.allMovesScored) dotClass = "done";
-    const active = State.scoreNo === no ? "active" : "";
+    const pairIdx = State.scoreMode === "two" ? State.pairNos.indexOf(no) : -1;
+    const active = State.scoreMode === "two"
+      ? (pairIdx >= 0 ? "picked" : "")
+      : (State.scoreNo === no ? "active" : "");
     const customName = (roster.names && roster.names[no]) || "";
     const status = roster.status && roster.status[no];
     const label = status || customName;
     const full = !status && (challengeMode ? computeChallenge(rec).b === B_MAX : cs.final === FINAL_MAX);
     html += `<button class="stu-chip ${active} ${dotClass} ${full?'full':''} ${status?'inactive':''}" data-no="${no}" title="${esc(no + "번 " + customName + (status ? " (" + status + ")" : ""))}">
+      ${pairIdx >= 0 ? `<span class="side">${pairIdx === 0 ? "왼쪽" : "오른쪽"}</span>` : ""}
       <span class="no">${no}</span>${label ? `<span class="name">${esc(label)}</span>` : ""}
     </button>`;
   }
   grid.innerHTML = html;
   grid.querySelectorAll(".stu-chip").forEach(btn => {
     btn.addEventListener("click", () => {
-      State.scoreNo = Number(btn.dataset.no);
+      const no = Number(btn.dataset.no);
+      if (State.scoreMode === "two"){
+        // 두 명을 차례로 고른다(왼쪽 → 오른쪽). 고른 번호를 다시 누르면 선택 취소.
+        const at = State.pairNos.indexOf(no);
+        if (at >= 0) State.pairNos.splice(at, 1);
+        else if (State.pairNos.length < 2) State.pairNos.push(no);
+        else State.pairNos = [State.pairNos[1], no];
+        State.liveStep = 0;
+        renderStudentGrid();
+        renderScoreCard();
+        if (State.pairNos.length === 2 && window.innerWidth < 860){
+          const wrap = document.getElementById("scoreCardWrap");
+          if (wrap) wrap.scrollIntoView({behavior:"smooth", block:"start"});
+        }
+        return;
+      }
+      State.scoreNo = no;
       State.liveStep = 0;
       State.activeRound = null;
       renderStudentGrid();
@@ -977,9 +1057,116 @@ function renderStudentGrid(){
 /* =========================================================
    11. 채점 탭 — 채점 카드
    ========================================================= */
+/* ---- 2명 동시 채점 ----
+   같은 음악에 맞춰 두 학생이 함께 하므로 동작은 둘이 같이 넘어가고,
+   실수 버튼만 좌우로 나눠 양손 엄지로 각각 누른다. */
+function pairRoundNo(rec){
+  const nos = Object.keys(getRounds(rec)).map(roundNumFromKey).sort((a,b) => a - b);
+  return nos[nos.length - 1];
+}
+function pairSide(cls, no){
+  const rec = (State.scoresByClass[cls] && State.scoresByClass[cls][no]) || {};
+  const rn = pairRoundNo(rec);
+  const moves = (getRounds(rec)[roundKey(rn)] || {}).moves || {};
+  const level = moves[State.liveStep];
+  return { rec, rn, level, clicks: clicksFromLevel(level), score: level || 5 };
+}
+function savePairMiss(cls, no, delta){
+  const s = pairSide(cls, no);
+  const clicks = Math.max(0, Math.min(4, s.clicks + delta));
+  const rounds = Object.assign({}, getStoredRounds(s.rec));
+  const key = roundKey(s.rn);
+  const cur = rounds[key] || {};
+  const moves = Object.assign({}, cur.moves || {});
+  moves[State.liveStep] = levelFromClicks(clicks);
+  rounds[key] = Object.assign({}, cur, {moves, createdAt: cur.createdAt || Date.now()});
+  // 화면 전체를 다시 그리면 연타가 씹히므로 해당 칸만 갱신한다(1명 모드와 같은 이유).
+  mergeScorePatch(cls, no, {rounds, moves: null});
+  refreshPairSide(cls, no);
+}
+function refreshPairSide(cls, no){
+  const col = document.querySelector(`.pair-col[data-no="${no}"]`);
+  if (!col) return;
+  const s = pairSide(cls, no);
+  const dots = col.querySelector(".pair-dots");
+  if (dots) dots.innerHTML = [0,1,2,3].map(d => `<span class="${d < s.clicks ? 'on' : ''}"></span>`).join("");
+  const sc = col.querySelector(".pair-score");
+  if (sc) sc.innerHTML = `실수 ${s.clicks}회 → <b>${s.score}점</b>`;
+  const undo = col.querySelector(".pair-undo");
+  if (undo) undo.disabled = s.clicks <= 0;
+}
+function renderPairCard(){
+  const card = document.getElementById("scoreCard");
+  const cls = State.scoreCls;
+  const [a, b] = State.pairNos;
+  const done = State.liveStep >= MOVES.length;
+
+  let html = `<div class="pair-head">
+    ${[a, b].map((no, i) => `<div class="pair-name">${esc(studentName(cls, no))}<small>${cls}반 ${no}번 · ${i === 0 ? "왼쪽" : "오른쪽"}</small></div>`).join("")}
+  </div>`;
+
+  if (done){
+    html += `<div class="pair-move"><div class="name">✅ ${MOVES.length}개 동작 완료!</div>
+      <div class="step">두 학생 모두 기록되었습니다</div></div>
+      <div class="pair-nav">
+        <button id="btnPairPrev">◀ 동작 다시 보기</button>
+        <button class="main" id="btnPairNew">다음 두 명 고르기 ▶</button>
+      </div>`;
+  } else {
+    html += `<div class="pair-move">
+      <div class="step">${State.liveStep + 1}/${MOVES.length}번째 동작</div>
+      <div class="name">${esc(MOVES[State.liveStep])}</div>
+    </div><div class="pair-grid">`;
+    [a, b].forEach(no => {
+      const s = pairSide(cls, no);
+      html += `<div class="pair-col" data-no="${no}">
+        <div class="pair-dots">${[0,1,2,3].map(d => `<span class="${d < s.clicks ? 'on' : ''}"></span>`).join("")}</div>
+        <div class="pair-score">실수 ${s.clicks}회 → <b>${s.score}점</b></div>
+        <button class="pair-miss" data-miss="${no}">❌ 실수</button>
+        <button class="pair-undo" data-undo="${no}" ${s.clicks <= 0 ? "disabled" : ""}>↩️ 되돌리기</button>
+      </div>`;
+    });
+    html += `</div><div class="pair-nav">
+      <button id="btnPairPrev" ${State.liveStep <= 0 ? "disabled" : ""}>◀ 이전 동작</button>
+      <button class="main" id="btnPairNext">다음 동작 ▶</button>
+    </div>`;
+  }
+  card.innerHTML = html;
+
+  card.querySelectorAll("[data-miss]").forEach(btn => {
+    btn.addEventListener("click", () => savePairMiss(cls, Number(btn.dataset.miss), +1));
+  });
+  card.querySelectorAll("[data-undo]").forEach(btn => {
+    btn.addEventListener("click", () => savePairMiss(cls, Number(btn.dataset.undo), -1));
+  });
+  const prev = document.getElementById("btnPairPrev");
+  if (prev) prev.addEventListener("click", () => { State.liveStep = Math.max(0, State.liveStep - 1); renderPairCard(); });
+  const next = document.getElementById("btnPairNext");
+  if (next) next.addEventListener("click", () => { State.liveStep++; renderPairCard(); renderStudentGrid(); });
+  const fresh = document.getElementById("btnPairNew");
+  if (fresh) fresh.addEventListener("click", () => {
+    State.pairNos = []; State.liveStep = 0;
+    renderStudentGrid(); renderScoreCard();
+  });
+}
+
 function renderScoreCard(){
   const empty = document.getElementById("scoreCardEmpty");
   const card = document.getElementById("scoreCard");
+  if (State.scoreMode === "two"){
+    const picked = State.pairNos.length === 2;
+    empty.classList.toggle("hidden", picked);
+    card.classList.toggle("hidden", !picked);
+    if (!picked){
+      empty.innerHTML = `<div class="pair-pick">동시에 채점할 <b>학생 두 명</b>을 번호에서 고르세요.<br>
+        먼저 고른 학생이 <b>왼쪽</b>, 다음이 <b>오른쪽</b>입니다.<br>
+        ${State.pairNos.length === 1 ? "한 명 더 고르세요." : ""}</div>`;
+      return;
+    }
+    renderPairCard();
+    return;
+  }
+  empty.textContent = "반과 학생 번호를 선택하면 채점 화면이 나타납니다.";
   if (!State.scoreNo){
     empty.classList.remove("hidden");
     card.classList.add("hidden");
