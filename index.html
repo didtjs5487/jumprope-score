@@ -56,6 +56,15 @@
   .btn-ghost{background:transparent;color:var(--primary);font-weight:600;font-size:13px;}
   .err-msg{color:var(--danger);font-size:13px;margin-top:10px;min-height:16px;}
   .dev-mode-btn{margin-top:14px;width:100%;background:#fff;border:1px dashed var(--muted);color:var(--muted);}
+  .acct-pick{display:flex;gap:6px;margin-bottom:8px;}
+  .acct-pick button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--border);
+    background:var(--bg);font-size:15px;font-weight:700;color:var(--text);padding:0 4px;}
+  .acct-pick button.on{background:var(--primary);color:#fff;border-color:var(--primary);}
+  /* 보강 선생님 공용 계정: 되돌릴 수 없는 초기화는 아예 보이지 않게 한다 */
+  body.sub-teacher .danger-zone{display:none;}
+  .sub-note{display:none;background:#FFF8E8;border:1px solid #F0DFB5;border-radius:12px;
+    padding:12px 14px;margin-bottom:10px;font-size:15px;font-weight:600;color:var(--warn);}
+  body.sub-teacher .sub-note{display:block;}
 
   /* ---- app shell ---- */
   #app header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);}
@@ -401,6 +410,8 @@
     <p class="sub">인천영종고 체육2 · 실기평가 채점 도구</p>
     <div class="field">
       <label>이메일</label>
+      <!-- 보강 선생님처럼 주소를 외우지 않아도 되도록, 계정을 눌러 고를 수 있게 한다 -->
+      <div class="acct-pick" id="acctPick"></div>
       <input id="loginEmail" type="email" autocomplete="username" placeholder="teacher112@yeongjong.icehs.kr">
     </div>
     <div class="field">
@@ -476,6 +487,7 @@
     <!-- 명단 -->
     <section id="tab-roster" class="hidden">
       <a class="help-link" href="사용법.html" target="_blank" rel="noopener">📘 앱 사용법 보기 (인쇄 가능)</a>
+      <p class="sub-note">보강 선생님 계정으로 로그인했습니다. 채점은 모두 하실 수 있고, 되돌릴 수 없는 초기화 기능만 숨겨져 있습니다.</p>
       <details class="roster-card" open>
         <summary class="roster-title">📋 표 전체 일괄 등록</summary>
         <p class="roster-help">엑셀에서 여러 반이 나란히 있는 명렬표를 통째로 선택해 복사(Ctrl+C)한 뒤 아래에 붙여넣으세요. <b>번호·성명(또는 이름)</b> 열이 있는 머리글 줄과, 그 위에 반 이름(예: <b>3반</b>, <b>1-3</b>)이 적힌 줄까지 함께 복사되어 있어야 합니다.</p>
@@ -705,10 +717,15 @@ function levelFromClicks(clicks){
   return Math.max(1, 5 - clicks);
 }
 
+// 보강 선생님 공용 계정 — 담당 교사가 자리를 비울 때 보강 들어오는 선생님이 함께 쓴다.
+// 채점·명단 확인은 모두 가능하고, 되돌릴 수 없는 초기화만 막는다(body.sub-teacher).
+const SUB_EMAIL = "bogang@yeongjong.icehs.kr";
 const TEACHER_NAMES = {
   "teacher112@yeongjong.icehs.kr": "김양선",
   "teacher74@yeongjong.icehs.kr": "정우철",
+  [SUB_EMAIL]: "보강",
 };
+function isSubTeacher(email){ return String(email || "").toLowerCase() === SUB_EMAIL; }
 function teacherDisplayName(email){
   if (!email) return "";
   if (TEACHER_NAMES[email]) return TEACHER_NAMES[email];
@@ -951,12 +968,32 @@ Backend.onAuth(user => {
     document.getElementById("loginScreen").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
     document.getElementById("whoName").textContent = teacherDisplayName(user.email) + " 선생님";
+    document.body.classList.toggle("sub-teacher", isSubTeacher(user.email));
     startAppData();
   } else {
     document.getElementById("app").classList.add("hidden");
     document.getElementById("loginScreen").classList.remove("hidden");
+    document.body.classList.remove("sub-teacher");
   }
 });
+
+/* 로그인 화면의 계정 고르기 버튼 — 긴 이메일 주소를 치지 않아도 되게 한다 */
+(function buildAccountPicker(){
+  const box = document.getElementById("acctPick");
+  if (!box) return;
+  const emailEl = document.getElementById("loginEmail");
+  box.innerHTML = Object.keys(TEACHER_NAMES).map(em =>
+    `<button type="button" data-email="${em}">${TEACHER_NAMES[em]}</button>`).join("");
+  box.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      box.querySelectorAll("button").forEach(b => b.classList.remove("on"));
+      btn.classList.add("on");
+      emailEl.value = btn.dataset.email;
+      const pw = document.getElementById("loginPw");
+      if (pw) pw.focus();
+    });
+  });
+})();
 
 /* 채점 모드 전환: 한 명씩 / 두 명 동시 */
 document.querySelectorAll("#scoreMode .mode-btn").forEach(btn => {
