@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>체육관 득점판 — 채점 중</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --board:#0E1116; --panel:#171C24; --steel:#2A313C; --steel-hi:#3C4553;
+    --paint:#F2F4F7; --dim:#7C8798;
+    --lamp:#FFB020; --miss:#FF3B30; --ok:#27D07A;
+  }
+  html,body{width:390px;height:844px;overflow:hidden}
+  body{background:var(--board);color:var(--paint);
+    font-family:"Noto Sans KR","Barlow Condensed",sans-serif;
+    font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
+  .num{font-family:"Barlow Condensed","Noto Sans KR",sans-serif;font-variant-numeric:tabular-nums}
+
+  /* 머리 — 누구를 채점하는가 + 저장 상태(켜지면 볼 때까지 들고 있는다) */
+  .head{display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px 12px;border-bottom:1px solid var(--steel)}
+  .who{display:flex;align-items:baseline;gap:9px}
+  .who .cls{font-size:15px;font-weight:700;color:var(--dim);letter-spacing:.02em}
+  .who .nm{font-size:26px;font-weight:900;letter-spacing:-.01em}
+  .save{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;color:var(--ok)}
+  .save i{width:9px;height:9px;border-radius:50%;background:var(--ok);
+    box-shadow:0 0 0 4px rgba(39,208,122,.16)}
+
+  /* 램프 띠 — 8개 동작이 고정 칸으로 걸린다. 지금 동작만 점등 */
+  .strip{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;
+    padding:12px 13px 14px;background:var(--panel);border-bottom:1px solid var(--steel)}
+  .cell{height:62px;border-radius:4px;background:#0D1117;border:1px solid var(--steel);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  .cell .i{font-size:13px;font-weight:700;color:#4E5969;letter-spacing:.02em}
+  .cell .v{font-size:23px;font-weight:700;line-height:1;color:#2C3542}
+  .cell.done{background:#131A22;border-color:var(--steel-hi)}
+  .cell.done .i{color:var(--dim)} .cell.done .v{color:var(--paint)}
+  .cell.now{background:#2A1E08;border-color:var(--lamp);
+    box-shadow:inset 0 0 0 1px rgba(255,176,32,.55), 0 6px 18px rgba(255,176,32,.18);
+    animation:lamp 1.7s ease-in-out infinite}
+  .cell.now .i{color:var(--lamp)} .cell.now .v{color:var(--lamp)}
+  @keyframes lamp{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,176,32,.5),0 6px 18px rgba(255,176,32,.14)}
+    50%{box-shadow:inset 0 0 0 1px rgba(255,176,32,.9),0 8px 24px rgba(255,176,32,.30)}}
+
+  /* 지금 동작 — 화면에서 가장 큰 글자 */
+  .now-move{padding:22px 18px 16px;text-align:center}
+  .now-move .step{font-size:16px;font-weight:700;color:var(--lamp);letter-spacing:.06em}
+  .now-move .name{font-size:33px;font-weight:900;line-height:1.18;margin-top:6px;
+    letter-spacing:-.02em;text-wrap:balance}
+
+  /* 점수 — 고정 폭 칸 안에서만 바뀐다 */
+  .score{display:flex;align-items:center;justify-content:center;gap:12px;
+    margin:0 18px 16px;padding:11px 14px;background:var(--panel);
+    border:1px solid var(--steel);border-radius:6px}
+  .score .lab{font-size:16px;font-weight:700;color:var(--dim)}
+  .slot{min-width:34px;text-align:center;font-size:30px;font-weight:700;line-height:1}
+  .slot.m{color:var(--miss)} .slot.p{color:var(--ok)}
+  .score .arrow{color:#4E5969;font-size:18px;font-weight:700}
+
+  /* 실수 버튼 — 화면 절반, 램프처럼 테두리가 켜져 있다 */
+  .miss{margin:0 16px;flex:1;min-height:0;border-radius:10px;border:2px solid #FF6B63;
+    background:linear-gradient(180deg,#E5322D,#C0231F);color:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+    box-shadow:0 10px 30px rgba(229,50,45,.28), inset 0 1px 0 rgba(255,255,255,.25)}
+  .miss .t{font-size:40px;font-weight:900;letter-spacing:-.01em}
+  .miss .dots{display:flex;gap:10px}
+  .miss .dots span{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.28)}
+  .miss .dots span.on{background:#fff}
+  .miss .sub{font-size:15px;font-weight:700;opacity:.85}
+
+  .row{display:flex;gap:10px;padding:12px 16px 10px}
+  .undo{flex:1;height:58px;border-radius:8px;background:transparent;color:var(--lamp);
+    border:1.5px solid #4A3A18;font-size:17px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;gap:8px}
+  .hint{text-align:center;font-size:14px;font-weight:600;color:var(--dim);padding:0 0 16px}
+  .hint b{color:var(--paint)}
+  svg{display:block}
+</style></head>
+<body>
+
+  <div class="head">
+    <div class="who"><span class="cls num">1반 7번</span><span class="nm">강지호</span></div>
+    <div class="save"><i></i>저장됨</div>
+  </div>
+
+  <div class="strip">
+    <div class="cell done"><span class="i num">1</span><span class="v num">5</span></div>
+    <div class="cell done"><span class="i num">2</span><span class="v num">4</span></div>
+    <div class="cell now"><span class="i num">3</span><span class="v num">3</span></div>
+    <div class="cell"><span class="i num">4</span><span class="v num">·</span></div>
+    <div class="cell"><span class="i num">5</span><span class="v num">·</span></div>
+    <div class="cell"><span class="i num">6</span><span class="v num">·</span></div>
+    <div class="cell"><span class="i num">7</span><span class="v num">·</span></div>
+    <div class="cell"><span class="i num">8</span><span class="v num">·</span></div>
+  </div>
+
+  <div class="now-move">
+    <div class="step num">3 / 8번째 동작</div>
+    <div class="name">③ 번갈아두박자 뛰기</div>
+  </div>
+
+  <div class="score">
+    <span class="lab">실수</span><span class="slot m num">2</span>
+    <span class="lab">회</span>
+    <span class="arrow">→</span>
+    <span class="slot p num">3</span><span class="lab">점</span>
+  </div>
+
+  <button class="miss">
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    <span class="t">실수</span>
+    <span class="dots"><span class="on"></span><span class="on"></span><span></span><span></span></span>
+    <span class="sub">한 번 더 누르면 2점</span>
+  </button>
+
+  <div class="row">
+    <button class="undo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFB020" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+      되돌리기
+    </button>
+  </div>
+  <div class="hint">옆으로 쓸면 <b>다음 동작</b> · 눕히면 버튼만 크게</div>
+
+</body></html>

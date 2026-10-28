@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>심판 채점표 — 채점 중</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--paper:#F4F1EA; --paper-2:#EAE5DA; --ink:#15161A; --rule:#C9C2B2;
+    --stamp:#C8102E; --pass:#1E6F50; --mute:#6E6859}
+  html,body{width:390px;height:844px;overflow:hidden}
+  body{background:#DCD6C8;color:var(--ink);font-family:"Noto Sans KR",sans-serif;
+    font-variant-numeric:tabular-nums;padding:10px}
+  .num{font-family:"Barlow Condensed","Noto Sans KR",sans-serif}
+
+  /* 한 장의 채점 용지 */
+  .slip{height:824px;background:var(--paper);border:1px solid var(--rule);
+    box-shadow:0 10px 24px rgba(0,0,0,.22);display:flex;flex-direction:column}
+
+  .head{padding:14px 16px 12px;border-bottom:2px solid var(--ink);
+    display:flex;align-items:flex-end;justify-content:space-between}
+  .head .ttl{font-size:13px;font-weight:700;color:var(--mute);letter-spacing:.14em}
+  .head .nm{font-size:28px;font-weight:900;line-height:1.05;margin-top:2px}
+  .head .nm small{font-size:15px;font-weight:700;color:var(--mute);margin-right:8px}
+  .head .sv{font-size:13px;font-weight:800;color:var(--pass);display:flex;align-items:center;gap:6px}
+  .head .sv i{width:8px;height:8px;border-radius:50%;background:var(--pass)}
+
+  /* 동작마다 한 줄. 지금 줄만 펼쳐진다 */
+  .rows{flex:1;min-height:0;display:flex;flex-direction:column}
+  .r{display:grid;grid-template-columns:30px 1fr 58px;align-items:center;gap:10px;
+    padding:0 16px;height:46px;border-bottom:1px solid var(--rule)}
+  .r .i{font-size:17px;font-weight:700;color:var(--mute)}
+  .r .n{font-size:17px;font-weight:700}
+  .r .v{text-align:right;font-size:22px;font-weight:700}
+  .r.done .v{color:var(--ink)}
+  .r.todo .n,.r.todo .i{color:#A9A294}
+  .r.todo .v{color:#C9C2B2}
+
+  /* 지금 줄 — 펼쳐져서 실수 버튼이 된다 */
+  .open{background:var(--paper-2);border-top:2px solid var(--ink);
+    border-bottom:2px solid var(--ink);padding:14px 16px 16px;flex:1;min-height:0;
+    display:flex;flex-direction:column}
+  .open .top{display:flex;align-items:baseline;justify-content:space-between}
+  .open .step{font-size:13px;font-weight:800;color:var(--stamp);letter-spacing:.1em}
+  .open .name{font-size:30px;font-weight:900;line-height:1.15;margin:6px 0 10px;letter-spacing:-.02em}
+  .marks{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+  .mk{width:38px;height:38px;border:2px solid var(--rule);border-radius:3px;
+    display:flex;align-items:center;justify-content:center}
+  .mk.on{border-color:var(--stamp);background:rgba(200,16,46,.08);
+    animation:press .9s cubic-bezier(.19,1,.22,1) 1}
+  @keyframes press{0%{transform:scale(1.16);opacity:.4}100%{transform:scale(1);opacity:1}}
+  .marks .res{margin-left:auto;font-size:15px;font-weight:800;color:var(--mute)}
+  .marks .res b{font-size:28px;color:var(--ink);margin-left:6px}
+
+  .stampbtn{flex:1;min-height:0;border:3px solid var(--stamp);border-radius:6px;
+    background:var(--stamp);color:var(--paper);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:10px;box-shadow:0 6px 0 #8E0B20}
+  .stampbtn .t{font-size:34px;font-weight:900;letter-spacing:.02em}
+  .stampbtn .s{font-size:14px;font-weight:700;opacity:.9}
+
+  .foot{display:flex;gap:10px;padding:12px 16px 14px;align-items:center}
+  .undo{flex:1;height:52px;border:2px solid var(--ink);background:transparent;
+    border-radius:4px;font-size:16px;font-weight:800;color:var(--ink)}
+  .turn{font-size:13px;font-weight:700;color:var(--mute);text-align:right;line-height:1.3}
+  svg{display:block}
+</style></head>
+<body>
+  <div class="slip">
+
+    <div class="head">
+      <div>
+        <div class="ttl num">음악줄넘기 채점표</div>
+        <div class="nm"><small class="num">1반 7번</small>강지호</div>
+      </div>
+      <div class="sv"><i></i>저장됨</div>
+    </div>
+
+    <div class="rows">
+      <div class="r done"><span class="i num">①</span><span class="n">양발모아뛰기</span><span class="v num">5</span></div>
+      <div class="r done"><span class="i num">②</span><span class="n">번갈아 뛰기</span><span class="v num">4</span></div>
+
+      <div class="open">
+        <div class="top"><span class="step num">3 / 8번째 동작</span></div>
+        <div class="name">③ 번갈아두박자 뛰기</div>
+        <div class="marks">
+          <span class="mk on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+          <span class="mk on"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8102E" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>
+          <span class="mk"></span><span class="mk"></span>
+          <span class="res">지금<b class="num">3</b>점</span>
+        </div>
+        <button class="stampbtn">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#F4F1EA" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          <span class="t">실수</span>
+          <span class="s">한 번 더 찍으면 2점</span>
+        </button>
+      </div>
+
+      <div class="r todo"><span class="i num">④</span><span class="n">십자 뛰기</span><span class="v num">·</span></div>
+      <div class="r todo"><span class="i num">⑤</span><span class="n">가위바위보 뛰기</span><span class="v num">·</span></div>
+      <div class="r todo"><span class="i num">⑥</span><span class="n">사이드 오픈</span><span class="v num">·</span></div>
+      <div class="r todo"><span class="i num">⑦</span><span class="n">사이드 크로스</span><span class="v num">·</span></div>
+      <div class="r todo"><span class="i num">⑧</span><span class="n">크로스 오픈</span><span class="v num">·</span></div>
+    </div>
+
+    <div class="foot">
+      <button class="undo">↩ 되돌리기</button>
+      <div class="turn">옆으로 쓸면 다음 줄<br>끝나면 용지가 넘어갑니다</div>
+    </div>
+
+  </div>
+</body></html>

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>음악줄넘기 채점</title>
-<meta name="theme-color" content="#E9E7F8">
+<meta name="theme-color" content="#F4F6F9">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -16,15 +16,16 @@
 <link rel="icon" href="icon-192-v2.png">
 <style>
   :root{
-    /* 타바타 앱과 같은 디자인 언어 (2026-10-01) — 연보라 바탕 · 남색 글자 · 보라 강조 */
-    --bg:#E9E7F8; --card:#ffffff; --text:#2B3160; --muted:#5E6493; --border:#E4E1F5;
-    --primary:#5B51E8; --primary-dark:#4A40D4; --primary-light:#ECEAFD;
-    --lv1:#E5485A; --lv1-bg:#FDE7EA;
-    --lv2:#C97A00; --lv2-bg:#FFF1DC;
-    --lv3:#A87400; --lv3-bg:#FFF3D1;
-    --lv4:#5B51E8; --lv4-bg:#ECEAFD;
-    --lv5:#2E9E60; --lv5-bg:#E3F6EB;
-    --danger:#E5485A; --ok:#2E9E60; --warn:#C97A00;
+    /* 2026-10-29 새 디자인 — 흰 카드 · 얇은 회선 위에 색이 세 가지 일만 한다:
+       파랑 = 지금 여기(현재 동작·현재 회차), 코랄 = 실수, 민트 = 끝난 것·저장됨. */
+    --bg:#F4F6F9; --card:#ffffff; --text:#161A20; --muted:#79828E; --border:#E8ECF2;
+    --primary:#2F6BF0; --primary-dark:#1F55CC; --primary-light:#EDF3FF;
+    --lv1:#FF5B4A; --lv1-bg:#FFF0EE;
+    --lv2:#F08A24; --lv2-bg:#FFF3E6;
+    --lv3:#C79A00; --lv3-bg:#FFF8DF;
+    --lv4:#2F6BF0; --lv4-bg:#EDF3FF;
+    --lv5:#1AA37A; --lv5-bg:#E7F7F1;
+    --danger:#FF5B4A; --ok:#1AA37A; --warn:#E08600;
     --radius:16px;
   }
   /* touch-action:manipulation — 더블탭 시 화면이 확대되는 iOS Safari 기본 동작을 꺼서,
@@ -43,7 +44,7 @@
   /* ---- login ---- */
   #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
   .login-card{background:var(--card);border-radius:var(--radius);padding:32px 24px;width:100%;max-width:360px;
-    box-shadow:0 8px 24px rgba(91,81,232,.10);border:1px solid var(--border);}
+    box-shadow:0 10px 30px rgba(22,26,32,.07);border:1px solid var(--border);}
   .login-card h1{font-size:22px;margin-bottom:4px;text-align:center;}
   .login-card p.sub{color:var(--muted);font-size:13px;text-align:center;margin:0 0 20px;}
   .field{margin-bottom:14px;}
@@ -232,16 +233,24 @@
     body.focus-live .pair-miss{height:calc(100vh - 122px);min-height:110px;font-size:22px;gap:6px;}
     body.focus-live .pair-undo{min-height:42px;font-size:14px;}
     /* 1명 채점(음악줄넘기 라이브)도 같은 이유로 버튼을 화면만큼 키운다 */
-    body.focus-live .miss-btn{min-height:calc(100vh - 215px);}
+    /* 1명 채점(채점표)은 지금 동작 줄만 남기고 버튼을 화면만큼 키운다 */
+    body.focus-live .sheet-row,
+    body.focus-live .sheet-done,
+    body.focus-live .undo-btn-big{display:none;}
+    body.focus-live .sheet{border:none;border-radius:0;}
+    body.focus-live .sheet-open{border-top:none;padding:6px 10px 8px;background:transparent;}
+    body.focus-live .so-name{font-size:21px;margin:3px 0 7px;}
+    body.focus-live .so-mk{width:32px;height:32px;}
+    body.focus-live .so-hit{min-height:calc(100vh - 150px);font-size:24px;}
   }
 
-  .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 8px 24px rgba(91,81,232,.08);border:1px solid var(--border);}
-  .score-card h2{font-size:18px;margin-bottom:2px;}
-  .score-card .sub{color:var(--muted);font-size:14px;line-height:1.45;margin-bottom:14px;}
+  .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(22,26,32,.06);border:1px solid var(--border);}
+  .score-card h2{font-size:19px;margin-bottom:1px;}
+  .score-card .sub{color:var(--muted);font-size:13px;line-height:1.4;margin-bottom:9px;}
   .move-row{margin-bottom:12px;}
   .move-row .move-name{font-size:13px;font-weight:600;margin-bottom:6px;}
   .lv-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
-  .lv-btn{padding:9px 2px;border-radius:9px;border:1px solid var(--border);background:#F3F1FD;
+  .lv-btn{padding:9px 2px;border-radius:9px;border:1px solid var(--border);background:var(--bg);
     font-size:11px;font-weight:600;color:var(--muted);line-height:1.3;}
   .lv-btn b{display:block;font-size:13px;}
   .lv-btn[data-lv="1"].sel{background:var(--lv1-bg);border-color:var(--lv1);color:var(--lv1);}
@@ -256,35 +265,59 @@
   /* 회차가 늘어나도 세로로 줄바꿈되지 않고 가로 스크롤되도록 한다(반 선택
      줄과 같은 방식) — 그렇지 않으면 재도전을 거듭할수록 이 영역이 계속
      길어져 보기 불편해진다. */
-  .round-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:10px;margin-bottom:12px;align-items:center;}
-  .round-tab{flex:none;min-height:44px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);
-    font-size:13px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .round-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:8px;margin-bottom:9px;align-items:center;}
+  .round-tab{flex:none;min-height:44px;padding:8px 14px;border-radius:999px;border:1px solid var(--border);background:var(--card);
+    font-size:14px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:7px;white-space:nowrap;}
+  .round-tab .round-pts{font-size:16px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;}
   .round-tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .round-tab.active .round-pts{color:#fff;}
   .round-tab:active,.round-add:active{opacity:.6;}
   .round-del{font-size:13px;opacity:.7;padding:4px 6px;border-radius:6px;}
   .round-del:hover{opacity:1;background:rgba(0,0,0,.15);}
-  .round-add{flex:none;min-height:44px;padding:10px 14px;border-radius:10px;border:1px dashed var(--primary);background:none;
-    font-size:13px;font-weight:700;color:var(--primary);white-space:nowrap;}
+  .round-add{flex:none;min-height:44px;padding:8px 14px;border-radius:999px;border:1px dashed #BFD4FF;background:none;
+    font-size:14px;font-weight:700;color:var(--primary);white-space:nowrap;}
 
   /* ---- 라이브 채점 모드 ---- */
-  .mode-toggle{display:flex;gap:6px;margin-bottom:14px;}
+  .mode-toggle{display:flex;gap:6px;margin-bottom:10px;}
   .mode-btn{flex:1;padding:8px;border-radius:9px;border:1px solid var(--border);background:var(--bg);
     font-size:12px;font-weight:700;color:var(--muted);}
   .mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-  .live-step-label{font-size:12px;color:var(--muted);font-weight:700;margin-bottom:4px;}
-  .live-move-name{font-size:22px;font-weight:800;margin-bottom:14px;line-height:1.3;}
+  /* ---- 채점표(음악줄넘기) ----
+     여덟 동작을 여덟 줄로 늘 함께 보여주고, 지금 차례인 줄만 펼쳐져 실수 버튼이 된다.
+     음악이 끝났을 때 무엇이 남았는지 스크롤하지 않고 알 수 있어야 하기 때문. */
   .live-gesture-zone{touch-action:pan-y;user-select:none;-webkit-user-select:none;}
-  .miss-btn{width:100%;min-height:32vh;padding:20px 10px;border-radius:20px;border:none;background:var(--lv1);color:#fff;
-    font-size:26px;font-weight:800;line-height:1.5;}
-  .miss-btn:active{opacity:.85;transform:scale(.98);}
-  .miss-btn-sub{display:block;font-size:13px;font-weight:600;opacity:.9;margin-top:6px;}
-  .miss-btn-sub.hide{visibility:hidden;}
-  .miss-dots{display:flex;gap:8px;justify-content:center;margin:14px 0;}
-  .miss-dot{width:14px;height:14px;border-radius:50%;background:#E4E1F5;border:2px solid var(--border);}
-  .miss-dot.on{background:var(--lv1);border-color:var(--lv1);}
-  .live-score-line{text-align:center;font-size:15px;font-weight:700;margin-bottom:6px;}
-  .live-score-line b{color:var(--primary);font-size:20px;}
-  .swipe-hint{text-align:center;font-size:11px;color:var(--muted);margin-bottom:8px;}
+  .sheet{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--card);}
+  .sheet-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:11px;width:100%;
+    padding:0 14px;height:42px;border:none;border-bottom:1px solid var(--border);background:var(--card);text-align:left;}
+  .sheet-row:last-child{border-bottom:none;}
+  .sheet-row .sr-i{font-size:15px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .sheet-row .sr-n{font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sheet-row .sr-v{font-size:21px;font-weight:800;color:var(--ok);font-variant-numeric:tabular-nums;}
+  .sheet-row.todo .sr-i,.sheet-row.todo .sr-n{color:#B3BAC4;}
+  .sheet-row.todo .sr-v{color:#D4D9E0;font-size:19px;}
+  .sheet-row:active{background:var(--primary-light);}
+  /* 지금 동작 — 줄이 펼쳐져 채점 칸이 된다 */
+  .sheet-open{background:var(--primary-light);border-top:2px solid var(--primary);
+    border-bottom:1px solid var(--border);padding:11px 14px 13px;}
+  .so-step{font-size:13px;font-weight:800;color:var(--primary);letter-spacing:.05em;font-variant-numeric:tabular-nums;}
+  .so-name{font-size:24px;font-weight:800;line-height:1.2;margin:4px 0 9px;letter-spacing:-.02em;}
+  .so-marks{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .so-mk{width:36px;height:36px;border-radius:10px;background:var(--card);border:2px solid #CFE0FF;
+    display:flex;align-items:center;justify-content:center;}
+  .so-mk.on{background:var(--danger);border-color:var(--danger);}
+  .so-res{margin-left:auto;font-size:14px;font-weight:700;color:var(--muted);}
+  .so-res b{font-size:27px;font-weight:800;color:var(--text);margin-left:5px;font-variant-numeric:tabular-nums;}
+  .so-hit{width:100%;min-height:max(146px,19vh);border:none;border-radius:18px;background:var(--danger);color:#fff;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
+    font-size:30px;font-weight:800;box-shadow:0 8px 20px rgba(255,91,74,.24);}
+  .so-hit:active{transform:scale(.99);box-shadow:0 4px 12px rgba(255,91,74,.3);}
+  .so-hit .sub{font-size:14px;font-weight:600;opacity:.95;}
+  .so-hit .sub.hide{visibility:hidden;}
+  .sheet-done{background:var(--lv5-bg);border-top:2px solid var(--ok);padding:16px 14px;text-align:center;}
+  .sheet-done .t{font-size:21px;font-weight:800;color:var(--ok);}
+  .sheet-done .s{font-size:14px;color:var(--muted);font-weight:600;margin-top:4px;}
+  .swipe-hint{text-align:center;font-size:13px;color:var(--muted);margin:11px 0 2px;font-weight:600;}
+  .swipe-hint b{color:var(--primary);}
   /* 데스크톱은 터치 스와이프가 없어 이동 수단이 없어지므로, 이전/다음 동작
      버튼을 데스크톱에서만 보여준다(모바일은 스와이프+실수 버튼 자동진행). */
   .desktop-move-nav{display:none;}
@@ -295,16 +328,17 @@
       background:#fff;font-size:14px;font-weight:700;color:var(--text);}
     .desktop-move-nav button:disabled{opacity:.4;}
   }
-  .undo-btn-big{width:100%;min-height:96px;padding:20px;border-radius:18px;border:3px solid var(--warn);background:var(--lv2-bg);
-    color:var(--warn);font-size:22px;font-weight:800;margin-top:2px;}
-  .undo-btn-big:active{background:var(--warn);color:#fff;}
-  .undo-btn-big:disabled{opacity:.35;border-color:var(--border);background:var(--bg);color:var(--muted);}
+  .undo-btn-big{width:100%;min-height:54px;padding:12px;border-radius:14px;border:1.5px solid var(--border);
+    background:var(--card);color:var(--text);font-size:16px;font-weight:700;margin-top:10px;
+    display:flex;align-items:center;justify-content:center;gap:8px;}
+  .undo-btn-big:active{background:var(--bg);}
+  .undo-btn-big:disabled{opacity:.4;}
   .move-nav{display:flex;gap:8px;margin-top:14px;}
   .move-nav button{flex:1;padding:13px;border-radius:10px;border:1px solid var(--border);background:#fff;font-size:14px;font-weight:700;}
   .move-nav button.primary{background:var(--primary);color:#fff;border-color:var(--primary);}
   .move-nav button:disabled{opacity:.4;}
-  .live-wrap-title{font-size:16px;font-weight:800;margin-bottom:14px;text-align:center;}
-  .live-done-hint{font-size:12px;color:var(--muted);text-align:center;margin:-8px 0 16px;}
+  .live-wrap-title{font-size:19px;font-weight:800;margin-bottom:12px;text-align:center;}
+  .live-done-hint{font-size:14px;color:var(--muted);text-align:center;margin:-6px 0 14px;}
   .next-student-btn{width:100%;padding:18px;border-radius:14px;border:none;background:var(--ok);color:#fff;
     font-size:16px;font-weight:800;margin-top:16px;}
   .next-student-btn:disabled{opacity:.4;}
@@ -487,6 +521,7 @@
     <!-- 명단 -->
     <section id="tab-roster" class="hidden">
       <a class="help-link" href="사용법.html" target="_blank" rel="noopener">📘 앱 사용법 보기 (인쇄 가능)</a>
+      <a class="help-link" href="변경기록.html" target="_blank" rel="noopener">🗒️ 변경 기록 — 무엇을 왜 바꿨는지</a>
       <p class="sub-note">보강 선생님 계정으로 로그인했습니다. 채점은 모두 하실 수 있고, 되돌릴 수 없는 초기화 기능만 숨겨져 있습니다.</p>
       <details class="roster-card" open>
         <summary class="roster-title">📋 표 전체 일괄 등록</summary>
@@ -1645,37 +1680,54 @@ function wireDetailBody(cls, no, rec, roundNo, moves){
   });
 }
 
-/* ---- 라이브 채점: 동작 하나씩, "실수" 탭만으로 채점 ---- */
+/* ---- 채점표: 여덟 동작이 여덟 줄, 지금 차례인 줄만 펼쳐진다 ----
+   한 동작만 화면에 띄우던 예전 방식은 음악이 끝났을 때 "무엇이 남았나"를 알 수 없었다.
+   줄을 눌러 그 동작으로 바로 갈 수 있고, 옆으로 쓸면 다음 줄로 내려간다. */
+const ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const ICON_X_BIG = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const ICON_UNDO = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>';
+
 function renderLiveBody(moves){
-  if (State.liveStep < MOVES.length){
-    const i = State.liveStep;
-    const level = moves ? moves[i] : null;
-    const clicks = clicksFromLevel(level);
-    const liveScore = level || 5;
-    const atFloor = clicks >= 4;
-    const dots = [0,1,2,3].map(d => `<span class="miss-dot ${d < clicks ? 'on':''}"></span>`).join("");
-    return `
-      <div class="live-step-label">${i+1}/${MOVES.length}번째 동작</div>
-      <div class="live-move-name">${esc(MOVES[i])}</div>
-      <div class="miss-dots">${dots}</div>
-      <div class="live-score-line">실수 ${clicks}회 → <b>${liveScore}점</b></div>
-      <p class="swipe-hint">💡 화면을 좌우로 스와이프하면 다음/이전 동작으로 이동합니다</p>
-      <div class="desktop-move-nav">
-        <button id="btnPrevMoveDesktop" ${i<=0?"disabled":""}>◀ 이전 동작</button>
-        <button id="btnNextMoveDesktop">${i<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
-      </div>
-      <div class="live-gesture-zone" id="liveGestureZone">
-        <button class="miss-btn" id="btnMiss">❌ 실수<span class="miss-btn-sub ${atFloor ? '' : 'hide'}">한 번 더 탭하면 다음 동작으로</span></button>
-      </div>
-      <button class="undo-btn-big" id="btnUndo" ${clicks<=0?"disabled":""}>↩️ 잘못 눌렀다면 되돌리기</button>`;
+  moves = moves || {};
+  const cur = State.liveStep;
+  const curLevel = moves[cur];
+  const curClicks = clicksFromLevel(curLevel);
+  const atFloor = curClicks >= 4;
+  const done = cur >= MOVES.length;
+
+  let rows = "";
+  MOVES.forEach((name, i) => {
+    if (i === cur){
+      rows += `<div class="sheet-open" id="liveOpenRow">
+        <div class="so-step">${i+1} / ${MOVES.length}번째 동작</div>
+        <div class="so-name">${esc(name)}</div>
+        <div class="so-marks">
+          ${[0,1,2,3].map(d => `<span class="so-mk ${d < curClicks ? 'on':''}">${d < curClicks ? ICON_X : ''}</span>`).join("")}
+          <span class="so-res">지금<b>${curLevel || 5}</b>점</span>
+        </div>
+        <button class="so-hit" id="btnMiss">${ICON_X_BIG}실수<span class="sub ${atFloor ? '' : 'hide'}">한 번 더 누르면 다음 동작으로</span></button>
+      </div>`;
+      return;
+    }
+    const level = moves[i];
+    rows += `<button class="sheet-row ${level ? '' : 'todo'}" data-go="${i}">
+      <span class="sr-n">${esc(name)}</span>
+      <span class="sr-v">${level || "·"}</span>
+    </button>`;
+  });
+  if (done){
+    rows += `<div class="sheet-done"><div class="t">${MOVES.length}개 동작 모두 채점했습니다</div>
+      <div class="s">고칠 동작이 있으면 그 줄을 누르세요</div></div>`;
   }
-  // liveStep === MOVES.length : 전체 동작 종료
-  return `<div class="live-wrap-title">✅ ${MOVES.length}개 동작 완료!</div>
-    <p class="live-done-hint">과제수행 가산점은 아래(또는 학생 목록)에서 바로 체크할 수 있어요.</p>
-    <div class="move-nav">
-      <button id="btnPrevMove">◀ 동작 다시 보기</button>
+
+  return `<div class="live-gesture-zone" id="liveGestureZone"><div class="sheet">${rows}</div></div>
+    <button class="undo-btn-big" id="btnUndo" ${(done || curClicks <= 0) ? "disabled" : ""}>${ICON_UNDO} 잘못 눌렀다면 되돌리기</button>
+    <p class="swipe-hint">💡 옆으로 쓸면 <b>다음 동작</b> · 줄을 누르면 그 동작으로</p>
+    <div class="desktop-move-nav">
+      <button id="btnPrevMoveDesktop" ${cur<=0?"disabled":""}>◀ 이전 동작</button>
+      <button id="btnNextMoveDesktop" ${done?"disabled":""}>${cur<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
     </div>
-    <button class="next-student-btn" id="btnNextStudentLive">🎉 이 학생 완료 → 다음 학생 ▶</button>`;
+    ${done ? '<button class="next-student-btn" id="btnNextStudentLive">이 학생 완료 → 다음 학생 ▶</button>' : ''}`;
 }
 // 좌우 스와이프 감지: 세로 스크롤은 방해하지 않도록 가로 이동이 세로 이동보다
 // 뚜렷하게 클 때만(60px 이상) 스와이프로 인식한다.
@@ -1699,49 +1751,57 @@ function attachSwipeNav(el, onSwipeLeft, onSwipeRight){
 function wireLiveBody(cls, no, rec, roundNo, moves){
   const card = document.getElementById("scoreCard");
   const count = getRoster(cls).count || 30;
+  const i = State.liveStep;
+  const done = i >= MOVES.length;
 
-  if (State.liveStep < MOVES.length){
-    const i = State.liveStep;
-    // 실수/되돌리기를 연타해도 화면을 다시 그리지 않으므로(saveMoveQuiet),
-    // 클로저로 캡처된 moves는 금방 낡은 값이 된다 — 매번 State에서 최신값을
-    // 직접 읽는다.
-    const currentLevel = () => getCurrentLiveLevel(cls, no, roundNo, i);
-    const goNext = () => {
-      if (currentLevel() == null){
-        saveMoveQuiet(cls, no, roundNo, i, 5); // 탭 없음 = 클리어로 확정 저장
-      }
-      State.liveStep = i + 1;
-      renderScoreCard();
-    };
-    const goPrev = () => {
-      if (i > 0){ State.liveStep = i - 1; renderScoreCard(); }
-    };
-    card.querySelector("#btnMiss").addEventListener("click", () => {
-      const curClicks = clicksFromLevel(currentLevel());
-      if (curClicks >= 4){
-        // 이미 최저점(1점)에 도달 — 한 번 더 탭하면 다음 동작으로 자동 진행
-        goNext();
-        return;
-      }
-      saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(curClicks + 1));
-    });
-    card.querySelector("#btnUndo").addEventListener("click", () => {
-      const clicks = Math.max(0, clicksFromLevel(currentLevel()) - 1);
-      saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(clicks));
-    });
-    attachSwipeNav(card.querySelector("#liveGestureZone"), goNext, goPrev);
-    const prevDesktopBtn = card.querySelector("#btnPrevMoveDesktop");
-    if (prevDesktopBtn) prevDesktopBtn.addEventListener("click", goPrev);
-    const nextDesktopBtn = card.querySelector("#btnNextMoveDesktop");
-    if (nextDesktopBtn) nextDesktopBtn.addEventListener("click", goNext);
-  } else {
-    card.querySelector("#btnPrevMove").addEventListener("click", () => {
-      State.liveStep = MOVES.length - 1; renderScoreCard();
-    });
-    const nextStuBtn = card.querySelector("#btnNextStudentLive");
+  // 실수/되돌리기를 연타해도 화면을 다시 그리지 않으므로(saveMoveQuiet),
+  // 클로저로 캡처된 moves는 금방 낡은 값이 된다 — 매번 State에서 최신값을 직접 읽는다.
+  const currentLevel = () => getCurrentLiveLevel(cls, no, roundNo, i);
+  const goTo = (step) => {
+    State.liveStep = Math.max(0, Math.min(MOVES.length, step));
+    renderScoreCard();
+    // 줄이 길어 펼쳐진 줄이 화면 밖으로 밀릴 수 있다 — 보이지 않을 때만 끌어온다.
+    const open = document.getElementById("liveOpenRow");
+    if (open){
+      const r = open.getBoundingClientRect();
+      if (r.top < 0 || r.bottom > window.innerHeight) open.scrollIntoView({block:"center", behavior:"smooth"});
+    }
+  };
+  const goNext = () => {
+    if (done) return;
+    if (currentLevel() == null) saveMoveQuiet(cls, no, roundNo, i, 5); // 탭 없음 = 클리어로 확정 저장
+    goTo(i + 1);
+  };
+  const goPrev = () => { if (i > 0) goTo(i - 1); };
+
+  const missBtn = card.querySelector("#btnMiss");
+  if (missBtn) missBtn.addEventListener("click", () => {
+    const curClicks = clicksFromLevel(currentLevel());
+    if (curClicks >= 4){
+      goNext();   // 이미 최저점(1점) — 한 번 더 누르면 다음 동작으로
+      return;
+    }
+    saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(curClicks + 1));
+  });
+  const undoBtn = card.querySelector("#btnUndo");
+  if (undoBtn) undoBtn.addEventListener("click", () => {
+    const clicks = Math.max(0, clicksFromLevel(currentLevel()) - 1);
+    saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(clicks));
+  });
+  card.querySelectorAll(".sheet-row[data-go]").forEach(row => {
+    row.addEventListener("click", () => goTo(Number(row.dataset.go)));
+  });
+  attachSwipeNav(card.querySelector("#liveGestureZone"), goNext, goPrev);
+  const prevDesktopBtn = card.querySelector("#btnPrevMoveDesktop");
+  if (prevDesktopBtn) prevDesktopBtn.addEventListener("click", goPrev);
+  const nextDesktopBtn = card.querySelector("#btnNextMoveDesktop");
+  if (nextDesktopBtn) nextDesktopBtn.addEventListener("click", goNext);
+
+  const nextStuBtn = card.querySelector("#btnNextStudentLive");
+  if (nextStuBtn){
     if (no >= count){
       nextStuBtn.disabled = true;
-      nextStuBtn.textContent = "🎉 이 반의 마지막 학생입니다";
+      nextStuBtn.textContent = "이 반의 마지막 학생입니다";
     } else {
       nextStuBtn.addEventListener("click", () => {
         State.scoreNo = no + 1;
@@ -1825,11 +1885,17 @@ function refreshLiveDisplay(cls, no, roundNo, moveIdx){
   const liveScore = level || 5;
   const atFloor = clicks >= 4;
 
-  const dotsEl = card.querySelector(".miss-dots");
-  if (dotsEl) dotsEl.innerHTML = [0,1,2,3].map(d => `<span class="miss-dot ${d < clicks ? 'on':''}"></span>`).join("");
-  const scoreLineEl = card.querySelector(".live-score-line");
-  if (scoreLineEl) scoreLineEl.innerHTML = `실수 ${clicks}회 → <b>${liveScore}점</b>`;
-  const subEl = card.querySelector(".miss-btn-sub");
+  const marksEl = card.querySelector(".so-marks");
+  if (marksEl){
+    marksEl.querySelectorAll(".so-mk").forEach((mk, d) => {
+      const on = d < clicks;
+      mk.classList.toggle("on", on);
+      mk.innerHTML = on ? ICON_X : "";
+    });
+    const resEl = marksEl.querySelector(".so-res");
+    if (resEl) resEl.innerHTML = `지금<b>${liveScore}</b>점`;
+  }
+  const subEl = card.querySelector(".so-hit .sub");
   if (subEl) subEl.classList.toggle("hide", !atFloor);
   const undoBtn = document.getElementById("btnUndo");
   if (undoBtn) undoBtn.disabled = clicks <= 0;

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>형광 테이프 — 채점 중</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --ground:#F7F7F4; --paper:#FFFFFF; --ink:#141414; --mute:#767472;
+    --lime:#D8F23C; --coral:#FF6B5A; --sky:#45C0FF; --rule:#E6E5E0;
+  }
+  html,body{width:390px;height:844px;overflow:hidden}
+  body{background:var(--ground);color:var(--ink);font-family:"Noto Sans KR",sans-serif;
+    font-variant-numeric:tabular-nums;display:flex;flex-direction:column}
+  .num{font-family:"Barlow Condensed","Noto Sans KR",sans-serif}
+
+  .head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 10px}
+  .who{display:flex;align-items:baseline;gap:9px}
+  .who .cls{font-size:15px;font-weight:700;color:var(--mute)}
+  .who .nm{font-size:26px;font-weight:900;letter-spacing:-.02em}
+  .save{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#139A5B}
+  .save i{width:8px;height:8px;border-radius:50%;background:#139A5B}
+
+  /* 여덟 조각 테이프 — 지나온 조각은 라임으로 붙어 있다 */
+  .tape{display:flex;gap:4px;padding:4px 18px 16px}
+  .t{flex:1;height:46px;border-radius:3px;background:#EAE9E4;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    transform:rotate(-.6deg)}
+  .t:nth-child(even){transform:rotate(.7deg)}
+  .t .i{font-size:11px;font-weight:700;color:#A5A39D}
+  .t .v{font-size:19px;font-weight:900;line-height:1;color:#BFBDB7}
+  .t.done{background:var(--lime)}
+  .t.done .i{color:#5D6B00} .t.done .v{color:var(--ink)}
+  .t.now{background:var(--coral);box-shadow:0 5px 14px rgba(255,107,90,.3)}
+  .t.now .i{color:rgba(255,255,255,.85)} .t.now .v{color:#fff}
+
+  .now{padding:0 18px}
+  .now .step{display:inline-block;background:var(--ink);color:var(--lime);
+    font-size:13px;font-weight:700;padding:4px 10px;border-radius:3px;letter-spacing:.04em}
+  .now .name{font-size:33px;font-weight:900;line-height:1.15;margin-top:10px;letter-spacing:-.03em}
+
+  .score{display:flex;align-items:center;gap:8px;margin:16px 18px 0}
+  .chip{background:var(--paper);border:2px solid var(--ink);border-radius:999px;
+    padding:9px 16px;font-size:16px;font-weight:700;display:flex;align-items:baseline;gap:7px}
+  .chip b{font-size:24px;font-weight:900}
+  .chip.hit{background:var(--coral);border-color:var(--coral);color:#fff}
+  .dots{display:flex;gap:7px;margin-left:auto}
+  .dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--ink);background:transparent}
+  .dots i.on{background:var(--coral);border-color:var(--coral)}
+
+  .miss{flex:1;min-height:0;margin:16px 18px 0;border-radius:26px;border:3px solid var(--ink);
+    background:var(--lime);color:var(--ink);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:10px}
+  .miss .t2{font-size:40px;font-weight:900;letter-spacing:-.02em}
+  .miss .s{font-size:15px;font-weight:700;color:#5D6B00}
+
+  .row{display:flex;gap:10px;padding:12px 18px 8px}
+  .undo{flex:1;height:56px;border-radius:999px;background:var(--paper);border:2px solid var(--ink);
+    color:var(--ink);font-size:16px;font-weight:700;display:flex;align-items:center;
+    justify-content:center;gap:8px}
+  .hint{text-align:center;font-size:13px;font-weight:700;color:var(--mute);padding-bottom:16px}
+  .hint b{color:var(--ink)}
+  svg{display:block}
+</style></head>
+<body>
+
+  <div class="head">
+    <div class="who"><span class="cls num">1반 7번</span><span class="nm">강지호</span></div>
+    <div class="save"><i></i>저장됨</div>
+  </div>
+
+  <div class="tape">
+    <div class="t done"><span class="i num">1</span><span class="v num">5</span></div>
+    <div class="t done"><span class="i num">2</span><span class="v num">4</span></div>
+    <div class="t now"><span class="i num">3</span><span class="v num">3</span></div>
+    <div class="t"><span class="i num">4</span><span class="v num">·</span></div>
+    <div class="t"><span class="i num">5</span><span class="v num">·</span></div>
+    <div class="t"><span class="i num">6</span><span class="v num">·</span></div>
+    <div class="t"><span class="i num">7</span><span class="v num">·</span></div>
+    <div class="t"><span class="i num">8</span><span class="v num">·</span></div>
+  </div>
+
+  <div class="now">
+    <span class="step num">3 / 8번째 동작</span>
+    <div class="name">③ 번갈아<br>두박자 뛰기</div>
+  </div>
+
+  <div class="score">
+    <span class="chip hit">실수 <b class="num">2</b>회</span>
+    <span class="chip">지금 <b class="num">3</b>점</span>
+    <span class="dots"><i class="on"></i><i class="on"></i><i></i><i></i></span>
+  </div>
+
+  <button class="miss">
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    <span class="t2">실수</span>
+    <span class="s">한 번 더 누르면 2점</span>
+  </button>
+
+  <div class="row">
+    <button class="undo">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#141414" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+      되돌리기
+    </button>
+  </div>
+  <div class="hint">옆으로 쓸면 <b>다음 동작</b> · 눕히면 버튼만 크게</div>
+
+</body></html>

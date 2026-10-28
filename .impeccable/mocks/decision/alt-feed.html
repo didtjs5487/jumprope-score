@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>한 화면 한 동작 — 채점 중</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--ink:#0B0B0C; --field:#E8402F; --white:#fff; --ok:#1E9E5A; --amber:#F5A623}
+  html,body{width:390px;height:844px;overflow:hidden}
+  body{background:var(--ink);color:var(--white);font-family:"Noto Sans KR",sans-serif;
+    font-variant-numeric:tabular-nums}
+  .num{font-family:"Barlow Condensed","Noto Sans KR",sans-serif}
+
+  /* 한 동작이 화면 전체를 가진다. 색면은 동작마다 다르다 */
+  .item{position:relative;width:390px;height:844px;overflow:hidden;
+    background:radial-gradient(130% 85% at 22% 12%, #FF6A4D 0%, #E8402F 46%, #B6251A 100%)}
+
+  /* 위 — 누구를, 몇 번째를, 저장은 됐는지 */
+  .top{position:absolute;top:0;left:0;right:0;padding:16px 18px;display:flex;
+    align-items:center;justify-content:space-between;
+    background:linear-gradient(180deg,rgba(0,0,0,.42),transparent)}
+  .who{display:flex;align-items:baseline;gap:9px}
+  .who .cls{font-size:15px;font-weight:700;opacity:.85}
+  .who .nm{font-size:24px;font-weight:900}
+  .save{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700}
+  .save i{width:9px;height:9px;border-radius:50%;background:#7CFFB2}
+
+  /* 진행 — 여덟 칸 막대. 지금 칸만 꽉 찬다 */
+  .bars{position:absolute;top:58px;left:18px;right:18px;display:grid;
+    grid-template-columns:repeat(8,1fr);gap:5px}
+  .bars span{height:5px;border-radius:3px;background:rgba(255,255,255,.3)}
+  .bars span.done{background:rgba(255,255,255,.75)}
+  .bars span.now{background:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+
+  /* 가운데는 비운다 — 엄지가 지나는 자리 */
+  .caption{position:absolute;left:18px;right:104px;bottom:122px}
+  .caption .step{font-size:15px;font-weight:800;letter-spacing:.06em;opacity:.9}
+  .caption .name{font-size:40px;font-weight:900;line-height:1.1;margin-top:8px;letter-spacing:-.03em}
+  .caption .sub{margin-top:12px;font-size:16px;font-weight:700;opacity:.92}
+
+  /* 오른쪽 세로 레일 — 엄지가 닿는 자리에 조작이 쌓인다 */
+  .rail{position:absolute;right:14px;bottom:108px;display:flex;flex-direction:column;
+    align-items:center;gap:20px}
+  .act{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .act .btn{width:74px;height:74px;border-radius:50%;border:none;background:rgba(0,0,0,.26);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+  .act .btn.on{background:#fff;box-shadow:0 8px 22px rgba(0,0,0,.3)}
+  .act .cap{font-size:14px;font-weight:800;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .act .cnt{font-size:27px;font-weight:900;line-height:1}
+
+  /* 아래 — 다음은 한 번 넘기면 나온다 */
+  .next{position:absolute;left:0;right:0;bottom:0;padding:16px 18px 20px;
+    background:linear-gradient(0deg,rgba(0,0,0,.5),transparent);
+    display:flex;align-items:center;justify-content:space-between}
+  .next .lab{font-size:15px;font-weight:800;opacity:.95}
+  .next .peek{font-size:14px;font-weight:700;opacity:.75}
+  .chev{display:flex;align-items:center;gap:6px;animation:nudge 1.9s ease-in-out infinite}
+  @keyframes nudge{0%,100%{transform:translateX(0)}50%{transform:translateX(-5px)}}
+  svg{display:block}
+</style></head>
+<body>
+
+  <div class="item">
+    <div class="top">
+      <div class="who"><span class="cls num">1반 7번</span><span class="nm">강지호</span></div>
+      <div class="save"><i></i>저장됨</div>
+    </div>
+
+    <div class="bars">
+      <span class="done"></span><span class="done"></span><span class="now"></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="caption">
+      <div class="step num">3 / 8번째 동작</div>
+      <div class="name">③ 번갈아<br>두박자 뛰기</div>
+      <div class="sub">실수 <span class="num">2</span>회 · 지금 <span class="num">3</span>점</div>
+    </div>
+
+    <div class="rail">
+      <div class="act">
+        <button class="btn on">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#E8402F" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <span class="cnt num">2</span><span class="cap">실수</span>
+      </div>
+      <div class="act">
+        <button class="btn">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+        </button>
+        <span class="cap">되돌리기</span>
+      </div>
+      <div class="act">
+        <button class="btn"><span class="cnt num" style="color:#fff">3</span></button>
+        <span class="cap">점수</span>
+      </div>
+    </div>
+
+    <div class="next">
+      <span class="lab">다음 ④ 십자 뛰기</span>
+      <span class="chev"><span class="peek">넘기기</span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </span>
+    </div>
+  </div>
+
+</body></html>

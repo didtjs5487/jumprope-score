@@ -1,0 +1,104 @@
+{
+  "title": "음악줄넘기 채점 — 새 디자인 방향 고르기",
+  "question": "더 가벼운 쪽으로 다시 뽑았습니다. 밝은 바탕 · 얇은 선 · 색은 꼭 필요한 곳에만 — 세 가지 중에 골라 주세요.",
+  "options": [
+    {
+      "id": "light-court",
+      "kind": "grounded",
+      "label": "코트 라인",
+      "kicker": "가볍게 · 1",
+      "lineage": "체육관 바닥에 그어진 코트 라인",
+      "thesis": "선생님이 서 있는 바닥을 그대로 화면에 가져온다. 여덟 동작이 코트 라인 위의 눈금이 되고, 지금 동작만 센터서클처럼 커진다.",
+      "palette": [
+        "#FBFAF7",
+        "#FFFFFF",
+        "#1F5FD0",
+        "#E8402F",
+        "#1E9E5A"
+      ],
+      "materials": [
+        "밝은 바닥",
+        "코트 라인 테이프"
+      ],
+      "viewport": "맨 위에 파란 라인이 지나가고 지나온 눈금에 점수가 적힌다. 실수 버튼은 흰 바탕에 코랄 링.",
+      "motion": "실수를 누르면 링이 코랄로 꽉 찼다가 180ms 만에 흰색으로 돌아온다. 동작을 넘기면 파란 라인이 다음 눈금까지 자란다.",
+      "risk": "흰 바탕이라 득점판보다 화면이 조용하다. 멀리서 보는 맛은 덜하다.",
+      "html": ".impeccable/mocks/decision/light-court.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "light-beat",
+      "kind": "grounded",
+      "label": "16박자 마디",
+      "kicker": "가볍게 · 2",
+      "lineage": "악보의 마디와 박자 눈금",
+      "thesis": "이 수업의 단위는 16박자다. 여덟 동작을 여덟 마디로 늘어놓고, 끝난 마디에는 점수를 적어 둔다.",
+      "palette": [
+        "#F6F7F9",
+        "#FFFFFF",
+        "#00B386",
+        "#FF5B4A",
+        "#12161C"
+      ],
+      "materials": [
+        "흰 악보지",
+        "가는 괘선"
+      ],
+      "viewport": "위에 여덟 마디 칸, 아래 16박자 눈금과 실수 네 칸 계기, 그 아래가 실수 버튼.",
+      "motion": "실수를 누르면 계기 한 칸이 코랄로 채워진다. 마디를 넘기면 초록 밑줄이 옆 마디로 미끄러진다.",
+      "risk": "가장 차분하다. 수업용으로 안전하지만 첫인상은 덜 강하다.",
+      "html": ".impeccable/mocks/decision/light-beat.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "light-tape",
+      "kind": "grounded",
+      "label": "형광 테이프",
+      "kicker": "가볍게 · 3",
+      "lineage": "체육 수업에서 바닥에 붙이는 형광 마킹 테이프",
+      "thesis": "여덟 동작이 여덟 조각 테이프다. 지나온 조각은 라임으로 붙고, 지금 조각만 코랄이다.",
+      "palette": [
+        "#F7F7F4",
+        "#D8F23C",
+        "#FF6B5A",
+        "#141414"
+      ],
+      "materials": [
+        "형광 테이프",
+        "두꺼운 검은 테두리"
+      ],
+      "viewport": "살짝 비뚤게 붙은 테이프 여덟 조각, 검은 라벨, 큰 라임 버튼.",
+      "motion": "실수를 누르면 테이프가 눌렸다 펴진다(90ms). 동작을 넘기면 다음 조각이 탁 붙는다.",
+      "risk": "제일 발랄한 대신 평가 도구치고 가볍게 보일 수 있다. 큰 버튼 색(라임)은 의미가 아니라 테이프 색이다.",
+      "html": ".impeccable/mocks/decision/light-tape.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": {
+    "registers": [
+      "safer",
+      "bolder"
+    ]
+  },
+  "buildPath": {
+    "value": "code"
+  },
+  "canon": true,
+  "canonCard": {
+    "kind": "canon",
+    "label": "요즘 앱 표준",
+    "thesis": "흰 바탕에 카드와 파란 버튼 — 이 분야가 늘 내놓는 화면을 흠 없이 만든 것.",
+    "palette": [
+      "#FFFFFF",
+      "#111827",
+      "#2563EB"
+    ],
+    "materials": [
+      "깔끔한 격자",
+      "둥근 카드"
+    ],
+    "viewport": "익숙한 배치 그대로, 대신 간격과 글자만 제대로 잡은 화면.",
+    "risk": "다른 앱과 구별되지 않는다 — 그게 이 선택의 성격이다."
+  },
+  "steer": true
+}
