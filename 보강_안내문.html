@@ -4,17 +4,17 @@
 <style>
   @page{size:A4 portrait; margin:9mm}
   *{box-sizing:border-box}
-  body{margin:0; font-family:"Noto Sans KR","Malgun Gothic",sans-serif; color:#2B3160; word-break:keep-all}
-  .tip{padding:6px 10px; background:#F3F1FD; font-size:11pt}
-  h1{margin:0 0 1.5mm; font-size:19pt; color:#5B51E8}
-  .top{display:flex; gap:5mm; align-items:center; border:1.5px solid #D9D5F5; border-radius:4mm; padding:2.5mm 4.5mm; margin-bottom:2.5mm}
+  body{margin:0; font-family:"Noto Sans KR","Malgun Gothic",sans-serif; color:#161A20; word-break:keep-all}
+  .tip{padding:6px 10px; background:#F4F6F9; font-size:11pt}
+  h1{margin:0 0 1.5mm; font-size:19pt; color:#2F6BF0}
+  .top{display:flex; gap:5mm; align-items:center; border:1.5px solid #D5E1FA; border-radius:4mm; padding:2.5mm 4.5mm; margin-bottom:2.5mm}
   .top img{width:23mm; height:23mm; flex:none}
-  .top p{margin:0; font-size:11.5pt; line-height:1.45} .top b{color:#5B51E8}
-  .box{border:1.5px solid #D9D5F5; border-radius:4mm; padding:2mm 4.5mm; margin-bottom:2mm}
-  h2{margin:0 0 1mm; font-size:13.5pt; color:#5B51E8}
+  .top p{margin:0; font-size:11.5pt; line-height:1.45} .top b{color:#2F6BF0}
+  .box{border:1.5px solid #D5E1FA; border-radius:4mm; padding:2mm 4.5mm; margin-bottom:2mm}
+  h2{margin:0 0 1mm; font-size:13.5pt; color:#2F6BF0}
   ol,ul{margin:0; padding-left:5.5mm; font-size:11.5pt; line-height:1.33}
   li{margin-bottom:.5mm}
-  .k{display:inline-block; padding:0 2mm; border-radius:2mm; background:#ECEAFD; font-weight:800}
+  .k{display:inline-block; padding:0 2mm; border-radius:2mm; background:#EDF3FF; font-weight:800}
   .warn{background:#FFF6E5; border-color:#F0D9A8}
   .pw{font-size:11pt; margin-top:1.5mm; margin-bottom:0}
   .cols{display:flex; gap:4mm} .cols>div{flex:1}
@@ -44,10 +44,10 @@
 <div class="box">
   <h2>2. 채점하기 — ✏️ 채점 탭</h2>
   <ol>
-    <li>맨 위에서 <span class="k">👤 1명 채점</span> 또는 <span class="k">👥 2명 동시 채점</span>을 고르고, <b>오늘 수업하는 반</b>과 <b>학생 번호</b>를 누릅니다.</li>
-    <li>가운데 버튼 중 <span class="k">🎯 음악줄넘기</span>를 누르면 평가 화면입니다. 동작 이름이 하나씩 크게 나옵니다.</li>
-    <li>학생을 보면서 <b>실수할 때마다 ❌ 실수 버튼만</b> 누릅니다. (0회 5점 · 1회 4점 · 2회 3점 · 3회 2점 · 4회 이상 1점)</li>
-    <li>한 동작이 끝나면 <b>화면을 왼쪽으로 쓸어</b> 다음 동작으로 넘깁니다. 실수가 없었으면 그냥 넘기면 5점으로 저장됩니다.</li>
+    <li>맨 위에서 <span class="k">1명 채점</span> 또는 <span class="k">2명 동시 채점</span>을 고르고, <b>오늘 수업하는 반</b>과 <b>학생 번호</b>를 누릅니다.</li>
+    <li>가운데 버튼 중 <span class="k">음악줄넘기</span>를 누르면 평가 화면(채점표)입니다. 여덟 동작이 줄로 보이고, <b>지금 차례인 줄만 펼쳐집니다</b>.</li>
+    <li>학생을 보면서 <b>실수할 때마다 실수 버튼만</b> 누릅니다. (0회 5점 · 1회 4점 · 2회 3점 · 3회 2점 · 4회 이상 1점)</li>
+    <li>한 동작이 끝나면 <b>화면을 왼쪽으로 쓸어</b> 다음 동작으로 넘깁니다. 돌아가거나 건너뛰려면 <b>아래 목록의 줄을 누르세요</b>. 실수가 없었으면 그냥 넘기면 5점으로 저장됩니다.</li>
     <li>잘못 눌렀으면 <span class="k">↩️ 되돌리기</span>. 8개 동작이 끝나면 완료 화면이 나옵니다.</li>
     <li>한 번 더 하겠다는 학생은 <span class="k">➕ 재도전</span>을 눌러 주세요. <b>가장 잘한 회차가 점수로 반영</b>됩니다.</li>
   </ol>
@@ -72,7 +72,7 @@
       <span class="gr" style="background:#2E6BE6"></span>E,
       <b>흰 칸은 아직 평가를 보지 않은 학생</b>입니다.</li>
     <li>흐린 칸에 <b>전출·자퇴</b> 등이 적힌 학생은 학적변동이라 채점되지 않습니다. 그대로 두시면 됩니다.</li>
-    <li><span class="k">🏆 개인진도표</span>는 가산점용입니다. 연습·테스트를 해 보셨다면 통과한 동작을 눌러 주셔도 좋고, 부담되시면 <b>음악줄넘기 채점만</b> 하셔도 됩니다.</li>
+    <li><span class="k">개인진도표</span>는 가산점용입니다. 연습·테스트를 해 보셨다면 통과한 동작을 눌러 주셔도 좋고, 부담되시면 <b>음악줄넘기 채점만</b> 하셔도 됩니다.</li>
   </ul>
 </div>
 

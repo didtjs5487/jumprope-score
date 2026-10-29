@@ -67,6 +67,19 @@
     padding:12px 14px;margin-bottom:10px;font-size:15px;font-weight:600;color:var(--warn);}
   body.sub-teacher .sub-note{display:block;}
 
+  /* ---- 선 아이콘 (이모지 대신) ---- */
+  .ic{width:1.2em;height:1.2em;vertical-align:-.22em;margin-right:.4em;flex:none;
+    fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .tab-btn .ic,.mode-btn .ic{margin-right:.35em;}
+  .pair-hint .ic,.swipe-hint .ic{margin-right:.3em;color:var(--primary);}
+  .login-logo{display:block;margin:0 auto 10px;border-radius:19px;box-shadow:0 8px 20px rgba(22,26,32,.16);}
+  .off-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--danger);margin-right:7px;}
+  .best-star{display:inline-flex;margin-left:3px;color:#F2A100;}
+  .best-star .ic{margin:0;width:1.05em;height:1.05em;}
+  .round-tab.active .best-star{color:#FFE08A;}
+  .status-block .status-icon{color:var(--danger);}
+  .status-block .status-icon .ic{width:40px;height:40px;margin:0;}
+
   /* ---- app shell ---- */
   #app header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);}
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:8px;}
@@ -193,10 +206,10 @@
   .pair-dots span{width:13px;height:13px;border-radius:50%;background:rgba(255,255,255,.35);}
   .pair-dots span.on{background:#fff;}
   .pair-sc{font-size:15px;font-weight:700;opacity:.95;}
-  .pair-undo{min-height:52px;border-radius:12px;border:2px solid var(--warn);background:var(--card);
-    color:var(--warn);font-size:15px;font-weight:800;}
+  .pair-undo{min-height:54px;border-radius:14px;border:1.5px solid var(--border);background:var(--card);
+    color:var(--text);font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;}
   .pair-undo[disabled]{opacity:.35;}
-  .pair-undo.pressing{background:var(--warn);color:#fff;}
+  .pair-undo.pressing{background:var(--primary-light);}
   .pair-nav{display:flex;gap:10px;margin-top:12px;}
   .pair-nav button{flex:1;min-height:54px;border-radius:12px;border:1px solid var(--border);
     background:var(--bg);font-size:16px;font-weight:800;}
@@ -236,12 +249,19 @@
     /* 1명 채점(채점표)은 지금 동작 줄만 남기고 버튼을 화면만큼 키운다 */
     body.focus-live .sheet-row,
     body.focus-live .sheet-done,
-    body.focus-live .undo-btn-big{display:none;}
+    body.focus-live .undo-btn-big,
+    body.focus-live .score-card .sub,
+    body.focus-live .round-tabs,
+    body.focus-live .mode-toggle,
+    body.focus-live .summary-bar,
+    body.focus-live .task-section,
+    body.focus-live .desktop-move-nav{display:none;}
+    body.focus-live .score-card h2{font-size:15px;margin:0 70px 2px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     body.focus-live .sheet{border:none;border-radius:0;}
     body.focus-live .sheet-open{border-top:none;padding:6px 10px 8px;background:transparent;}
     body.focus-live .so-name{font-size:21px;margin:3px 0 7px;}
     body.focus-live .so-mk{width:32px;height:32px;}
-    body.focus-live .so-hit{min-height:calc(100vh - 150px);font-size:24px;}
+    body.focus-live .so-hit{min-height:calc(100vh - 152px);font-size:24px;}
   }
 
   .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(22,26,32,.06);border:1px solid var(--border);}
@@ -351,13 +371,19 @@
   .task-link b{color:var(--primary);font-size:16px;flex:none;}
 
   /* ---- 챌린지(개인진도표): 동작별 통과 여부 토글 목록 ---- */
-  .challenge-move-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+  .challenge-move-list{display:flex;flex-direction:column;margin-top:12px;border:1px solid var(--border);
+    border-radius:14px;overflow:hidden;background:var(--card);}
   .challenge-move-row{width:100%;display:flex;align-items:center;justify-content:space-between;
-    padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg);
-    font-size:14px;font-weight:600;text-align:left;min-height:48px;}
-  .challenge-move-row.passed{border-color:var(--ok);background:#E3F6EB;}
-  .challenge-move-row .move-state{font-size:13px;font-weight:700;color:var(--muted);flex:none;margin-left:10px;}
+    padding:0 14px;border:none;border-bottom:1px solid var(--border);background:var(--card);
+    font-size:16px;font-weight:700;text-align:left;min-height:54px;color:var(--text);
+    transition:background-color .18s ease;}
+  .challenge-move-row:last-child{border-bottom:none;}
+  .challenge-move-row:active{background:var(--primary-light);}
+  .challenge-move-row.passed{background:var(--lv5-bg);}
+  .challenge-move-row .move-state{font-size:14px;font-weight:700;color:#A3ABB6;flex:none;margin-left:10px;
+    display:flex;align-items:center;}
   .challenge-move-row.passed .move-state{color:var(--ok);}
+  .challenge-move-row.passed .move-state .ic{animation:tick .28s cubic-bezier(.2,.9,.3,1.4);}
   .bonus-box{margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
   .bonus-title{font-size:16px;font-weight:700;margin-bottom:4px;}
   .bonus-help{font-size:14px;color:var(--muted);line-height:1.45;margin:0 0 10px;}
@@ -368,16 +394,44 @@
   .bonus-val{font-size:24px;font-weight:800;color:var(--primary);min-width:64px;text-align:center;}
 
   .summary-bar{position:sticky;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);
-    padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 -2px 10px rgba(0,0,0,.05);
+    padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 -4px 14px rgba(22,26,32,.06);
     margin:14px -16px -16px;border-radius:0 0 var(--radius) var(--radius);}
-  .summary-bar .scores{flex:1;font-size:12px;color:var(--muted);}
-  .summary-bar .final{font-size:22px;font-weight:800;color:var(--primary);}
-  .summary-bar .final small{font-size:11px;font-weight:600;color:var(--muted);}
-  .nav-btn{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:700;}
-  .save-state{font-size:11px;color:var(--muted);}
+  .summary-bar .scores{flex:1;font-size:13px;color:var(--muted);line-height:1.4;}
+  .summary-bar .final{font-size:26px;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums;}
+  .summary-bar .final small{font-size:13px;font-weight:600;color:var(--muted);}
+  .nav-btn{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 12px;font-size:14px;font-weight:700;min-height:44px;}
+  .save-state{font-size:13px;color:var(--muted);}
   .save-state.err{color:var(--danger);font-weight:700;}
 
-  .empty-state{text-align:center;color:var(--muted);padding:40px 16px;font-size:14px;}
+  .empty-state{text-align:center;color:var(--muted);padding:40px 16px;font-size:15px;}
+
+  /* ---- 모션 ----
+     원칙: 눌렸다는 사실과 상태가 바뀌었다는 사실만 알린다. 모두 90~280ms 안에 끝나고,
+     화면을 다시 그릴 때가 아니라 "상태가 새로 바뀐 순간"에만 한 번 움직인다.
+     (연타·두 손가락 동시 입력을 방해하지 않도록 transform/opacity/색만 쓴다.) */
+  @keyframes pop{0%{transform:scale(.55);opacity:.4}60%{transform:scale(1.14);opacity:1}100%{transform:scale(1)}}
+  @keyframes tick{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+  @keyframes bump{0%{transform:translateY(0)}35%{transform:translateY(-4px)}100%{transform:translateY(0)}}
+  @keyframes openIn{from{opacity:.0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  @keyframes flashHit{0%{box-shadow:0 0 0 0 rgba(255,91,74,.55)}100%{box-shadow:0 0 0 18px rgba(255,91,74,0)}}
+  @keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+  @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .so-mk.pop{animation:pop .24s cubic-bezier(.2,.9,.3,1.3);}
+  .so-res b.bump{display:inline-block;animation:bump .22s ease-out;}
+  .so-hit.flash{animation:flashHit .32s ease-out;}
+  .sheet-open{animation:openIn .2s ease-out;}
+  .sheet-done{position:relative;overflow:hidden;}
+  .sheet-done::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);
+    animation:sweep .9s ease-out .1s 1 both;pointer-events:none;}
+  .score-card{animation:cardIn .22s ease-out;}
+  .sheet-row,.challenge-move-row,.stu-chip,.round-tab,.cls-btn,.mode-btn,.tab-btn,.nav-btn{
+    transition:background-color .18s ease,color .18s ease,border-color .18s ease,transform .12s ease;}
+  .stu-chip:active,.round-tab:active,.cls-btn:active,.nav-btn:active{transform:scale(.96);}
+  .pair-miss:active{transform:scale(.985);}
+  .save-state.ok{color:var(--ok);}
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+  }
 
   .status-block{text-align:center;padding:40px 16px;}
   .status-block .status-icon{font-size:36px;margin-bottom:8px;}
@@ -396,8 +450,8 @@
   .roster-card label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;}
   .roster-card textarea{width:100%;min-height:280px;padding:10px;border:1px solid var(--border);border-radius:10px;
     font-size:14px;line-height:1.7;resize:vertical;}
-  .roster-help{font-size:12px;color:var(--muted);margin:8px 0 12px;}
-  .roster-title{font-size:15px;margin-bottom:10px;}
+  .roster-help{font-size:14px;color:var(--muted);margin:8px 0 12px;line-height:1.5;}
+  .roster-title{font-size:17px;margin-bottom:10px;}
   .one-stu-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px;}
   .one-stu-row .field{min-width:80px;}
   .field select{width:100%;padding:12px 10px;border:1px solid var(--border);border-radius:10px;font-size:15px;background:#fff;}
@@ -409,14 +463,16 @@
   .cls-summary-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-bottom:14px;}
   .cls-card{background:var(--card);border-radius:10px;padding:10px 6px;text-align:center;border:1px solid var(--border);}
   .cls-card.active{border-color:var(--primary);background:var(--primary-light);}
-  .cls-card .n{font-size:12px;color:var(--muted);}
-  .cls-card .frac{font-size:15px;font-weight:800;margin-top:2px;}
+  .cls-card .n{font-size:14px;color:var(--muted);}
+  .cls-card .frac{font-size:17px;font-weight:800;margin-top:2px;}
   .dash-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap;}
-  .export-btn{background:var(--ok);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;}
-  table.dash-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;font-size:13px;}
+  .export-btn{background:var(--ok);color:#fff;border:none;border-radius:12px;padding:12px 16px;font-size:15px;font-weight:700;min-height:48px;}
+  table.dash-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:var(--radius);overflow:hidden;font-size:15px;}
   table.dash-table th,table.dash-table td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);}
-  table.dash-table th{background:#F3F1FD;color:var(--muted);font-size:11px;cursor:pointer;user-select:none;white-space:nowrap;}
-  table.dash-table td.name-cell{text-align:left;font-weight:600;}
+  table.dash-table th{background:var(--bg);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;}
+  table.dash-table td{white-space:nowrap;font-variant-numeric:tabular-nums;}
+  table.dash-table td.name-cell{text-align:left;font-weight:700;min-width:5em;}
+  .part-tag{display:inline-block;background:#FFF3E6;color:#B86A00;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;}
   table.dash-table td.final-cell{font-weight:800;color:var(--primary);}
   .table-scroll{overflow-x:auto;border-radius:var(--radius);}
 
@@ -424,7 +480,7 @@
      기기가 있었다. */
   #toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:100;display:flex;flex-direction:column;gap:6px;
     align-items:center;pointer-events:none;width:calc(100% - 32px);max-width:360px;}
-  .toast-msg{background:#2B3160;color:#fff;padding:12px 18px;border-radius:20px;font-size:14px;font-weight:600;text-align:center;
+  .toast-msg{background:#161A20;color:#fff;padding:12px 18px;border-radius:20px;font-size:14px;font-weight:600;text-align:center;
     box-shadow:0 4px 16px rgba(0,0,0,.3);animation:toastIn .15s ease-out;}
   .toast-msg.err{background:var(--danger);}
   @keyframes toastIn{from{opacity:0;transform:scale(.92);}to{opacity:1;transform:scale(1);}}
@@ -434,13 +490,14 @@
 
 <div class="install-banner" id="installBanner">
   <span id="installBannerText"></span>
-  <button class="install-btn hidden" id="btnInstallApp">📲 앱 설치</button>
+  <button class="install-btn hidden" id="btnInstallApp"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M12 8v6M9.5 11.5 12 14l2.5-2.5"/></svg>앱 설치</button>
   <button class="install-close" id="btnInstallClose" aria-label="닫기">✕</button>
 </div>
 
 <div id="loginScreen">
   <div class="login-card">
-    <h1>🎵 음악줄넘기 채점</h1>
+    <img class="login-logo" src="icon-192-v3.png" alt="" width="76" height="76">
+    <h1>음악줄넘기 채점</h1>
     <p class="sub">인천영종고 체육2 · 실기평가 채점 도구</p>
     <div class="field">
       <label>이메일</label>
@@ -468,11 +525,11 @@
         <button id="btnLogout">로그아웃</button>
       </div>
     </div>
-    <div class="offline-banner" id="offlineBanner">🔴 오프라인 상태입니다 · 재연결되면 자동으로 저장됩니다</div>
+    <div class="offline-banner" id="offlineBanner"><span class="off-dot"></span>오프라인 상태입니다 · 재연결되면 자동으로 저장됩니다</div>
     <div class="tabs">
-      <button class="tab-btn active" data-tab="score">✏️ 채점</button>
-      <button class="tab-btn" data-tab="dashboard">📊 현황판</button>
-      <button class="tab-btn" data-tab="roster">👥 명단</button>
+      <button class="tab-btn active" data-tab="score"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/></svg>채점</button>
+      <button class="tab-btn" data-tab="dashboard"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-7M12 20V5M19 20v-10M3 20h18"/></svg>현황판</button>
+      <button class="tab-btn" data-tab="roster"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c2.8 0 4.6 2 4.6 5"/></svg>명단</button>
     </div>
   </header>
 
@@ -480,8 +537,8 @@
     <!-- 채점 -->
     <section id="tab-score">
       <div class="score-mode" id="scoreMode">
-        <button class="mode-btn active" data-smode="one">👤 1명 채점</button>
-        <button class="mode-btn" data-smode="two">👥 2명 동시 채점</button>
+        <button class="mode-btn active" data-smode="one"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>1명 채점</button>
+        <button class="mode-btn" data-smode="two"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c2.8 0 4.6 2 4.6 5"/></svg>2명 동시 채점</button>
       </div>
       <div class="cls-row" id="clsRowScore"></div>
       <div class="student-grid" id="studentGrid"></div>
@@ -497,7 +554,7 @@
       <div class="cls-summary-row" id="clsSummaryRow"></div>
       <div class="dash-toolbar">
         <div id="dashFilterLabel" style="font-size:13px;color:var(--muted);font-weight:600;">전체 반</div>
-        <button class="export-btn" id="btnExportXlsx">⬇️ 엑셀로 내보내기 (반별 시트)</button>
+        <button class="export-btn" id="btnExportXlsx"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14"/></svg>엑셀로 내보내기 (반별 시트)</button>
       </div>
       <div class="table-scroll">
         <table class="dash-table" id="dashTable">
@@ -520,15 +577,15 @@
 
     <!-- 명단 -->
     <section id="tab-roster" class="hidden">
-      <a class="help-link" href="사용법.html" target="_blank" rel="noopener">📘 앱 사용법 보기 (인쇄 가능)</a>
-      <a class="help-link" href="변경기록.html" target="_blank" rel="noopener">🗒️ 변경 기록 — 무엇을 왜 바꿨는지</a>
+      <a class="help-link" href="사용법.html" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4z"/><path d="M8 17h10"/></svg>앱 사용법 보기 (인쇄 가능)</a>
+      <a class="help-link" href="변경기록.html" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 12h7M9 16h7"/></svg>변경 기록 — 무엇을 왜 바꿨는지</a>
       <p class="sub-note">보강 선생님 계정으로 로그인했습니다. 채점은 모두 하실 수 있고, 되돌릴 수 없는 초기화 기능만 숨겨져 있습니다.</p>
       <details class="roster-card" open>
-        <summary class="roster-title">📋 표 전체 일괄 등록</summary>
+        <summary class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="16" rx="2"/><path d="M9 5.5h6V4H9zM9 11h6M9 15h6"/></svg>표 전체 일괄 등록</summary>
         <p class="roster-help">엑셀에서 여러 반이 나란히 있는 명렬표를 통째로 선택해 복사(Ctrl+C)한 뒤 아래에 붙여넣으세요. <b>번호·성명(또는 이름)</b> 열이 있는 머리글 줄과, 그 위에 반 이름(예: <b>3반</b>, <b>1-3</b>)이 적힌 줄까지 함께 복사되어 있어야 합니다.</p>
         <textarea id="bulkRosterPaste" placeholder="엑셀 표를 여기에 붙여넣으세요 (Ctrl+V)"></textarea>
         <div class="roster-actions">
-          <button class="btn" id="btnBulkRosterAdd" style="width:auto;background:#2EC4B6;color:#08423D;">표 전체 일괄 등록</button>
+          <button class="btn btn-primary" id="btnBulkRosterAdd" style="width:auto;">표 전체 일괄 등록</button>
           <span class="save-state" id="bulkRosterResult"></span>
         </div>
       </details>
@@ -579,19 +636,19 @@
       </details>
 
       <div class="roster-card danger-zone">
-        <h3 class="roster-title">⚠️ 채점 기록만 초기화</h3>
+        <h3 class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>채점 기록만 초기화</h3>
         <p class="roster-help">학생 명단(반·번호·이름·학적변동)은 그대로 두고, 모든 반의 채점 기록(완성도·과제수행·회차 기록)과 챌린지 진도(개인진도표)만 영구적으로 삭제합니다. <b>되돌릴 수 없습니다.</b></p>
         <div class="roster-actions">
-          <button class="btn" id="btnResetScores" style="width:auto;background:var(--danger);color:#fff;">🗑️ 채점 기록만 초기화</button>
+          <button class="btn" id="btnResetScores" style="width:auto;background:var(--danger);color:#fff;"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg>채점 기록만 초기화</button>
           <span class="save-state" id="resetScoresResult"></span>
         </div>
       </div>
 
       <div class="roster-card danger-zone">
-        <h3 class="roster-title">⚠️ 자료 초기화</h3>
+        <h3 class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>자료 초기화</h3>
         <p class="roster-help">모든 반의 학생 명단과 채점 기록(완성도·과제수행·회차 기록), 챌린지 진도(개인진도표)까지 전부 영구적으로 삭제합니다. 테스트 데이터를 정리할 때만 사용하세요. <b>되돌릴 수 없습니다.</b></p>
         <div class="roster-actions">
-          <button class="btn" id="btnResetAll" style="width:auto;background:var(--danger);color:#fff;">🗑️ 자료 초기화</button>
+          <button class="btn" id="btnResetAll" style="width:auto;background:var(--danger);color:#fff;"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg>자료 초기화</button>
           <span class="save-state" id="resetAllResult"></span>
         </div>
       </div>
@@ -974,7 +1031,7 @@ if (Backend.mode === "local"){
   btn.addEventListener("click", () => Backend.devLogin());
   document.getElementById("loginErr").textContent = "";
   const sub = document.querySelector(".login-card p.sub");
-  sub.textContent = "⚠️ Firebase 미연결 — 로컬 미리보기 모드";
+  sub.textContent = "Firebase 미연결 — 로컬 미리보기 모드";
 }
 
 document.getElementById("btnLogout").addEventListener("click", () => {
@@ -1327,7 +1384,7 @@ function renderPairCard(){
     ${nameBox(a, 0)}${nameBox(b, 1)}`;
 
   if (done){
-    html += `<div class="pair-move"><div class="name">✅ ${MOVES.length}개 동작 완료!</div>
+    html += `<div class="pair-move"><div class="name">${MOVES.length}개 동작 완료</div>
       <div class="step">두 학생 모두 기록되었습니다</div></div></div>
       <div class="pair-nav">
         <button id="btnPairPrev">◀ 동작 다시 보기</button>
@@ -1341,18 +1398,18 @@ function renderPairCard(){
     [a, b].forEach(no => {
       const s = pairSide(cls, no);
       html += `<div class="pair-col" data-no="${no}">
-        <button class="pair-miss" data-miss="${no}">❌ 실수
+        <button class="pair-miss" data-miss="${no}">${ICON_X_BIG}실수
           <span class="pair-dots">${pairDotsHtml(s.clicks)}</span>
           <span class="pair-sc">실수 ${s.clicks}회 · ${s.score}점</span>
         </button>
-        <button class="pair-undo" data-undo="${no}" ${s.clicks <= 0 ? "disabled" : ""}>↩️ 되돌리기</button>
+        <button class="pair-undo" data-undo="${no}" ${s.clicks <= 0 ? "disabled" : ""}>${ICON_UNDO}되돌리기</button>
       </div>`;
     });
     html += `</div><div class="pair-nav">
       <button id="btnPairPrev" ${State.liveStep <= 0 ? "disabled" : ""}>◀ 이전 동작</button>
       <button class="main" id="btnPairNext">다음 동작 ▶</button>
     </div>
-    <p class="pair-hint">💡 화면을 좌우로 스와이프하면 다음/이전 동작으로 넘어갑니다</p></div>`;
+    <p class="pair-hint">${IC.bulb}화면을 좌우로 쓸면 다음/이전 동작으로 넘어갑니다</p></div>`;
   }
   card.innerHTML = html;
 
@@ -1441,7 +1498,7 @@ function renderScoreCardBody(){
     card.innerHTML = `
       <h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>
       <div class="status-block">
-        <div class="status-icon">🚫</div>
+        <div class="status-icon">${IC.ban}</div>
         <p class="status-big">학적변동: ${esc(status)}</p>
         <p class="roster-help">이 학생은 "${esc(status)}" 상태라 채점할 수 없습니다.</p>
       </div>
@@ -1471,9 +1528,9 @@ function renderScoreCardBody(){
   const activeStats = computeRoundStats(activeMoves);
 
   const modeToggleHtml = `<div class="mode-toggle">
-      <button class="mode-btn ${State.viewMode==='challenge'?'active':''}" id="btnModeChallenge">🏆 개인진도표</button>
-      <button class="mode-btn ${State.viewMode==='live'?'active':''}" id="btnModeLive">🎯 음악줄넘기</button>
-      <button class="mode-btn ${State.viewMode==='detail'?'active':''}" id="btnModeDetail">✏️ 점수 수정</button>
+      <button class="mode-btn ${State.viewMode==='challenge'?'active':''}" id="btnModeChallenge">${IC.trophy}개인진도표</button>
+      <button class="mode-btn ${State.viewMode==='live'?'active':''}" id="btnModeLive">${IC.target}음악줄넘기</button>
+      <button class="mode-btn ${State.viewMode==='detail'?'active':''}" id="btnModeDetail">${IC.pencil}점수 수정</button>
     </div>`;
 
   let html = `<h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>`;
@@ -1490,7 +1547,7 @@ function renderScoreCardBody(){
       const isPassed = !!passed[chKey(i)];
       html += `<button class="challenge-move-row ${isPassed?'passed':''}" data-move="${i}">
         <span class="move-name">${esc(name)}</span>
-        <span class="move-state">${isPassed ? "✅ 통과" : "탭해서 통과"}</span>
+        <span class="move-state">${isPassed ? IC.check + "통과" : "눌러서 통과"}</span>
       </button>`;
     });
     html += `</div>`;
@@ -1636,7 +1693,7 @@ function renderRoundTabs(rounds, roundNos, cs, activeRound){
 function roundTabPts(rn, rounds, cs, roundCount){
   const st = computeRoundStats(rounds[roundKey(rn)] && rounds[roundKey(rn)].moves);
   const pts = st.scoredMoves ? ` ${st.a}점` : "";
-  return pts + (rn === cs.bestRoundNo && roundCount > 1 ? " ⭐" : "");
+  return pts + (rn === cs.bestRoundNo && roundCount > 1 ? '<span class="best-star" title="성적에 반영되는 최고 회차">' + IC.star + '</span>' : "");
 }
 
 /* 라이브/상세 공통: 활성 차수의 동작 하나를 저장 (다른 차수 기록은 보존) */
@@ -1683,6 +1740,11 @@ function wireDetailBody(cls, no, rec, roundNo, moves){
 /* ---- 채점표: 여덟 동작이 여덟 줄, 지금 차례인 줄만 펼쳐진다 ----
    한 동작만 화면에 띄우던 예전 방식은 음악이 끝났을 때 "무엇이 남았나"를 알 수 없었다.
    줄을 눌러 그 동작으로 바로 갈 수 있고, 옆으로 쓸면 다음 줄로 내려간다. */
+const IC = {
+  trophy: "<svg class=\"ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 4h8v5a4 4 0 0 1-8 0V4z\"/><path d=\"M8 6H5v1.5A3 3 0 0 0 8 10.5M16 6h3v1.5a3 3 0 0 1-3 3\"/><path d=\"M12 13v4M8.5 20h7M10 17h4\"/></svg>", target: "<svg class=\"ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8\"/><circle cx=\"12\" cy=\"12\" r=\"4\"/><circle cx=\"12\" cy=\"12\" r=\".8\"/></svg>",
+  pencil: "<svg class=\"ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z\"/><path d=\"M13.5 6.5l3 3\"/></svg>", check: "<svg class=\"ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 12.5 10 17.5 19 7\"/></svg>",
+  bulb: "<svg class=\"ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z\"/></svg>", ban: "<svg class=\"ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M6 6l12 12\"/></svg>", star: "<svg class=\"ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 3.5l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.5 6.9 19.2l1-5.7-4.1-4 5.7-.8z\" fill=\"currentColor\"/></svg>",
+};
 const ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_X_BIG = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UNDO = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>';
@@ -1722,7 +1784,7 @@ function renderLiveBody(moves){
 
   return `<div class="live-gesture-zone" id="liveGestureZone"><div class="sheet">${rows}</div></div>
     <button class="undo-btn-big" id="btnUndo" ${(done || curClicks <= 0) ? "disabled" : ""}>${ICON_UNDO} 잘못 눌렀다면 되돌리기</button>
-    <p class="swipe-hint">💡 옆으로 쓸면 <b>다음 동작</b> · 줄을 누르면 그 동작으로</p>
+    <p class="swipe-hint">${IC.bulb}옆으로 쓸면 <b>다음 동작</b> · 줄을 누르면 그 동작으로</p>
     <div class="desktop-move-nav">
       <button id="btnPrevMoveDesktop" ${cur<=0?"disabled":""}>◀ 이전 동작</button>
       <button id="btnNextMoveDesktop" ${done?"disabled":""}>${cur<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
@@ -1889,11 +1951,25 @@ function refreshLiveDisplay(cls, no, roundNo, moveIdx){
   if (marksEl){
     marksEl.querySelectorAll(".so-mk").forEach((mk, d) => {
       const on = d < clicks;
+      const was = mk.classList.contains("on");
+      if (on === was) return;            // 바뀌지 않은 칸은 건드리지 않는다(진행 중인 모션을 끊지 않기 위해)
       mk.classList.toggle("on", on);
       mk.innerHTML = on ? ICON_X : "";
+      mk.classList.remove("pop");
+      if (on){ void mk.offsetWidth; mk.classList.add("pop"); }
     });
     const resEl = marksEl.querySelector(".so-res");
-    if (resEl) resEl.innerHTML = `지금<b>${liveScore}</b>점`;
+    if (resEl){
+      const prev = resEl.querySelector("b");
+      if (!prev){
+        resEl.innerHTML = `지금<b>${liveScore}</b>점`;
+      } else if (prev.textContent !== String(liveScore)){
+        prev.textContent = liveScore;    // 같은 노드의 글자만 바꾼다
+        prev.classList.remove("bump"); void prev.offsetWidth; prev.classList.add("bump");
+      }
+    }
+    const hit = card.querySelector(".so-hit");
+    if (hit){ hit.classList.remove("flash"); void hit.offsetWidth; hit.classList.add("flash"); }
   }
   const subEl = card.querySelector(".so-hit .sub");
   if (subEl) subEl.classList.toggle("hide", !atFloor);
@@ -1906,7 +1982,7 @@ function refreshLiveDisplay(cls, no, roundNo, moveIdx){
   const allRounds = getRounds(rec);
   card.querySelectorAll(".round-tab").forEach(tab => {
     const ptsEl = tab.querySelector(".round-pts");
-    if (ptsEl) ptsEl.textContent = roundTabPts(Number(tab.dataset.round), allRounds, cs, cs.roundCount);
+    if (ptsEl) ptsEl.innerHTML = roundTabPts(Number(tab.dataset.round), allRounds, cs, cs.roundCount);
   });
   const chip = document.querySelector(`#studentGrid .stu-chip[data-no="${no}"]`);
   if (chip && !chip.classList.contains("inactive")){
@@ -2190,7 +2266,7 @@ function renderDashboard(){
       <td class="name-cell">${esc(r.name)}</td>
       <td>${r.a}/${A_MAX}</td>
       <td>${r.b}/${B_MAX}</td>
-      <td>${r.raw}${r.complete?"":" ⏳"}</td>
+      <td>${r.raw}${r.complete?"":' <span class="part-tag">채점중</span>'}</td>
       <td class="final-cell">${r.final}</td>
       <td>${esc(r.by)}</td>
     </tr>
