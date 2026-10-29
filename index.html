@@ -18,14 +18,14 @@
   :root{
     /* 2026-10-29 새 디자인 — 흰 카드 · 얇은 회선 위에 색이 세 가지 일만 한다:
        파랑 = 지금 여기(현재 동작·현재 회차), 코랄 = 실수, 민트 = 끝난 것·저장됨. */
-    --bg:#F4F6F9; --card:#ffffff; --text:#161A20; --muted:#79828E; --border:#E8ECF2;
-    --primary:#2F6BF0; --primary-dark:#1F55CC; --primary-light:#EDF3FF;
-    --lv1:#FF5B4A; --lv1-bg:#FFF0EE;
+    --bg:#F4F6F9; --card:#ffffff; --text:#161A20; --muted:#5B6472; --border:#E8ECF2;
+    --primary:#2862E6; --primary-dark:#1F55CC; --primary-light:#EDF3FF;
+    --lv1:#D93A2B; --lv1-bg:#FFF0EE;
     --lv2:#F08A24; --lv2-bg:#FFF3E6;
     --lv3:#C79A00; --lv3-bg:#FFF8DF;
-    --lv4:#2F6BF0; --lv4-bg:#EDF3FF;
-    --lv5:#1AA37A; --lv5-bg:#E7F7F1;
-    --danger:#FF5B4A; --ok:#1AA37A; --warn:#E08600;
+    --lv4:#2862E6; --lv4-bg:#EDF3FF;
+    --lv5:#0E7F5C; --lv5-bg:#E7F7F1;
+    --danger:#D93A2B; --ok:#0E7F5C; --warn:#9A5700;
     --radius:16px;
   }
   /* touch-action:manipulation — 더블탭 시 화면이 확대되는 iOS Safari 기본 동작을 꺼서,
@@ -64,7 +64,7 @@
   /* 보강 선생님 공용 계정: 되돌릴 수 없는 초기화는 아예 보이지 않게 한다 */
   body.sub-teacher .danger-zone{display:none;}
   .sub-note{display:none;background:#FFF8E8;border:1px solid #F0DFB5;border-radius:12px;
-    padding:12px 14px;margin-bottom:10px;font-size:15px;font-weight:600;color:var(--warn);}
+  padding:12px 14px;margin-bottom:10px;font-size:15px;font-weight:600;color:#8A5300;}
   body.sub-teacher .sub-note{display:block;}
 
   /* ---- 선 아이콘 (이모지 대신) ---- */
@@ -313,7 +313,7 @@
   .sheet-row .sr-i{font-size:15px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;}
   .sheet-row .sr-n{font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .sheet-row .sr-v{font-size:21px;font-weight:800;color:var(--ok);font-variant-numeric:tabular-nums;}
-  .sheet-row.todo .sr-i,.sheet-row.todo .sr-n{color:#B3BAC4;}
+  .sheet-row.todo .sr-i,.sheet-row.todo .sr-n{color:#6B7482;font-weight:600;}
   .sheet-row.todo .sr-v{color:#D4D9E0;font-size:19px;}
   .sheet-row:active{background:var(--primary-light);}
   /* 지금 동작 — 줄이 펼쳐져 채점 칸이 된다 */
@@ -329,8 +329,8 @@
   .so-res b{font-size:27px;font-weight:800;color:var(--text);margin-left:5px;font-variant-numeric:tabular-nums;}
   .so-hit{width:100%;min-height:max(146px,19vh);border:none;border-radius:18px;background:var(--danger);color:#fff;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;
-    font-size:30px;font-weight:800;box-shadow:0 8px 20px rgba(255,91,74,.24);}
-  .so-hit:active{transform:scale(.99);box-shadow:0 4px 12px rgba(255,91,74,.3);}
+    font-size:30px;font-weight:800;box-shadow:0 8px 20px rgba(22,26,32,.18);}
+  .so-hit:active{transform:scale(.99);box-shadow:0 4px 12px rgba(22,26,32,.22);}
   .so-hit .sub{font-size:14px;font-weight:600;opacity:.95;}
   .so-hit .sub.hide{visibility:hidden;}
   .sheet-done{background:var(--lv5-bg);border-top:2px solid var(--ok);padding:16px 14px;text-align:center;}
@@ -413,7 +413,7 @@
   @keyframes tick{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
   @keyframes bump{0%{transform:translateY(0)}35%{transform:translateY(-4px)}100%{transform:translateY(0)}}
   @keyframes openIn{from{opacity:.0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-  @keyframes flashHit{0%{box-shadow:0 0 0 0 rgba(255,91,74,.55)}100%{box-shadow:0 0 0 18px rgba(255,91,74,0)}}
+  @keyframes flashHit{0%{box-shadow:0 0 0 0 rgba(217,58,43,.5)}100%{box-shadow:0 0 0 18px rgba(217,58,43,0)}}
   @keyframes sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
   @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   .so-mk.pop{animation:pop .24s cubic-bezier(.2,.9,.3,1.3);}
@@ -472,7 +472,7 @@
   table.dash-table th{background:var(--bg);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;}
   table.dash-table td{white-space:nowrap;font-variant-numeric:tabular-nums;}
   table.dash-table td.name-cell{text-align:left;font-weight:700;min-width:5em;}
-  .part-tag{display:inline-block;background:#FFF3E6;color:#B86A00;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;}
+  .part-tag{display:inline-block;background:#FFF3E6;color:#8A5300;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;}
   table.dash-table td.final-cell{font-weight:800;color:var(--primary);}
   .table-scroll{overflow-x:auto;border-radius:var(--radius);}
 
@@ -591,7 +591,7 @@
       </details>
 
       <details class="roster-card" open>
-        <summary class="roster-title">✏️ 반 하나씩 입력</summary>
+        <summary class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l3 3"/></svg>반 하나씩 입력</summary>
         <div class="cls-row" id="clsRowRoster"></div>
         <div class="count-field">
           <label style="margin:0;">인원수</label>
@@ -608,7 +608,7 @@
       </details>
 
       <details class="roster-card" open>
-        <summary class="roster-title">➕ 학생 한 명 추가·수정 (전학생 등)</summary>
+        <summary class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>학생 한 명 추가·수정 (전학생 등)</summary>
         <p class="roster-help">반 전체를 다시 붙여넣지 않고, 전학 온 학생 한 명만 빠르게 넣거나 이름을 고칠 때 씁니다.</p>
         <div class="one-stu-row">
           <div class="field" style="margin:0;">
@@ -636,7 +636,7 @@
       </details>
 
       <div class="roster-card danger-zone">
-        <h3 class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>채점 기록만 초기화</h3>
+        <h2 class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>채점 기록만 초기화</h2>
         <p class="roster-help">학생 명단(반·번호·이름·학적변동)은 그대로 두고, 모든 반의 채점 기록(완성도·과제수행·회차 기록)과 챌린지 진도(개인진도표)만 영구적으로 삭제합니다. <b>되돌릴 수 없습니다.</b></p>
         <div class="roster-actions">
           <button class="btn" id="btnResetScores" style="width:auto;background:var(--danger);color:#fff;"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg>채점 기록만 초기화</button>
@@ -645,7 +645,7 @@
       </div>
 
       <div class="roster-card danger-zone">
-        <h3 class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>자료 초기화</h3>
+        <h2 class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4.5M12 17.2v.1"/></svg>자료 초기화</h2>
         <p class="roster-help">모든 반의 학생 명단과 채점 기록(완성도·과제수행·회차 기록), 챌린지 진도(개인진도표)까지 전부 영구적으로 삭제합니다. 테스트 데이터를 정리할 때만 사용하세요. <b>되돌릴 수 없습니다.</b></p>
         <div class="roster-actions">
           <button class="btn" id="btnResetAll" style="width:auto;background:var(--danger);color:#fff;"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg>자료 초기화</button>
@@ -1681,7 +1681,7 @@ function renderRoundTabs(rounds, roundNos, cs, activeRound){
   // 재도전 버튼을 맨 앞에 고정 — 회차가 늘어나 목록이 옆으로 길어져도
   // 스크롤 없이 항상 바로 보이고 눌리도록 한다.
   let html = `<div class="round-tabs">`;
-  html += `<button type="button" class="round-add" id="btnAddRound">➕ 재도전</button>`;
+  html += `<button type="button" class="round-add" id="btnAddRound"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>재도전</button>`;
   html += roundNos.map(rn => {
     return `<button class="round-tab ${rn===activeRound?'active':''}" data-round="${rn}">${rn}차<span class="round-pts">${roundTabPts(rn, rounds, cs, roundNos.length)}</span>${roundNos.length>1 ? `<span class="round-del" data-del-round="${rn}" title="이 차수 삭제">✕</span>` : ""}</button>`;
   }).join("");
