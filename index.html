@@ -317,7 +317,7 @@
   .sheet-row.todo .sr-v{color:#D4D9E0;font-size:19px;}
   .sheet-row:active{background:var(--primary-light);}
   /* 지금 동작 — 줄이 펼쳐져 채점 칸이 된다 */
-  .sheet-open{background:var(--primary-light);border-top:2px solid var(--primary);
+  .sheet-open{touch-action:none;background:var(--primary-light);border-top:2px solid var(--primary);
     border-bottom:1px solid var(--border);padding:11px 14px 13px;}
   .so-step{font-size:13px;font-weight:800;color:var(--primary);letter-spacing:.05em;font-variant-numeric:tabular-nums;}
   .so-name{font-size:24px;font-weight:800;line-height:1.2;margin:4px 0 9px;letter-spacing:-.02em;}
@@ -1784,7 +1784,7 @@ function renderLiveBody(moves){
 
   return `<div class="live-gesture-zone" id="liveGestureZone"><div class="sheet">${rows}</div></div>
     <button class="undo-btn-big" id="btnUndo" ${(done || curClicks <= 0) ? "disabled" : ""}>${ICON_UNDO} 잘못 눌렀다면 되돌리기</button>
-    <p class="swipe-hint">${IC.bulb}옆으로 쓸면 <b>다음 동작</b> · 줄을 누르면 그 동작으로</p>
+    <p class="swipe-hint">${IC.bulb}펼쳐진 칸을 <b>위로 쓸면 다음 동작</b>, 아래로 쓸면 이전 · 줄을 누르면 그 동작으로</p>
     <div class="desktop-move-nav">
       <button id="btnPrevMoveDesktop" ${cur<=0?"disabled":""}>◀ 이전 동작</button>
       <button id="btnNextMoveDesktop" ${done?"disabled":""}>${cur<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
@@ -1807,6 +1807,26 @@ function attachSwipeNav(el, onSwipeLeft, onSwipeRight){
     startX = null;
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5){
       if (dx < 0) onSwipeLeft(); else onSwipeRight();
+    }
+  });
+}
+// 세로 스와이프: 목록이 위→아래로 내려가는 화면이라, 손가락도 같은 방향 감각으로
+// "위로 쓸면 다음 줄(아래에서 올라옴), 아래로 쓸면 이전 줄"로 맞춘다.
+// 펼쳐진 줄 안에서만 인식한다(그 안에서는 페이지 스크롤을 끄고, 아래 목록은 그대로 스크롤됨).
+function attachVerticalSwipe(el, onUp, onDown){
+  if (!el) return;
+  let sx = null, sy = null;
+  el.addEventListener("touchstart", (e) => {
+    if (e.touches.length !== 1){ sx = null; return; }   // 두 손가락(2명 모드 등)은 건드리지 않는다
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+  }, {passive:true});
+  el.addEventListener("touchend", (e) => {
+    if (sx == null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - sx, dy = t.clientY - sy;
+    sx = null;
+    if (Math.abs(dy) > 55 && Math.abs(dy) > Math.abs(dx) * 1.5){
+      if (dy < 0) onUp(); else onDown();
     }
   });
 }
@@ -1853,7 +1873,8 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
   card.querySelectorAll(".sheet-row[data-go]").forEach(row => {
     row.addEventListener("click", () => goTo(Number(row.dataset.go)));
   });
-  attachSwipeNav(card.querySelector("#liveGestureZone"), goNext, goPrev);
+  attachSwipeNav(card.querySelector("#liveGestureZone"), goNext, goPrev);          // 옆으로 쓸기(예전 방식, 그대로 동작)
+  attachVerticalSwipe(card.querySelector("#liveOpenRow"), goNext, goPrev);       // 위로 쓸면 다음, 아래로 쓸면 이전
   const prevDesktopBtn = card.querySelector("#btnPrevMoveDesktop");
   if (prevDesktopBtn) prevDesktopBtn.addEventListener("click", goPrev);
   const nextDesktopBtn = card.querySelector("#btnNextMoveDesktop");
