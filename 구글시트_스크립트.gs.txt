@@ -25,8 +25,8 @@ const HEADER = ['반', '번호', '이름'].concat(MOVE_NAMES, [
 function doPost(e) {
   try {
     const d = JSON.parse(e.postData.contents);
-    if (KEY === '여기에-열쇠를-적으세요') return out({ ok: false, error: '스크립트의 열쇠를 아직 정하지 않았습니다.' });
-    if (d.key !== KEY) return out({ ok: false, error: '열쇠가 맞지 않습니다.' });
+    if (KEY === '여기에-열쇠를-적으세요') { logRejected('스크립트의 열쇠를 아직 정하지 않았습니다.'); return out({ ok: false, error: '스크립트의 열쇠를 아직 정하지 않았습니다.' }); }
+    if (d.key !== KEY) { logRejected('열쇠가 맞지 않습니다. (앱의 열쇠와 스크립트의 KEY를 확인하세요)'); return out({ ok: false, error: '열쇠가 맞지 않습니다.' }); }
     const people = writeSheets(d.sheets, d.by || '');
     return out({ ok: true, rows: people, sheets: d.sheets.length });
   } catch (err) {
@@ -259,6 +259,14 @@ function writeLog(by, people, result) {
   ]);
   log.getRange('A1:A4').setFontWeight('bold');
   log.autoResizeColumns(1, 2);
+}
+
+// 앱은 구글의 응답을 읽을 수 없으므로, 거절한 이유를 '업데이트' 탭에 남깁니다.
+function logRejected(reason) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const log = ss.getSheetByName('업데이트') || ss.insertSheet('업데이트');
+  log.getRange('A6:B6').setValues([['마지막 거절', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm') + ' · ' + reason]]);
+  log.getRange('A6').setFontWeight('bold');
 }
 
 function out(o) {

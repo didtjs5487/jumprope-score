@@ -32,8 +32,8 @@
 
 <div class="card"><h2><span class="n">1</span>빈 구글 시트 만들기</h2>
 <ol>
-<li>구글 드라이브에서 <span class="k">새로 만들기 → Google 스프레드시트</span>를 누릅니다.</li>
-<li>이름을 <b>음악줄넘기 성적</b>으로 바꿉니다. 시트는 <b>비공개</b>로 두세요. 학생 번호·이름·점수가 들어갑니다.</li>
+<li>구글 드라이브에서 <span class="k">새로 만들기 → Google 스프레드시트</span>를 누릅니다. (이미 <b>음악줄넘기 성적</b> 시트를 만들어 두셨다면 그 시트를 그대로 쓰세요.)</li>
+<li>이름은 <b>음악줄넘기 성적</b>으로 합니다. 시트는 <b>비공개</b>로 두세요. 학생 번호·이름·점수가 들어갑니다.</li>
 </ol></div>
 
 <div class="card"><h2><span class="n">2</span>스크립트 붙여넣기</h2>
@@ -349,8 +349,10 @@ function out(o) {
 <li>Apps Script 오른쪽 위 <span class="k">배포 → 새 배포</span>를 누릅니다.</li>
 <li>톱니바퀴(유형 선택) → <span class="k">웹 앱</span>, <b>다음 사용자 인증 정보로 실행: 나</b>, <b>액세스 권한이 있는 사용자: 모든 사용자</b> 로 두고 <span class="k">배포</span>를 누릅니다.</li>
 <li>나온 <b>웹 앱 URL</b>(<code>https://script.google.com/macros/s/…/exec</code>)을 복사합니다.</li>
-<li>앱 <span class="k">명단 탭 → 구글 시트 연결 설정</span>에 <b>웹 앱 주소</b>와 2단계의 <b>열쇠</b>를 넣고 <span class="k">저장</span> → <span class="k">연결 확인</span>을 누릅니다.</li>
+<li>앱 <span class="k">명단 탭 → 구글 시트 연결 설정</span>에 <b>웹 앱 주소</b>와 2단계의 <b>열쇠</b>를 넣고 <span class="k">저장</span>을 누릅니다.</li>
+<li>현황판의 <span class="k">구글 시트로 보내기</span>를 누르고, 시트의 <b>업데이트 탭</b>이 바뀌는지 확인합니다.</li>
 </ol>
+<div class="note">구글은 앱에 답을 돌려주지 않습니다. 그래서 앱은 "보냈습니다"까지만 알려 주고, <b>잘 반영됐는지·열쇠가 틀렸는지는 시트의 업데이트 탭</b>에 적힙니다. (열쇠가 틀리면 "마지막 거절" 줄에 이유가 남습니다.) <b>연결 확인</b> 단추는 기기에 따라 응답을 못 읽을 수 있는데, 그럴 때도 위 방법으로 확인하면 됩니다.</div>
 <div class="note">"모든 사용자"로 배포해도 <b>암호(KEY)를 모르면 아무것도 쓸 수 없습니다.</b> 그래도 암호는 남에게 알려 주지 마세요. 이 주소와 암호는 앱을 쓰는 기기마다 한 번씩 넣어야 합니다.</div></div>
 
 <div class="card"><h2><span class="n">7</span>알아 둘 점</h2>

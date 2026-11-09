@@ -2458,21 +2458,21 @@ function showSheetLast(){
   if (!el) return;
   const last = lsRead(SHEET_LS.last);
   el.className = "sheet-last" + (last ? " ok" : "");
-  el.textContent = last ? "마지막으로 시트에 보낸 시각: " + last : (sheetConfig().url ? "" : "아직 구글 시트가 연결되지 않았습니다 (명단 탭 → 구글 시트 연결 설정).");
+  el.textContent = last ? "마지막으로 시트에 보낸 시각: " + last + " (반영 결과는 시트의 '업데이트' 탭)" : (sheetConfig().url ? "" : "아직 구글 시트가 연결되지 않았습니다 (명단 탭 → 구글 시트 연결 설정).");
 }
 async function postToSheet(payload){
   const {url} = sheetConfig();
   // text/plain 으로 보내야 브라우저가 사전 확인(preflight)을 하지 않아 Apps Script가 받을 수 있다.
   // 학교 와이파이가 불안정할 때 버튼이 오래 멈춰 있지 않도록 25초 안에 끝내거나 포기한다.
   const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 25000);
-  let text;
   try {
-    const res = await fetch(url, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(payload), signal: ctl.signal});
-    text = await res.text();
+    // Apps Script 웹 앱은 CORS 헤더를 주지 않아 응답을 읽을 수 없다(다트 앱에서 확인한 사실).
+    // 그래서 no-cors + text/plain 으로 보내고, 결과는 시트의 '업데이트' 탭에서 확인한다.
+    await fetch(url, {method:"POST", mode:"no-cors", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(payload), signal: ctl.signal});
+    return {ok:true, sent:true};
   } catch(e){
     throw new Error(e.name === "AbortError" ? "시간이 너무 오래 걸립니다. 인터넷 연결을 확인하고 다시 눌러 주세요." : "인터넷 연결 또는 시트 주소를 확인해 주세요.");
   } finally { clearTimeout(timer); }
-  try { return JSON.parse(text); } catch(e){ throw new Error("시트 응답을 읽지 못했습니다. 주소가 웹 앱 배포 주소인지 확인하세요."); }
 }
 document.getElementById("btnSendSheet").addEventListener("click", async () => {
   const btn = document.getElementById("btnSendSheet"), note = document.getElementById("sheetLast");
@@ -2486,11 +2486,10 @@ document.getElementById("btnSendSheet").addEventListener("click", async () => {
   if (!sheets.length){ toast("보낼 성적이 아직 없습니다.", true); return; }
   btn.disabled = true; note.className = "sheet-last"; note.textContent = "보내는 중…";
   try {
-    const r = await postToSheet({key: cfg.key, by: teacherDisplayName((State.user||{}).email), sheets});
-    if (!r.ok) throw new Error(r.error || "시트가 거절했습니다.");
+    await postToSheet({key: cfg.key, by: teacherDisplayName((State.user||{}).email), sheets});
     const t = new Date(), stamp = (t.getMonth()+1) + "월 " + t.getDate() + "일 " + pad2(t.getHours()) + ":" + pad2(t.getMinutes());
     lsWrite(SHEET_LS.last, stamp); showSheetLast();
-    toast("구글 시트에 보냈습니다 (" + r.rows + "명).");
+    toast("구글 시트에 보냈습니다. 반영 여부는 시트의 '업데이트' 탭에서 확인하세요.");
   } catch(e){
     note.className = "sheet-last err"; note.textContent = "보내지 못했습니다: " + e.message;
     toast("시트로 보내지 못했습니다.", true);
@@ -2516,7 +2515,10 @@ document.getElementById("btnSendSheet").addEventListener("click", async () => {
       const res = await fetch(u + (u.includes("?") ? "&" : "?") + "ping=1");
       const j = JSON.parse(await res.text());
       say(j.ok ? "연결됐습니다. 시트: " + (j.name || "") : "응답이 이상합니다.", !j.ok);
-    } catch(e){ say("연결하지 못했습니다. 배포 설정(액세스: 모든 사용자)을 확인하세요.", true); }
+    } catch(e){
+      // 브라우저가 구글의 응답을 읽지 못하는 경우도 있다. 이때는 '보내기'를 한 번 눌러 시트의 '업데이트' 탭이 바뀌는지 보면 된다.
+      say("이 기기에서는 응답을 읽지 못했습니다. 주소 형식은 맞습니다. '구글 시트로 보내기'를 눌러 시트의 '업데이트' 탭이 바뀌는지 확인하세요.", true);
+    }
   });
 })();
 document.getElementById("btnExportXlsx").addEventListener("click", () => {
