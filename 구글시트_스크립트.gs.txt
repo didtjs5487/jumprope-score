@@ -1,0 +1,63 @@
+// 음악줄넘기 채점 → 구글 시트 받는 스크립트
+// 사용법은 "구글시트_연결방법" 문서를 보세요.
+
+// ▼ 여기 따옴표 안에 선생님이 정한 열쇠(암호)를 적으세요. 앱의 '열쇠'와 똑같아야 합니다.
+const KEY = '여기에-열쇠를-적으세요';
+
+function doPost(e) {
+  try {
+    const d = JSON.parse(e.postData.contents);
+    if (KEY === '여기에-열쇠를-적으세요') return out({ ok: false, error: '스크립트의 열쇠를 아직 정하지 않았습니다.' });
+    if (d.key !== KEY) return out({ ok: false, error: '열쇠가 맞지 않습니다.' });
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sent = {};
+    let people = 0;
+
+    d.sheets.forEach(function (sh) {
+      sent[sh.name] = true;
+      const ws = ss.getSheetByName(sh.name) || ss.insertSheet(sh.name);
+      ws.clear();
+      const rows = sh.rows;
+      if (!rows.length) return;
+      const w = Math.max.apply(null, rows.map(function (r) { return r.length; }));
+      const grid = rows.map(function (r) { const c = r.slice(); while (c.length < w) c.push(''); return c; });
+      ws.getRange(1, 1, grid.length, w).setValues(grid);
+      ws.getRange(1, 1, 1, w).setFontWeight('bold').setBackground('#EDF3FF');
+      ws.setFrozenRows(1);
+      ws.autoResizeColumns(1, w);
+      if (sh.name === '전체') people = rows.length - 1;
+    });
+
+    // 이번에 기록이 없어진 반 시트는 옛 내용이 남지 않게 비워 둔다.
+    ss.getSheets().forEach(function (ws) {
+      if (/^\d+반$/.test(ws.getName()) && !sent[ws.getName()]) ws.clear();
+    });
+
+    // '전체' 시트를 맨 앞으로
+    const all = ss.getSheetByName('전체');
+    if (all) { ss.setActiveSheet(all); ss.moveActiveSheet(1); }
+
+    // 맨 뒤 '업데이트' 시트에 마지막으로 받은 시각을 남긴다.
+    const log = ss.getSheetByName('업데이트') || ss.insertSheet('업데이트');
+    log.getRange('A1:B3').setValues([
+      ['마지막 업데이트', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm')],
+      ['보낸 사람', d.by || ''],
+      ['학생 수', people]
+    ]);
+    log.getRange('A1:A3').setFontWeight('bold');
+
+    return out({ ok: true, rows: people, sheets: d.sheets.length });
+  } catch (err) {
+    return out({ ok: false, error: String(err) });
+  }
+}
+
+// 앱의 '연결 확인' 버튼이 부르는 곳 (성적은 돌려주지 않고 시트 이름만 알려 줍니다)
+function doGet(e) {
+  return out({ ok: true, name: SpreadsheetApp.getActiveSpreadsheet().getName() });
+}
+
+function out(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}

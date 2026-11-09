@@ -472,6 +472,12 @@
   table.dash-table th{background:var(--bg);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;user-select:none;white-space:nowrap;}
   table.dash-table td{white-space:nowrap;font-variant-numeric:tabular-nums;}
   table.dash-table td.name-cell{text-align:left;font-weight:700;min-width:5em;}
+  .sheet-btn{background:var(--primary);}
+  .dash-toolbar{gap:10px;}
+  .sheet-last{font-size:14px;color:var(--muted);margin:-2px 0 10px;min-height:1.3em;}
+  .sheet-last.ok{color:var(--ok);font-weight:700;}
+  .sheet-last.err{color:var(--danger);font-weight:700;}
+  #sheetSetup input{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:10px;font-size:16px;}
   .part-tag{display:inline-block;background:#FFF3E6;color:#8A5300;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:700;}
   table.dash-table td.final-cell{font-weight:800;color:var(--primary);}
   .table-scroll{overflow-x:auto;border-radius:var(--radius);}
@@ -553,9 +559,11 @@
     <section id="tab-dashboard" class="hidden">
       <div class="cls-summary-row" id="clsSummaryRow"></div>
       <div class="dash-toolbar">
-        <div id="dashFilterLabel" style="font-size:13px;color:var(--muted);font-weight:600;">전체 반</div>
+        <div id="dashFilterLabel" style="font-size:15px;color:var(--muted);font-weight:600;">전체 반</div>
         <button class="export-btn" id="btnExportXlsx"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14"/></svg>엑셀로 내보내기 (반별 시트)</button>
+        <button class="export-btn sheet-btn" id="btnSendSheet"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-3-7-7-1z"/></svg>구글 시트로 보내기</button>
       </div>
+      <p class="sheet-last" id="sheetLast"></p>
       <div class="table-scroll">
         <table class="dash-table" id="dashTable">
           <thead>
@@ -632,6 +640,20 @@
         <div class="roster-actions">
           <button class="btn btn-primary" id="btnOneStuAdd" style="width:auto;">추가·수정</button>
           <span class="save-state" id="oneStuResult"></span>
+        </div>
+      </details>
+
+      <details class="roster-card" id="sheetSetup">
+        <summary class="roster-title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3A4 4 0 0 0 13 5.3l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1"/></svg>구글 시트 연결 설정</summary>
+        <p class="roster-help">현황판의 <b>구글 시트로 보내기</b> 버튼이 성적을 보낼 주소입니다. 이 기기에만 저장됩니다. 만드는 방법은 <a href="구글시트_연결방법.html" target="_blank" rel="noopener">연결 방법 문서</a>를 보세요.</p>
+        <div class="field"><label for="sheetUrl">웹 앱 주소 (https://script.google.com/…/exec)</label>
+          <input id="sheetUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec"></div>
+        <div class="field"><label for="sheetKey">열쇠(암호)</label>
+          <input id="sheetKey" type="password" autocomplete="off" placeholder="스크립트에 적은 열쇠와 같은 글자"></div>
+        <div class="roster-actions">
+          <button class="btn btn-primary" id="btnSheetSave" style="width:auto;">저장</button>
+          <button class="btn" id="btnSheetTest" style="width:auto;background:var(--bg);border:1px solid var(--border);">연결 확인</button>
+          <span class="save-state" id="sheetSetupMsg"></span>
         </div>
       </details>
 
@@ -1119,7 +1141,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
     ["score","dashboard","roster"].forEach(t => {
       document.getElementById("tab-" + t).classList.toggle("hidden", t !== State.currentTab);
     });
-    if (State.currentTab === "dashboard") renderDashboard();
+    if (State.currentTab === "dashboard"){ renderDashboard(); if (typeof showSheetLast === "function") showSheetLast(); }
     if (State.currentTab === "roster") renderRosterTab();
     updateFocusMode();
   });
@@ -2409,7 +2431,8 @@ function makeXlsx(sheets){           // sheets: [{name, rows}]
   return zipStore(files);
 }
 
-document.getElementById("btnExportXlsx").addEventListener("click", () => {
+// 내보내기(엑셀)와 구글 시트 전송이 같은 구성을 쓰도록 한 곳에서 만든다.
+function buildExportSheets(){
   const sheets = [];
   const all = [EXPORT_HEADER];
   CLASSES.forEach(cls => {
@@ -2418,8 +2441,87 @@ document.getElementById("btnExportXlsx").addEventListener("click", () => {
     rows.forEach(r => all.push(r));
     sheets.push({name: cls + "반", rows: [EXPORT_HEADER, ...rows]});
   });
-  if (!sheets.length){ toast("내보낼 성적이 아직 없습니다.", true); return; }
+  if (!sheets.length) return [];
   sheets.unshift({name: "전체", rows: all});
+  return sheets;
+}
+
+/* ---- 구글 시트로 보내기 ----
+   선생님 구글 계정의 Apps Script(웹 앱)가 받아서 시트에 덮어쓴다. 주소와 열쇠는
+   소스에 두지 않고 이 기기의 localStorage에만 저장한다(앱 소스는 공개 페이지라서). */
+const SHEET_LS = {url:"jr_sheet_url", key:"jr_sheet_key", last:"jr_sheet_last"};
+const lsRead = k => { try { return localStorage.getItem(k) || ""; } catch(e){ return ""; } };
+const lsWrite = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
+function sheetConfig(){ return {url: lsRead(SHEET_LS.url).trim(), key: lsRead(SHEET_LS.key)}; }
+function showSheetLast(){
+  const el = document.getElementById("sheetLast");
+  if (!el) return;
+  const last = lsRead(SHEET_LS.last);
+  el.className = "sheet-last" + (last ? " ok" : "");
+  el.textContent = last ? "마지막으로 시트에 보낸 시각: " + last : (sheetConfig().url ? "" : "아직 구글 시트가 연결되지 않았습니다 (명단 탭 → 구글 시트 연결 설정).");
+}
+async function postToSheet(payload){
+  const {url} = sheetConfig();
+  // text/plain 으로 보내야 브라우저가 사전 확인(preflight)을 하지 않아 Apps Script가 받을 수 있다.
+  // 학교 와이파이가 불안정할 때 버튼이 오래 멈춰 있지 않도록 25초 안에 끝내거나 포기한다.
+  const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 25000);
+  let text;
+  try {
+    const res = await fetch(url, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(payload), signal: ctl.signal});
+    text = await res.text();
+  } catch(e){
+    throw new Error(e.name === "AbortError" ? "시간이 너무 오래 걸립니다. 인터넷 연결을 확인하고 다시 눌러 주세요." : "인터넷 연결 또는 시트 주소를 확인해 주세요.");
+  } finally { clearTimeout(timer); }
+  try { return JSON.parse(text); } catch(e){ throw new Error("시트 응답을 읽지 못했습니다. 주소가 웹 앱 배포 주소인지 확인하세요."); }
+}
+document.getElementById("btnSendSheet").addEventListener("click", async () => {
+  const btn = document.getElementById("btnSendSheet"), note = document.getElementById("sheetLast");
+  const cfg = sheetConfig();
+  if (!cfg.url || !cfg.key){
+    toast("먼저 명단 탭의 '구글 시트 연결 설정'을 해 주세요.", true);
+    note.className = "sheet-last err"; note.textContent = "연결 설정이 필요합니다 (명단 탭 → 구글 시트 연결 설정).";
+    return;
+  }
+  const sheets = buildExportSheets();
+  if (!sheets.length){ toast("보낼 성적이 아직 없습니다.", true); return; }
+  btn.disabled = true; note.className = "sheet-last"; note.textContent = "보내는 중…";
+  try {
+    const r = await postToSheet({key: cfg.key, by: teacherDisplayName((State.user||{}).email), sheets});
+    if (!r.ok) throw new Error(r.error || "시트가 거절했습니다.");
+    const t = new Date(), stamp = (t.getMonth()+1) + "월 " + t.getDate() + "일 " + pad2(t.getHours()) + ":" + pad2(t.getMinutes());
+    lsWrite(SHEET_LS.last, stamp); showSheetLast();
+    toast("구글 시트에 보냈습니다 (" + r.rows + "명).");
+  } catch(e){
+    note.className = "sheet-last err"; note.textContent = "보내지 못했습니다: " + e.message;
+    toast("시트로 보내지 못했습니다.", true);
+  } finally { btn.disabled = false; }
+});
+// 연결 설정(명단 탭)
+(function initSheetSetup(){
+  const url = document.getElementById("sheetUrl"), key = document.getElementById("sheetKey"), msg = document.getElementById("sheetSetupMsg");
+  if (!url) return;
+  url.value = lsRead(SHEET_LS.url); key.value = lsRead(SHEET_LS.key);
+  const say = (t, err) => { msg.textContent = t; msg.classList.toggle("err", !!err); };
+  document.getElementById("btnSheetSave").addEventListener("click", () => {
+    const u = url.value.trim();
+    if (u && !/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(u)){ say("주소 형태가 맞지 않습니다 (…/exec 로 끝나야 합니다).", true); return; }
+    lsWrite(SHEET_LS.url, u); lsWrite(SHEET_LS.key, key.value);
+    say("저장했습니다."); showSheetLast();
+  });
+  document.getElementById("btnSheetTest").addEventListener("click", async () => {
+    const u = url.value.trim();
+    if (!u){ say("주소를 먼저 입력하세요.", true); return; }
+    say("확인 중…");
+    try {
+      const res = await fetch(u + (u.includes("?") ? "&" : "?") + "ping=1");
+      const j = JSON.parse(await res.text());
+      say(j.ok ? "연결됐습니다. 시트: " + (j.name || "") : "응답이 이상합니다.", !j.ok);
+    } catch(e){ say("연결하지 못했습니다. 배포 설정(액세스: 모든 사용자)을 확인하세요.", true); }
+  });
+})();
+document.getElementById("btnExportXlsx").addEventListener("click", () => {
+  const sheets = buildExportSheets();
+  if (!sheets.length){ toast("내보낼 성적이 아직 없습니다.", true); return; }
   const now = new Date();
   const a = document.createElement("a");
   a.href = URL.createObjectURL(makeXlsx(sheets));

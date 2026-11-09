@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>구글 시트 연결 방법</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F4F6F9;--card:#fff;--text:#161A20;--muted:#5B6472;--border:#E8ECF2;--primary:#2862E6;--pl:#EDF3FF;--ok:#0E7F5C;--warn:#8A5300}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:"Noto Sans KR",sans-serif;font-size:17px;line-height:1.65}
+  .wrap{max-width:780px;margin:0 auto;padding:22px 16px 70px}
+  h1{font-size:28px;font-weight:900;letter-spacing:-.02em}
+  .lead{color:var(--muted);margin-top:6px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-top:16px}
+  h2{font-size:21px;font-weight:900;color:var(--primary);display:flex;gap:10px;align-items:center}
+  .n{background:var(--primary);color:#fff;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+  ol,ul{padding-left:22px;margin-top:8px} li{margin:7px 0}
+  b{font-weight:700} p{margin-top:8px}
+  .k{background:var(--pl);color:#1F55CC;border-radius:7px;padding:1px 8px;font-weight:700;white-space:nowrap}
+  .note{background:#FFF8E8;border:1px solid #F0DFB5;border-radius:12px;padding:11px 14px;margin-top:12px;color:var(--warn);font-weight:500}
+  .ok{background:#E7F7F1;border:1px solid #BFE8D6;border-radius:12px;padding:11px 14px;margin-top:12px;color:var(--ok);font-weight:700}
+  pre{background:#161A20;color:#E6EAF0;border-radius:12px;padding:14px;margin-top:10px;overflow:auto;font-size:13px;line-height:1.55;max-height:340px}
+  button.copy{margin-top:10px;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:13px 18px;font-size:16px;font-weight:700;min-height:48px;font-family:inherit}
+  code{background:#EEF1F5;border-radius:6px;padding:1px 6px;font-size:15px}
+  @media print{body{background:#fff}.card{break-inside:avoid}button.copy{display:none}}
+</style></head><body><div class="wrap">
+<h1>구글 시트 연결 방법</h1>
+<p class="lead">한 번만 하면 됩니다(약 5분). 이후에는 앱 현황판의 <b>구글 시트로 보내기</b> 버튼만 누르면 같은 시트에 최신 성적이 덮어써집니다.</p>
+
+<div class="card"><h2><span class="n">1</span>빈 구글 시트 만들기</h2>
+<ol>
+<li>구글 드라이브에서 <span class="k">새로 만들기 → Google 스프레드시트</span>를 누릅니다.</li>
+<li>이름을 <b>음악줄넘기 성적</b>으로 바꿉니다.</li>
+</ol></div>
+
+<div class="card"><h2><span class="n">2</span>스크립트 붙여넣기</h2>
+<ol>
+<li>시트 위쪽 메뉴에서 <span class="k">확장 프로그램 → Apps Script</span>를 엽니다.</li>
+<li>가운데 편집창의 기존 글(<code>function myFunction…</code>)을 <b>모두 지웁니다</b>.</li>
+<li>아래 <span class="k">스크립트 복사</span>를 누르고, 편집창에 붙여넣습니다.</li>
+<li>맨 위 <code>KEY = '여기에-열쇠를-적으세요'</code>의 따옴표 안을 <b>선생님이 정한 암호</b>로 바꿉니다. (예: 영문·숫자 8자 이상, 다른 사이트에 쓰는 비밀번호는 쓰지 마세요)</li>
+<li>위쪽 <span class="k">저장</span>(디스크 모양)을 누릅니다.</li>
+</ol>
+<button class="copy" id="cp">스크립트 복사</button>
+<pre id="code">// 음악줄넘기 채점 → 구글 시트 받는 스크립트
+// 사용법은 "구글시트_연결방법" 문서를 보세요.
+
+// ▼ 여기 따옴표 안에 선생님이 정한 열쇠(암호)를 적으세요. 앱의 '열쇠'와 똑같아야 합니다.
+const KEY = '여기에-열쇠를-적으세요';
+
+function doPost(e) {
+  try {
+    const d = JSON.parse(e.postData.contents);
+    if (KEY === '여기에-열쇠를-적으세요') return out({ ok: false, error: '스크립트의 열쇠를 아직 정하지 않았습니다.' });
+    if (d.key !== KEY) return out({ ok: false, error: '열쇠가 맞지 않습니다.' });
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sent = {};
+    let people = 0;
+
+    d.sheets.forEach(function (sh) {
+      sent[sh.name] = true;
+      const ws = ss.getSheetByName(sh.name) || ss.insertSheet(sh.name);
+      ws.clear();
+      const rows = sh.rows;
+      if (!rows.length) return;
+      const w = Math.max.apply(null, rows.map(function (r) { return r.length; }));
+      const grid = rows.map(function (r) { const c = r.slice(); while (c.length &lt; w) c.push(''); return c; });
+      ws.getRange(1, 1, grid.length, w).setValues(grid);
+      ws.getRange(1, 1, 1, w).setFontWeight('bold').setBackground('#EDF3FF');
+      ws.setFrozenRows(1);
+      ws.autoResizeColumns(1, w);
+      if (sh.name === '전체') people = rows.length - 1;
+    });
+
+    // 이번에 기록이 없어진 반 시트는 옛 내용이 남지 않게 비워 둔다.
+    ss.getSheets().forEach(function (ws) {
+      if (/^\d+반$/.test(ws.getName()) &amp;&amp; !sent[ws.getName()]) ws.clear();
+    });
+
+    // '전체' 시트를 맨 앞으로
+    const all = ss.getSheetByName('전체');
+    if (all) { ss.setActiveSheet(all); ss.moveActiveSheet(1); }
+
+    // 맨 뒤 '업데이트' 시트에 마지막으로 받은 시각을 남긴다.
+    const log = ss.getSheetByName('업데이트') || ss.insertSheet('업데이트');
+    log.getRange('A1:B3').setValues([
+      ['마지막 업데이트', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm')],
+      ['보낸 사람', d.by || ''],
+      ['학생 수', people]
+    ]);
+    log.getRange('A1:A3').setFontWeight('bold');
+
+    return out({ ok: true, rows: people, sheets: d.sheets.length });
+  } catch (err) {
+    return out({ ok: false, error: String(err) });
+  }
+}
+
+// 앱의 '연결 확인' 버튼이 부르는 곳 (성적은 돌려주지 않고 시트 이름만 알려 줍니다)
+function doGet(e) {
+  return out({ ok: true, name: SpreadsheetApp.getActiveSpreadsheet().getName() });
+}
+
+function out(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+</pre></div>
+
+<div class="card"><h2><span class="n">3</span>웹 앱으로 배포하기</h2>
+<ol>
+<li>오른쪽 위 <span class="k">배포 → 새 배포</span>를 누릅니다.</li>
+<li>톱니바퀴(유형 선택) → <span class="k">웹 앱</span>을 고릅니다.</li>
+<li><b>다음 사용자 인증 정보로 실행: 나</b> 로 둡니다.</li>
+<li><b>액세스 권한이 있는 사용자: 모든 사용자</b> 로 바꿉니다.</li>
+<li><span class="k">배포</span>를 누르면 권한 승인 창이 뜹니다. <b>권한 검토 → 계정 선택 → 고급 → (안전하지 않음) 이동 → 허용</b> 순서로 누릅니다. (본인이 만든 스크립트라서 나오는 안내입니다.)</li>
+<li>마지막 창에 <b>웹 앱 URL</b>이 나옵니다. <span class="k">복사</span>를 누릅니다. 주소는 <code>https://script.google.com/macros/s/…/exec</code> 로 끝납니다.</li>
+</ol>
+<div class="note">"모든 사용자"로 배포해도 <b>암호를 모르면 아무것도 쓸 수 없습니다.</b> 스크립트는 암호가 맞을 때만 시트에 씁니다. 그래서 암호는 남에게 알려 주지 마세요.</div></div>
+
+<div class="card"><h2><span class="n">4</span>앱에 연결하기</h2>
+<ol>
+<li>앱 <span class="k">명단 탭 → 구글 시트 연결 설정</span>을 엽니다.</li>
+<li><b>웹 앱 주소</b> 칸에 3단계에서 복사한 주소, <b>열쇠</b> 칸에 2단계에서 정한 암호를 넣습니다.</li>
+<li><span class="k">저장</span> 후 <span class="k">연결 확인</span>을 누릅니다. "연결됐습니다. 시트: 음악줄넘기 성적"이 나오면 성공입니다.</li>
+<li>현황판의 <span class="k">구글 시트로 보내기</span>를 눌러 보세요. 시트에 <b>전체</b>·<b>반별</b> 탭이 생기고 성적이 채워집니다.</li>
+</ol>
+<div class="ok">앱을 쓰는 기기(휴대폰, 컴퓨터)마다 4단계를 한 번씩 해 주세요. 주소와 암호는 그 기기에만 저장됩니다.</div></div>
+
+<div class="card"><h2><span class="n">5</span>알아 둘 점</h2>
+<ul>
+<li>버튼을 누를 때마다 시트의 <b>전체·반별 탭이 새 성적으로 통째로 바뀝니다.</b> 시트에서 직접 고친 내용은 사라지니, 계산이나 메모는 <b>다른 탭</b>에 적으세요.</li>
+<li><b>업데이트</b> 탭에 마지막 업데이트 시각이 기록됩니다.</li>
+<li>스크립트를 고친 뒤에는 <span class="k">배포 → 배포 관리 → 새 버전</span>으로 다시 배포해야 반영됩니다. 이때 주소는 그대로입니다.</li>
+<li>보강 선생님 계정은 연결이 필요 없습니다. 담당 선생님 기기에서만 보내시면 됩니다.</li>
+<li>시트는 선생님만 볼 수 있게 비공개로 두세요. 학생 번호·이름·점수가 들어 있습니다.</li>
+</ul></div>
+</div>
+<script>
+document.getElementById("cp").addEventListener("click", async function(){
+  var t=document.getElementById("code").textContent, b=this;
+  try{ await navigator.clipboard.writeText(t); b.textContent="복사했습니다"; }
+  catch(e){ var r=document.createRange(); r.selectNodeContents(document.getElementById("code")); var s=getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent="글이 선택됐습니다. 길게 눌러 복사하세요"; }
+  setTimeout(function(){ b.textContent="스크립트 복사"; }, 2500);
+});
+</script></body></html>
