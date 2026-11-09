@@ -1,36 +1,25 @@
-// 음악줄넘기 채점 → 구글 시트
-//  ① 앱의 "구글 시트로 보내기" 버튼이 보낸 성적을 받아 시트에 씁니다.
-//  ② 매일 17시 대에 서버(Firebase)에서 성적을 직접 읽어 와 시트를 갱신합니다.
-// 설정 방법은 "구글시트_연결방법" 문서를 보세요.
+// 음악줄넘기 채점 → 구글 시트 받는 스크립트
+// 앱이 성적이 바뀔 때마다 보내 주는 내용을 이 시트에 덮어씁니다.
+// 사용법은 "구글시트_연결방법" 문서를 보세요. (열쇠 파일 같은 건 필요 없습니다)
 
-// ▼ 따옴표 안에 선생님이 정한 열쇠(암호)를 적으세요. (앱의 '열쇠'와 같아야 버튼 전송이 됩니다)
-const KEY = '여기에-열쇠를-적으세요';
+// ▼ 따옴표 안에 선생님이 정한 암호를 적으세요. 앱의 '열쇠'와 똑같아야 합니다.
+const KEY = '여기에-암호를-적으세요';
 
-// 아래는 건드리지 않아도 됩니다.
-const DB_URL = 'https://jumprope-score-default-rtdb.asia-southeast1.firebasedatabase.app';
-const DAILY_HOUR = 17;                       // 매일 17시 대
-const MOVE_COUNT = 8;                        // 채점 동작 수
-const CHALLENGE_COUNT = 10;                  // 개인진도표 동작 수
-const B_MAX = 5;                             // 과제수행 가산점 만점
-const CLASS_COUNT = 10;                      // 반 수
-const MOVE_NAMES = [
-  '① 양발모아뛰기 2도약+1도약', '② 번갈아 뛰기', '③ 번갈아두박자 뛰기', '④ 십자 뛰기',
-  '⑤ 가위바위보 뛰기', '⑥ 사이드 오픈(SO)', '⑦ 사이드 크로스(SC)', '⑧ 크로스 오픈(CO)'
-];
-const HEADER = ['반', '번호', '이름'].concat(MOVE_NAMES, [
-  '완성도(Ⓐ)', '과제수행(Ⓑ)', '원점수', '환산점수', '반영 차수', '총 시도 차수', '채점교사', '비고'
-]);
-
-/* ===================== ① 앱 버튼으로 받기 ===================== */
 function doPost(e) {
+  // 두 기기가 동시에 보내도 차례대로 처리합니다.
+  const lock = LockService.getScriptLock();
   try {
+    lock.waitLock(25000);
     const d = JSON.parse(e.postData.contents);
-    if (KEY === '여기에-열쇠를-적으세요') { logRejected('스크립트의 열쇠를 아직 정하지 않았습니다.'); return out({ ok: false, error: '스크립트의 열쇠를 아직 정하지 않았습니다.' }); }
-    if (d.key !== KEY) { logRejected('열쇠가 맞지 않습니다. (앱의 열쇠와 스크립트의 KEY를 확인하세요)'); return out({ ok: false, error: '열쇠가 맞지 않습니다.' }); }
+    if (KEY === '여기에-암호를-적으세요') { logRejected('스크립트의 KEY(암호)를 아직 정하지 않았습니다.'); return out({ ok: false }); }
+    if (d.key !== KEY) { logRejected('암호가 맞지 않습니다. 앱의 열쇠와 스크립트의 KEY가 같은지 확인하세요.'); return out({ ok: false }); }
     const people = writeSheets(d.sheets, d.by || '');
     return out({ ok: true, rows: people, sheets: d.sheets.length });
   } catch (err) {
+    try { logRejected('오류: ' + String(err)); } catch (e2) {}
     return out({ ok: false, error: String(err) });
+  } finally {
+    try { lock.releaseLock(); } catch (e3) {}
   }
 }
 
@@ -39,181 +28,6 @@ function doGet(e) {
   return out({ ok: true, name: SpreadsheetApp.getActiveSpreadsheet().getName() });
 }
 
-/* ===================== ② 매일 17시 자동 가져오기 ===================== */
-// 시간 알람이 부르는 함수입니다.
-function dailyUpdate() {
-  updateFromServer('자동(매일 ' + DAILY_HOUR + '시)');
-}
-
-// 편집기에서 직접 눌러 지금 바로 갱신해 볼 때 쓰세요.
-function 지금_업데이트() {
-  updateFromServer('수동(편집기)');
-}
-
-// 설정이 맞는지 시험합니다. 시트는 건드리지 않고 결과만 보여 줍니다. (처음 한 번 실행하면 권한 승인 창이 뜹니다)
-function 연결_시험() {
-  const data = readServer();
-  const sheets = buildSheets(data.scores, data.rosters);
-  const n = sheets.length ? sheets[0].rows.length - 1 : 0;
-  const msg = '서버 연결 성공. 읽은 학생 수: ' + n + '명, 시트 ' + sheets.length + '개 (실제 시트는 바꾸지 않았습니다)';
-  Logger.log(msg);
-  SpreadsheetApp.getActiveSpreadsheet().toast(msg, '연결 시험', 10);
-}
-
-// 매일 17시 알람 켜기 (한 번만 실행하면 됩니다. 여러 번 눌러도 알람은 하나만 남습니다)
-function 매일17시_켜기() {
-  매일17시_끄기();
-  ScriptApp.newTrigger('dailyUpdate').timeBased().atHour(DAILY_HOUR).everyDays(1).inTimezone('Asia/Seoul').create();
-  SpreadsheetApp.getActiveSpreadsheet().toast('매일 ' + DAILY_HOUR + '시 대에 자동으로 갱신합니다.', '알람 켬', 8);
-}
-
-function 매일17시_끄기() {
-  ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === 'dailyUpdate') ScriptApp.deleteTrigger(t);
-  });
-}
-
-function updateFromServer(by) {
-  try {
-    const data = readServer();
-    const sheets = buildSheets(data.scores, data.rosters);
-    if (!sheets.length) { writeLog(by, 0, '성적이 아직 없어 시트를 바꾸지 않았습니다.'); return; }
-    writeSheets(sheets, by);
-  } catch (err) {
-    // 실패해도 시트의 기존 성적은 그대로 두고, 업데이트 탭에만 이유를 남깁니다.
-    writeLog(by, '', '실패: ' + String(err));
-    throw err;
-  }
-}
-
-/* ===================== 서버(Firebase) 읽기 ===================== */
-function getAccessToken() {
-  const raw = PropertiesService.getScriptProperties().getProperty('SA_JSON');
-  if (!raw) throw new Error('스크립트 속성 SA_JSON 이 비어 있습니다. (프로젝트 설정 → 스크립트 속성)');
-  const sa = JSON.parse(raw);
-  if (!sa.client_email || !sa.private_key) throw new Error('SA_JSON 에 client_email / private_key 가 없습니다. 내려받은 키 파일 내용 전체를 붙여넣으세요.');
-  const now = Math.floor(Date.now() / 1000);
-  const enc = function (o) { return Utilities.base64EncodeWebSafe(JSON.stringify(o)).replace(/=+$/, ''); };
-  const unsigned = enc({ alg: 'RS256', typ: 'JWT' }) + '.' + enc({
-    iss: sa.client_email,
-    scope: 'https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now, exp: now + 3600
-  });
-  const sig = Utilities.base64EncodeWebSafe(Utilities.computeRsaSha256Signature(unsigned, sa.private_key)).replace(/=+$/, '');
-  const res = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', {
-    method: 'post', muteHttpExceptions: true,
-    payload: { grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: unsigned + '.' + sig }
-  });
-  const j = JSON.parse(res.getContentText());
-  if (!j.access_token) throw new Error('서버 열쇠로 로그인하지 못했습니다: ' + (j.error_description || j.error || res.getResponseCode()));
-  return j.access_token;
-}
-
-function readServer() {
-  const token = getAccessToken();
-  const get = function (path) {
-    const res = UrlFetchApp.fetch(DB_URL + '/' + path + '.json?access_token=' + encodeURIComponent(token), { muteHttpExceptions: true });
-    if (res.getResponseCode() !== 200) throw new Error(path + ' 읽기 실패 (' + res.getResponseCode() + '): ' + res.getContentText().slice(0, 120));
-    return JSON.parse(res.getContentText());
-  };
-  return { scores: get('scores') || {}, rosters: get('rosters') || {} };
-}
-
-/* ===================== 점수 계산 (앱과 똑같은 규칙) =====================
-   Firebase 는 번호가 1,2,3…으로 이어진 데이터를 배열로 돌려주기도 하므로
-   객체/배열 어느 쪽이든 같은 방식으로 읽습니다. */
-function keysOf(o) { return o ? Object.keys(o) : []; }
-
-function finalScoreFromRaw(raw) {
-  if (raw <= 9) return 10;
-  if (raw <= 14) return 15;
-  if (raw <= 19) return 20;
-  if (raw <= 24) return 25;
-  if (raw <= 29) return 30;
-  if (raw <= 34) return 35;
-  return 40;
-}
-
-function storedRounds(rec) {
-  if (rec && rec.rounds && keysOf(rec.rounds).length) return rec.rounds;
-  if (rec && rec.moves && keysOf(rec.moves).length) return { r1: { moves: rec.moves } };   // 옛 기록은 1차
-  return {};
-}
-function roundsOf(rec) {
-  const st = storedRounds(rec);
-  return keysOf(st).length ? st : { r1: { moves: {} } };
-}
-function roundNo(k) { return Number(String(k).replace(/^r/, '')); }
-
-function roundStats(moves) {
-  moves = moves || {};
-  let a = 0, scored = 0;
-  for (let i = 0; i < MOVE_COUNT; i++) { const v = moves[i]; if (v) { a += v; scored++; } }
-  return { a: a, scored: scored };
-}
-
-function challengeOf(rec) {
-  const passed = (rec && rec.challenge) || {};
-  let count = 0;
-  for (let i = 0; i < CHALLENGE_COUNT; i++) { if (passed['c' + i]) count++; }
-  const passB = Math.max(0, Math.min(B_MAX, count - 4));
-  const bonus = Math.max(0, Math.min(B_MAX, Number(rec && rec.challengeBonus) || 0));
-  return { count: count, b: Math.min(B_MAX, passB + bonus) };
-}
-
-function scoresOf(rec) {
-  const rounds = roundsOf(rec);
-  const nos = keysOf(rounds).map(roundNo).sort(function (x, y) { return x - y; });
-  let best = null;
-  nos.forEach(function (rn) {
-    const r = rounds['r' + rn];
-    const st = roundStats(r && r.moves);
-    if (!best || st.a > best.a) best = { roundNo: rn, a: st.a, scored: st.scored };
-  });
-  const b = challengeOf(rec).b;
-  const raw = best.a + b;
-  return { a: best.a, b: b, raw: raw, final: finalScoreFromRaw(raw), scored: best.scored, bestRoundNo: best.roundNo, roundCount: nos.length };
-}
-
-// 앱의 "엑셀로 내보내기"와 같은 시트 구성을 만듭니다: 전체 + 기록 있는 반별.
-function buildSheets(scores, rosters) {
-  const all = [HEADER];
-  const sheets = [];
-  for (let cls = 1; cls <= CLASS_COUNT; cls++) {
-    const roster = (rosters && rosters[cls]) || {};
-    const count = roster.count || 30;
-    const names = roster.names || {};
-    const status = roster.status || {};
-    const clsScores = (scores && scores[cls]) || {};
-    const rows = [];
-    for (let no = 1; no <= count; no++) {
-      const name = names[no] ? names[no] : (no + '번');
-      if (status[no]) {   // 학적변동 학생: 번호·이름만 남기고 성적은 비움
-        const blank = [];
-        for (let i = 0; i < MOVE_COUNT; i++) blank.push('');
-        rows.push([cls, no, name].concat(blank, ['', '', '', '', '', '', '', status[no]]));
-        continue;
-      }
-      const rec = clsScores[no];
-      if (!rec) continue;
-      const cs = scoresOf(rec);
-      if (cs.scored === 0 && cs.b === 0 && challengeOf(rec).count === 0) continue;
-      const best = (roundsOf(rec)['r' + cs.bestRoundNo] || {}).moves || {};
-      const vals = [];
-      for (let i = 0; i < MOVE_COUNT; i++) vals.push(best[i] || '');
-      rows.push([cls, no, name].concat(vals, [cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + '차', cs.roundCount, rec.scoredBy || '', '']));
-    }
-    if (!rows.length) continue;
-    rows.forEach(function (r) { all.push(r); });
-    sheets.push({ name: cls + '반', rows: [HEADER].concat(rows) });
-  }
-  if (!sheets.length) return [];
-  sheets.unshift({ name: '전체', rows: all });
-  return sheets;
-}
-
-/* ===================== 시트에 쓰기 ===================== */
 function writeSheets(sheets, by) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sent = {};
@@ -239,26 +53,23 @@ function writeSheets(sheets, by) {
     if (/^\d+반$/.test(ws.getName()) && !sent[ws.getName()]) ws.clear();
   });
 
-  // '전체' 시트를 맨 앞으로
+  // 처음 만들어진 빈 '시트1'은 지우고, '전체'를 맨 앞으로
+  const blank = ss.getSheetByName('시트1') || ss.getSheetByName('Sheet1');
+  if (blank && ss.getSheets().length > 1 && blank.getLastRow() === 0) ss.deleteSheet(blank);
   const all = ss.getSheetByName('전체');
   if (all) { ss.setActiveSheet(all); ss.moveActiveSheet(1); }
 
-  writeLog(by, people, '성공');
-  return people;
-}
-
-// '업데이트' 탭에 마지막으로 받은 시각과 결과를 남깁니다.
-function writeLog(by, people, result) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  // '업데이트' 탭에 마지막으로 받은 시각과 보낸 사람을 남깁니다.
   const log = ss.getSheetByName('업데이트') || ss.insertSheet('업데이트');
   log.getRange('A1:B4').setValues([
-    ['마지막 업데이트', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm')],
-    ['방식', by || ''],
+    ['마지막 업데이트', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss')],
+    ['보낸 곳', by || ''],
     ['학생 수', people],
-    ['결과', result]
+    ['결과', '성공']
   ]);
   log.getRange('A1:A4').setFontWeight('bold');
   log.autoResizeColumns(1, 2);
+  return people;
 }
 
 // 앱은 구글의 응답을 읽을 수 없으므로, 거절한 이유를 '업데이트' 탭에 남깁니다.

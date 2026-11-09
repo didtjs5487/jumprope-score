@@ -4,7 +4,7 @@
 <title>구글 시트 연결 방법</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#F4F6F9;--card:#fff;--text:#161A20;--muted:#5B6472;--border:#E8ECF2;--primary:#2862E6;--pl:#EDF3FF;--ok:#0E7F5C;--warn:#8A5300;--danger:#D93A2B}
+  :root{--bg:#F4F6F9;--card:#fff;--text:#161A20;--muted:#5B6472;--border:#E8ECF2;--primary:#2862E6;--pl:#EDF3FF;--ok:#0E7F5C;--warn:#8A5300}
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--text);font-family:"Noto Sans KR",sans-serif;font-size:17px;line-height:1.65}
   .wrap{max-width:780px;margin:0 auto;padding:22px 16px 70px}
@@ -15,69 +15,54 @@
   .n{background:var(--primary);color:#fff;width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;flex:none}
   ol,ul{padding-left:22px;margin-top:8px} li{margin:7px 0}
   b{font-weight:700} p{margin-top:8px}
-  a{color:var(--primary)}
   .k{background:var(--pl);color:#1F55CC;border-radius:7px;padding:1px 8px;font-weight:700;white-space:nowrap}
   .note{background:#FFF8E8;border:1px solid #F0DFB5;border-radius:12px;padding:11px 14px;margin-top:12px;color:var(--warn);font-weight:500}
-  .danger{background:#FDEDEA;border:1px solid #F3C4BD;border-radius:12px;padding:11px 14px;margin-top:12px;color:#8E2418;font-weight:500}
   .ok{background:#E7F7F1;border:1px solid #BFE8D6;border-radius:12px;padding:11px 14px;margin-top:12px;color:var(--ok);font-weight:700}
-  pre{background:#161A20;color:#E6EAF0;border-radius:12px;padding:14px;margin-top:10px;overflow:auto;font-size:13px;line-height:1.55;max-height:340px}
+  pre{background:#161A20;color:#E6EAF0;border-radius:12px;padding:14px;margin-top:10px;overflow:auto;font-size:13px;line-height:1.55;max-height:300px}
   button.copy{margin-top:10px;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:13px 18px;font-size:16px;font-weight:700;min-height:48px;font-family:inherit}
   code{background:#EEF1F5;border-radius:6px;padding:1px 6px;font-size:15px}
-  .tag{display:inline-block;border-radius:999px;padding:2px 10px;font-size:13px;font-weight:800}
-  .tag.must{background:#E7F7F1;color:var(--ok)} .tag.opt{background:#EEF1F5;color:var(--muted)}
   @media print{body{background:#fff}.card{break-inside:avoid}button.copy{display:none}}
 </style></head><body><div class="wrap">
 <h1>구글 시트 연결 방법</h1>
-<p class="lead">한 번만 하면 됩니다(약 15분). 끝나면 <b>매일 17시 대에 시트가 스스로 최신 성적으로 바뀝니다.</b> 앱·휴대폰·컴퓨터는 켜 둘 필요가 없습니다. 급할 때는 앱 현황판의 <b>구글 시트로 보내기</b> 버튼으로 바로 갱신할 수도 있습니다.</p>
+<p class="lead">한 번만 하면 됩니다(약 5분). 끝나면 <b>성적이 바뀔 때마다 구글 드라이브의 스프레드시트가 자동으로 최신이 됩니다.</b> 열쇠 파일 같은 어려운 설정은 없습니다.</p>
 
-<div class="card"><h2><span class="n">1</span>빈 구글 시트 만들기</h2>
+<div class="card"><h2><span class="n">1</span>스프레드시트 준비</h2>
 <ol>
-<li>구글 드라이브에서 <span class="k">새로 만들기 → Google 스프레드시트</span>를 누릅니다. (이미 <b>음악줄넘기 성적</b> 시트를 만들어 두셨다면 그 시트를 그대로 쓰세요.)</li>
-<li>이름은 <b>음악줄넘기 성적</b>으로 합니다. 시트는 <b>비공개</b>로 두세요. 학생 번호·이름·점수가 들어갑니다.</li>
+<li>구글 드라이브의 <b>음악줄넘기 성적</b> 시트를 엽니다. (없으면 <span class="k">새로 만들기 → Google 스프레드시트</span>로 만들고 이름을 같게 합니다.)</li>
+<li>시트는 <b>비공개</b>로 두세요. 학생 번호·이름·점수가 들어갑니다.</li>
 </ol></div>
 
 <div class="card"><h2><span class="n">2</span>스크립트 붙여넣기</h2>
 <ol>
 <li>시트 위쪽 메뉴에서 <span class="k">확장 프로그램 → Apps Script</span>를 엽니다.</li>
 <li>가운데 편집창의 기존 글(<code>function myFunction…</code>)을 <b>모두 지웁니다</b>.</li>
-<li>아래 <span class="k">스크립트 복사</span>를 누르고, 편집창에 붙여넣습니다.</li>
-<li>맨 위 <code>KEY = '여기에-열쇠를-적으세요'</code>의 따옴표 안을 <b>선생님이 정한 암호</b>로 바꿉니다. (영문·숫자 8자 이상, 다른 곳에 쓰는 비밀번호는 쓰지 마세요)</li>
+<li>아래 <span class="k">스크립트 복사</span>를 누르고 편집창에 붙여넣습니다.</li>
+<li>맨 위 <code>KEY = '여기에-암호를-적으세요'</code>의 따옴표 안을 <b>선생님이 정한 암호</b>로 바꿉니다. (영문·숫자 8자 이상. 다른 곳에 쓰는 비밀번호는 쓰지 마세요.)</li>
 <li>위쪽 <span class="k">저장</span>(디스크 모양)을 누릅니다.</li>
 </ol>
 <button class="copy" id="cp">스크립트 복사</button>
-<pre id="code">// 음악줄넘기 채점 → 구글 시트
-//  ① 앱의 "구글 시트로 보내기" 버튼이 보낸 성적을 받아 시트에 씁니다.
-//  ② 매일 17시 대에 서버(Firebase)에서 성적을 직접 읽어 와 시트를 갱신합니다.
-// 설정 방법은 "구글시트_연결방법" 문서를 보세요.
+<pre id="code">// 음악줄넘기 채점 → 구글 시트 받는 스크립트
+// 앱이 성적이 바뀔 때마다 보내 주는 내용을 이 시트에 덮어씁니다.
+// 사용법은 "구글시트_연결방법" 문서를 보세요. (열쇠 파일 같은 건 필요 없습니다)
 
-// ▼ 따옴표 안에 선생님이 정한 열쇠(암호)를 적으세요. (앱의 '열쇠'와 같아야 버튼 전송이 됩니다)
-const KEY = '여기에-열쇠를-적으세요';
+// ▼ 따옴표 안에 선생님이 정한 암호를 적으세요. 앱의 '열쇠'와 똑같아야 합니다.
+const KEY = '여기에-암호를-적으세요';
 
-// 아래는 건드리지 않아도 됩니다.
-const DB_URL = 'https://jumprope-score-default-rtdb.asia-southeast1.firebasedatabase.app';
-const DAILY_HOUR = 17;                       // 매일 17시 대
-const MOVE_COUNT = 8;                        // 채점 동작 수
-const CHALLENGE_COUNT = 10;                  // 개인진도표 동작 수
-const B_MAX = 5;                             // 과제수행 가산점 만점
-const CLASS_COUNT = 10;                      // 반 수
-const MOVE_NAMES = [
-  '① 양발모아뛰기 2도약+1도약', '② 번갈아 뛰기', '③ 번갈아두박자 뛰기', '④ 십자 뛰기',
-  '⑤ 가위바위보 뛰기', '⑥ 사이드 오픈(SO)', '⑦ 사이드 크로스(SC)', '⑧ 크로스 오픈(CO)'
-];
-const HEADER = ['반', '번호', '이름'].concat(MOVE_NAMES, [
-  '완성도(Ⓐ)', '과제수행(Ⓑ)', '원점수', '환산점수', '반영 차수', '총 시도 차수', '채점교사', '비고'
-]);
-
-/* ===================== ① 앱 버튼으로 받기 ===================== */
 function doPost(e) {
+  // 두 기기가 동시에 보내도 차례대로 처리합니다.
+  const lock = LockService.getScriptLock();
   try {
+    lock.waitLock(25000);
     const d = JSON.parse(e.postData.contents);
-    if (KEY === '여기에-열쇠를-적으세요') return out({ ok: false, error: '스크립트의 열쇠를 아직 정하지 않았습니다.' });
-    if (d.key !== KEY) return out({ ok: false, error: '열쇠가 맞지 않습니다.' });
+    if (KEY === '여기에-암호를-적으세요') { logRejected('스크립트의 KEY(암호)를 아직 정하지 않았습니다.'); return out({ ok: false }); }
+    if (d.key !== KEY) { logRejected('암호가 맞지 않습니다. 앱의 열쇠와 스크립트의 KEY가 같은지 확인하세요.'); return out({ ok: false }); }
     const people = writeSheets(d.sheets, d.by || '');
     return out({ ok: true, rows: people, sheets: d.sheets.length });
   } catch (err) {
+    try { logRejected('오류: ' + String(err)); } catch (e2) {}
     return out({ ok: false, error: String(err) });
+  } finally {
+    try { lock.releaseLock(); } catch (e3) {}
   }
 }
 
@@ -86,181 +71,6 @@ function doGet(e) {
   return out({ ok: true, name: SpreadsheetApp.getActiveSpreadsheet().getName() });
 }
 
-/* ===================== ② 매일 17시 자동 가져오기 ===================== */
-// 시간 알람이 부르는 함수입니다.
-function dailyUpdate() {
-  updateFromServer('자동(매일 ' + DAILY_HOUR + '시)');
-}
-
-// 편집기에서 직접 눌러 지금 바로 갱신해 볼 때 쓰세요.
-function 지금_업데이트() {
-  updateFromServer('수동(편집기)');
-}
-
-// 설정이 맞는지 시험합니다. 시트는 건드리지 않고 결과만 보여 줍니다. (처음 한 번 실행하면 권한 승인 창이 뜹니다)
-function 연결_시험() {
-  const data = readServer();
-  const sheets = buildSheets(data.scores, data.rosters);
-  const n = sheets.length ? sheets[0].rows.length - 1 : 0;
-  const msg = '서버 연결 성공. 읽은 학생 수: ' + n + '명, 시트 ' + sheets.length + '개 (실제 시트는 바꾸지 않았습니다)';
-  Logger.log(msg);
-  SpreadsheetApp.getActiveSpreadsheet().toast(msg, '연결 시험', 10);
-}
-
-// 매일 17시 알람 켜기 (한 번만 실행하면 됩니다. 여러 번 눌러도 알람은 하나만 남습니다)
-function 매일17시_켜기() {
-  매일17시_끄기();
-  ScriptApp.newTrigger('dailyUpdate').timeBased().atHour(DAILY_HOUR).everyDays(1).inTimezone('Asia/Seoul').create();
-  SpreadsheetApp.getActiveSpreadsheet().toast('매일 ' + DAILY_HOUR + '시 대에 자동으로 갱신합니다.', '알람 켬', 8);
-}
-
-function 매일17시_끄기() {
-  ScriptApp.getProjectTriggers().forEach(function (t) {
-    if (t.getHandlerFunction() === 'dailyUpdate') ScriptApp.deleteTrigger(t);
-  });
-}
-
-function updateFromServer(by) {
-  try {
-    const data = readServer();
-    const sheets = buildSheets(data.scores, data.rosters);
-    if (!sheets.length) { writeLog(by, 0, '성적이 아직 없어 시트를 바꾸지 않았습니다.'); return; }
-    writeSheets(sheets, by);
-  } catch (err) {
-    // 실패해도 시트의 기존 성적은 그대로 두고, 업데이트 탭에만 이유를 남깁니다.
-    writeLog(by, '', '실패: ' + String(err));
-    throw err;
-  }
-}
-
-/* ===================== 서버(Firebase) 읽기 ===================== */
-function getAccessToken() {
-  const raw = PropertiesService.getScriptProperties().getProperty('SA_JSON');
-  if (!raw) throw new Error('스크립트 속성 SA_JSON 이 비어 있습니다. (프로젝트 설정 → 스크립트 속성)');
-  const sa = JSON.parse(raw);
-  if (!sa.client_email || !sa.private_key) throw new Error('SA_JSON 에 client_email / private_key 가 없습니다. 내려받은 키 파일 내용 전체를 붙여넣으세요.');
-  const now = Math.floor(Date.now() / 1000);
-  const enc = function (o) { return Utilities.base64EncodeWebSafe(JSON.stringify(o)).replace(/=+$/, ''); };
-  const unsigned = enc({ alg: 'RS256', typ: 'JWT' }) + '.' + enc({
-    iss: sa.client_email,
-    scope: 'https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now, exp: now + 3600
-  });
-  const sig = Utilities.base64EncodeWebSafe(Utilities.computeRsaSha256Signature(unsigned, sa.private_key)).replace(/=+$/, '');
-  const res = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', {
-    method: 'post', muteHttpExceptions: true,
-    payload: { grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: unsigned + '.' + sig }
-  });
-  const j = JSON.parse(res.getContentText());
-  if (!j.access_token) throw new Error('서버 열쇠로 로그인하지 못했습니다: ' + (j.error_description || j.error || res.getResponseCode()));
-  return j.access_token;
-}
-
-function readServer() {
-  const token = getAccessToken();
-  const get = function (path) {
-    const res = UrlFetchApp.fetch(DB_URL + '/' + path + '.json?access_token=' + encodeURIComponent(token), { muteHttpExceptions: true });
-    if (res.getResponseCode() !== 200) throw new Error(path + ' 읽기 실패 (' + res.getResponseCode() + '): ' + res.getContentText().slice(0, 120));
-    return JSON.parse(res.getContentText());
-  };
-  return { scores: get('scores') || {}, rosters: get('rosters') || {} };
-}
-
-/* ===================== 점수 계산 (앱과 똑같은 규칙) =====================
-   Firebase 는 번호가 1,2,3…으로 이어진 데이터를 배열로 돌려주기도 하므로
-   객체/배열 어느 쪽이든 같은 방식으로 읽습니다. */
-function keysOf(o) { return o ? Object.keys(o) : []; }
-
-function finalScoreFromRaw(raw) {
-  if (raw &lt;= 9) return 10;
-  if (raw &lt;= 14) return 15;
-  if (raw &lt;= 19) return 20;
-  if (raw &lt;= 24) return 25;
-  if (raw &lt;= 29) return 30;
-  if (raw &lt;= 34) return 35;
-  return 40;
-}
-
-function storedRounds(rec) {
-  if (rec &amp;&amp; rec.rounds &amp;&amp; keysOf(rec.rounds).length) return rec.rounds;
-  if (rec &amp;&amp; rec.moves &amp;&amp; keysOf(rec.moves).length) return { r1: { moves: rec.moves } };   // 옛 기록은 1차
-  return {};
-}
-function roundsOf(rec) {
-  const st = storedRounds(rec);
-  return keysOf(st).length ? st : { r1: { moves: {} } };
-}
-function roundNo(k) { return Number(String(k).replace(/^r/, '')); }
-
-function roundStats(moves) {
-  moves = moves || {};
-  let a = 0, scored = 0;
-  for (let i = 0; i &lt; MOVE_COUNT; i++) { const v = moves[i]; if (v) { a += v; scored++; } }
-  return { a: a, scored: scored };
-}
-
-function challengeOf(rec) {
-  const passed = (rec &amp;&amp; rec.challenge) || {};
-  let count = 0;
-  for (let i = 0; i &lt; CHALLENGE_COUNT; i++) { if (passed['c' + i]) count++; }
-  const passB = Math.max(0, Math.min(B_MAX, count - 4));
-  const bonus = Math.max(0, Math.min(B_MAX, Number(rec &amp;&amp; rec.challengeBonus) || 0));
-  return { count: count, b: Math.min(B_MAX, passB + bonus) };
-}
-
-function scoresOf(rec) {
-  const rounds = roundsOf(rec);
-  const nos = keysOf(rounds).map(roundNo).sort(function (x, y) { return x - y; });
-  let best = null;
-  nos.forEach(function (rn) {
-    const r = rounds['r' + rn];
-    const st = roundStats(r &amp;&amp; r.moves);
-    if (!best || st.a &gt; best.a) best = { roundNo: rn, a: st.a, scored: st.scored };
-  });
-  const b = challengeOf(rec).b;
-  const raw = best.a + b;
-  return { a: best.a, b: b, raw: raw, final: finalScoreFromRaw(raw), scored: best.scored, bestRoundNo: best.roundNo, roundCount: nos.length };
-}
-
-// 앱의 "엑셀로 내보내기"와 같은 시트 구성을 만듭니다: 전체 + 기록 있는 반별.
-function buildSheets(scores, rosters) {
-  const all = [HEADER];
-  const sheets = [];
-  for (let cls = 1; cls &lt;= CLASS_COUNT; cls++) {
-    const roster = (rosters &amp;&amp; rosters[cls]) || {};
-    const count = roster.count || 30;
-    const names = roster.names || {};
-    const status = roster.status || {};
-    const clsScores = (scores &amp;&amp; scores[cls]) || {};
-    const rows = [];
-    for (let no = 1; no &lt;= count; no++) {
-      const name = names[no] ? names[no] : (no + '번');
-      if (status[no]) {   // 학적변동 학생: 번호·이름만 남기고 성적은 비움
-        const blank = [];
-        for (let i = 0; i &lt; MOVE_COUNT; i++) blank.push('');
-        rows.push([cls, no, name].concat(blank, ['', '', '', '', '', '', '', status[no]]));
-        continue;
-      }
-      const rec = clsScores[no];
-      if (!rec) continue;
-      const cs = scoresOf(rec);
-      if (cs.scored === 0 &amp;&amp; cs.b === 0 &amp;&amp; challengeOf(rec).count === 0) continue;
-      const best = (roundsOf(rec)['r' + cs.bestRoundNo] || {}).moves || {};
-      const vals = [];
-      for (let i = 0; i &lt; MOVE_COUNT; i++) vals.push(best[i] || '');
-      rows.push([cls, no, name].concat(vals, [cs.a, cs.b, cs.raw, cs.final, cs.bestRoundNo + '차', cs.roundCount, rec.scoredBy || '', '']));
-    }
-    if (!rows.length) continue;
-    rows.forEach(function (r) { all.push(r); });
-    sheets.push({ name: cls + '반', rows: [HEADER].concat(rows) });
-  }
-  if (!sheets.length) return [];
-  sheets.unshift({ name: '전체', rows: all });
-  return sheets;
-}
-
-/* ===================== 시트에 쓰기 ===================== */
 function writeSheets(sheets, by) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sent = {};
@@ -286,26 +96,31 @@ function writeSheets(sheets, by) {
     if (/^\d+반$/.test(ws.getName()) &amp;&amp; !sent[ws.getName()]) ws.clear();
   });
 
-  // '전체' 시트를 맨 앞으로
+  // 처음 만들어진 빈 '시트1'은 지우고, '전체'를 맨 앞으로
+  const blank = ss.getSheetByName('시트1') || ss.getSheetByName('Sheet1');
+  if (blank &amp;&amp; ss.getSheets().length &gt; 1 &amp;&amp; blank.getLastRow() === 0) ss.deleteSheet(blank);
   const all = ss.getSheetByName('전체');
   if (all) { ss.setActiveSheet(all); ss.moveActiveSheet(1); }
 
-  writeLog(by, people, '성공');
-  return people;
-}
-
-// '업데이트' 탭에 마지막으로 받은 시각과 결과를 남깁니다.
-function writeLog(by, people, result) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  // '업데이트' 탭에 마지막으로 받은 시각과 보낸 사람을 남깁니다.
   const log = ss.getSheetByName('업데이트') || ss.insertSheet('업데이트');
   log.getRange('A1:B4').setValues([
-    ['마지막 업데이트', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm')],
-    ['방식', by || ''],
+    ['마지막 업데이트', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss')],
+    ['보낸 곳', by || ''],
     ['학생 수', people],
-    ['결과', result]
+    ['결과', '성공']
   ]);
   log.getRange('A1:A4').setFontWeight('bold');
   log.autoResizeColumns(1, 2);
+  return people;
+}
+
+// 앱은 구글의 응답을 읽을 수 없으므로, 거절한 이유를 '업데이트' 탭에 남깁니다.
+function logRejected(reason) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const log = ss.getSheetByName('업데이트') || ss.insertSheet('업데이트');
+  log.getRange('A6:B6').setValues([['마지막 거절', Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm') + ' · ' + reason]]);
+  log.getRange('A6').setFontWeight('bold');
 }
 
 function out(o) {
@@ -313,55 +128,34 @@ function out(o) {
 }
 </pre></div>
 
-<div class="card"><h2><span class="n">3</span>서버 읽기용 열쇠 만들기 <span class="tag must">매일 17시 자동 갱신에 필요</span></h2>
-<p>시트가 서버(Firebase)의 성적을 직접 읽으려면 <b>읽기용 열쇠 파일</b>이 필요합니다. 파일은 한 번 받아서 아래 4단계에서 붙여넣고, 바로 지웁니다.</p>
+<div class="card"><h2><span class="n">3</span>웹 앱으로 배포하기</h2>
 <ol>
-<li><a href="https://console.firebase.google.com/project/jumprope-score/settings/serviceaccounts/adminsdk" target="_blank" rel="noopener">Firebase 콘솔의 서비스 계정 화면</a>을 엽니다. (또는 Firebase 콘솔 → <b>jumprope-score</b> 프로젝트 → 왼쪽 위 톱니바퀴 → <span class="k">프로젝트 설정</span> → <span class="k">서비스 계정</span> 탭)</li>
-<li>아래쪽 <span class="k">새 비공개 키 생성</span>을 누르고, 안내 창에서 <span class="k">키 생성</span>을 누릅니다.</li>
-<li><code>jumprope-score-firebase-adminsdk-….json</code> 파일이 <b>다운로드 폴더</b>에 저장됩니다.</li>
+<li>오른쪽 위 <span class="k">배포 → 새 배포</span>를 누릅니다.</li>
+<li>톱니바퀴(유형 선택) → <span class="k">웹 앱</span>을 고릅니다.</li>
+<li><b>다음 사용자 인증 정보로 실행: 나</b> 로 둡니다.</li>
+<li><b>액세스 권한이 있는 사용자: 모든 사용자</b> 로 바꿉니다.</li>
+<li><span class="k">배포</span>를 누르면 권한 승인 창이 뜹니다. <span class="k">권한 검토 → 계정 선택 → 고급 → (안전하지 않음) 이동 → 허용</span> 순서로 누릅니다. (본인이 만든 스크립트라서 나오는 안내입니다.)</li>
+<li>마지막 창의 <b>웹 앱 URL</b> 옆 <span class="k">복사</span>를 누릅니다. <code>https://script.google.com/macros/s/…/exec</code> 로 끝나는 주소입니다.</li>
 </ol>
-<div class="danger"><b>이 파일은 데이터베이스 전체를 읽고 쓸 수 있는 열쇠입니다.</b> 카카오톡·이메일로 보내지 말고, 저에게도 붙여넣지 마세요. 4단계에서 선생님 구글 계정의 스크립트 보관함에만 넣고, 끝나면 <b>다운로드 폴더에서 지우세요.</b></div></div>
+<div class="note">"모든 사용자"로 배포해도 <b>2단계에서 정한 암호를 모르면 아무것도 쓸 수 없습니다.</b> 그래서 암호는 남에게 알려 주지 마세요.</div></div>
 
-<div class="card"><h2><span class="n">4</span>스크립트 보관함에 열쇠 넣기 <span class="tag must">3단계와 이어서</span></h2>
+<div class="card"><h2><span class="n">4</span>앱에 연결하기</h2>
 <ol>
-<li>Apps Script 화면 왼쪽의 톱니바퀴 <span class="k">프로젝트 설정</span>을 누릅니다.</li>
-<li>맨 아래 <span class="k">스크립트 속성 → 스크립트 속성 추가</span>를 누릅니다.</li>
-<li><b>속성</b> 칸에 <code>SA_JSON</code> 이라고 정확히 적습니다. (대문자, 밑줄 포함)</li>
-<li><b>값</b> 칸에는 방금 받은 <code>.json</code> 파일을 <b>메모장으로 열어 전체를 복사해 붙여넣습니다.</b> <code>{</code> 로 시작해 <code>}</code> 로 끝나는 내용 전부입니다.</li>
-<li><span class="k">스크립트 속성 저장</span>을 누릅니다.</li>
-<li>다운로드 폴더의 <code>.json</code> 파일을 <b>삭제</b>합니다.</li>
-</ol></div>
-
-<div class="card"><h2><span class="n">5</span>시험해 보고 알람 켜기</h2>
-<ol>
-<li>Apps Script 위쪽 <b>함수 선택 칸</b>(▶ 실행 옆)에서 <code>연결_시험</code> 을 고르고 <span class="k">실행</span>을 누릅니다.</li>
-<li>처음에는 <b>권한 검토</b> 창이 뜹니다. <span class="k">권한 검토 → 계정 선택 → 고급 → (안전하지 않음) 이동 → 허용</span> 순서로 누릅니다. (본인이 만든 스크립트라서 나오는 안내입니다.)</li>
-<li>시트 화면에 <b>"서버 연결 성공. 읽은 학생 수: ○○명"</b>이 뜨면 성공입니다. 이 시험은 시트를 바꾸지 않습니다.</li>
-<li>함수 선택 칸에서 <code>지금_업데이트</code> 를 고르고 실행하면, 지금 바로 시트가 채워집니다. <b>전체·반별 탭</b>과 <b>업데이트 탭</b>이 생기는지 확인하세요.</li>
-<li>함수 선택 칸에서 <code>매일17시_켜기</code> 를 고르고 실행합니다. 이제 <b>매일 17시 대</b>에 자동으로 갱신됩니다.</li>
+<li>앱 <span class="k">명단 탭 → 구글 시트 연결 설정</span>을 엽니다.</li>
+<li><b>웹 앱 주소</b>에 3단계에서 복사한 주소, <b>열쇠</b>에 2단계에서 정한 암호를 넣고 <span class="k">저장</span>을 누릅니다.</li>
+<li>현황판의 <span class="k">구글 시트로 보내기</span>를 눌러 시험합니다. 시트에 <b>전체·반별 탭</b>과 <b>업데이트 탭</b>이 생기면 성공입니다.</li>
 </ol>
-<div class="ok">알람은 "17시 정각"이 아니라 <b>17시 대(17:00~18:00 사이)</b>에 한 번 돌아갑니다. 구글이 정하는 방식이라 정확한 분은 고를 수 없습니다.</div>
-<div class="note">오류가 나면 <b>업데이트 탭</b>의 "결과" 칸에 이유가 적힙니다. 실패해도 시트의 기존 성적은 그대로 남습니다.</div></div>
+<div class="ok">한 번 저장하면 <b>선생님 계정으로 로그인한 다른 기기(휴대폰·컴퓨터)에도 자동으로 적용</b>됩니다. 기기마다 다시 넣지 않아도 됩니다.</div></div>
 
-<div class="card"><h2><span class="n">6</span>앱의 "구글 시트로 보내기" 버튼 연결 <span class="tag opt">선택</span></h2>
-<p>급하게 지금 바로 갱신하고 싶을 때 쓰는 버튼입니다. 매일 17시 자동 갱신만 쓰실 거라면 이 단계는 건너뛰어도 됩니다.</p>
-<ol>
-<li>Apps Script 오른쪽 위 <span class="k">배포 → 새 배포</span>를 누릅니다.</li>
-<li>톱니바퀴(유형 선택) → <span class="k">웹 앱</span>, <b>다음 사용자 인증 정보로 실행: 나</b>, <b>액세스 권한이 있는 사용자: 모든 사용자</b> 로 두고 <span class="k">배포</span>를 누릅니다.</li>
-<li>나온 <b>웹 앱 URL</b>(<code>https://script.google.com/macros/s/…/exec</code>)을 복사합니다.</li>
-<li>앱 <span class="k">명단 탭 → 구글 시트 연결 설정</span>에 <b>웹 앱 주소</b>와 2단계의 <b>열쇠</b>를 넣고 <span class="k">저장</span>을 누릅니다.</li>
-<li>현황판의 <span class="k">구글 시트로 보내기</span>를 누르고, 시트의 <b>업데이트 탭</b>이 바뀌는지 확인합니다.</li>
-</ol>
-<div class="note">구글은 앱에 답을 돌려주지 않습니다. 그래서 앱은 "보냈습니다"까지만 알려 주고, <b>잘 반영됐는지·열쇠가 틀렸는지는 시트의 업데이트 탭</b>에 적힙니다. (열쇠가 틀리면 "마지막 거절" 줄에 이유가 남습니다.) <b>연결 확인</b> 단추는 기기에 따라 응답을 못 읽을 수 있는데, 그럴 때도 위 방법으로 확인하면 됩니다.</div>
-<div class="note">"모든 사용자"로 배포해도 <b>암호(KEY)를 모르면 아무것도 쓸 수 없습니다.</b> 그래도 암호는 남에게 알려 주지 마세요. 이 주소와 암호는 앱을 쓰는 기기마다 한 번씩 넣어야 합니다.</div></div>
-
-<div class="card"><h2><span class="n">7</span>알아 둘 점</h2>
+<div class="card"><h2><span class="n">5</span>알아 둘 점</h2>
 <ul>
-<li>갱신될 때마다 시트의 <b>전체·반별 탭이 새 성적으로 통째로 바뀝니다.</b> 시트에서 직접 고친 내용은 사라지니, 계산이나 메모는 <b>다른 탭</b>에 적으세요. (<b>업데이트</b> 탭도 매번 덮어써집니다.)</li>
-<li>스크립트를 고친 뒤 버튼 방식(6단계)을 쓰고 있다면 <span class="k">배포 → 배포 관리 → 새 버전</span>으로 다시 배포해야 반영됩니다. 매일 17시 자동 갱신은 다시 배포하지 않아도 새 스크립트로 돕니다.</li>
-<li>알람을 끄려면 <code>매일17시_끄기</code> 를 실행하세요.</li>
-<li><b>열쇠를 잃어버렸거나 의심스러울 때</b>: Firebase 콘솔의 서비스 계정 화면에서 해당 키를 삭제하고, 3~4단계를 다시 하면 됩니다.</li>
-<li>새 학기에는 시트를 새로 복사해 쓰세요. 앱의 성적을 초기화해도 이미 만들어진 시트는 그대로 남아 있습니다.</li>
+<li><b>성적이 바뀐 뒤 약 20초 안에</b> 시트에 반영됩니다. 여러 번 연달아 채점하면 모아서 한 번에 보내고, 같은 내용은 다시 보내지 않습니다.</li>
+<li>앱이 <b>열려 있을 때</b> 보냅니다. 성적은 앱으로만 바뀌므로, 채점하는 동안에는 항상 반영됩니다. 앱을 닫아 둔 상태에서 서버의 성적이 바뀐 경우(다른 선생님이 채점)는 그 선생님의 앱이 보냅니다.</li>
+<li>구글은 앱에 답을 돌려주지 않습니다. 그래서 앱은 "보냈습니다"까지만 알려 주고, <b>잘 반영됐는지와 오류(암호가 틀림 등)는 시트의 업데이트 탭</b>에 적힙니다. 암호가 틀리면 "마지막 거절" 줄에 이유가 남습니다.</li>
+<li>시트의 <b>전체·반별 탭은 보낼 때마다 통째로 바뀝니다.</b> 시트에서 직접 고친 내용은 사라지니 계산·메모는 <b>다른 탭</b>에 적으세요.</li>
+<li>자동 전송을 끄려면 명단 탭의 연결 설정에서 <span class="k">성적이 바뀔 때마다 자동으로 보내기</span>를 끄고 저장하세요. 현황판 단추로는 언제든 직접 보낼 수 있습니다.</li>
+<li>스크립트를 고친 뒤에는 <span class="k">배포 → 배포 관리 → 새 버전</span>으로 다시 배포해야 반영됩니다. 주소는 그대로입니다.</li>
+<li>새 학기에는 시트를 새로 복사해 쓰세요.</li>
 </ul></div>
 </div>
 <script>
