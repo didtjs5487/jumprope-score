@@ -1200,6 +1200,10 @@ function loadRosterFor(){
     CLASSES.forEach(cls => { State.rosterCache[cls] = (all && all[cls]) || {count: 30, names: {}}; });
     State.rostersReady = true;
     try { syncSheetLinkFromServer(all && all._sheet); scheduleSheetSync(); } catch(e){}
+    // 반 명단이 실제로 바뀐 때만 화면을 다시 그린다(시트 연결 정보만 바뀐 알림은 무시).
+    const sig = JSON.stringify(CLASSES.map(c => all && all[c]));
+    if (sig === State.rosterSig) return;
+    State.rosterSig = sig;
     if (State.currentTab === "score"){ renderStudentGrid(); renderScoreCard(); }
     if (State.currentTab === "roster") renderRosterTab();
     if (State.currentTab === "dashboard") renderDashboard();
@@ -2456,8 +2460,8 @@ function buildExportSheets(){
 /* ---- 구글 시트로 보내기 ----
    선생님 구글 계정의 Apps Script(웹 앱)가 받아서 시트에 덮어쓴다. 주소와 열쇠는
    소스에 두지 않고 이 기기의 localStorage에만 저장한다(앱 소스는 공개 페이지라서). */
-var SHEET_LS = {url:"jr_sheet_url", key:"jr_sheet_key", last:"jr_sheet_last", auto:"jr_sheet_auto", hash:"jr_sheet_hash"};
-var SHEET_SYNC = {timer:null, lastAt:0, sending:false};
+var SHEET_LS = {url:"jr_sheet_url", key:"jr_sheet_key", last:"jr_sheet_last", auto:"jr_sheet_auto", hash:"jr_sheet_hash", size:"jr_sheet_size"};
+var SHEET_SYNC = {timer:null, lastAt:0, sending:false, blocked:""};
 const lsRead = k => { try { return localStorage.getItem(k) || ""; } catch(e){ return ""; } };
 const lsWrite = (k, v) => { try { localStorage.setItem(k, v); } catch(e){} };
 function sheetConfig(){ return {url: lsRead(SHEET_LS.url).trim(), key: lsRead(SHEET_LS.key), auto: lsRead(SHEET_LS.auto) !== "0"}; }
@@ -2465,6 +2469,7 @@ function showSheetLast(){
   const el = document.getElementById("sheetLast");
   if (!el) return;
   const last = lsRead(SHEET_LS.last), cfg = sheetConfig();
+  if (SHEET_SYNC.blocked){ el.className = "sheet-last err"; el.textContent = SHEET_SYNC.blocked; return; }
   el.className = "sheet-last" + (last ? " ok" : "");
   if (!cfg.url){ el.textContent = "아직 구글 시트가 연결되지 않았습니다 (명단 탭 → 구글 시트 연결 설정)."; return; }
   el.textContent = (cfg.auto ? "성적이 바뀔 때마다 자동으로 시트에 보냅니다. " : "자동 전송은 꺼져 있습니다. ")
@@ -2497,7 +2502,9 @@ document.getElementById("btnSendSheet").addEventListener("click", async () => {
   btn.disabled = true; note.className = "sheet-last"; note.textContent = "보내는 중…";
   try {
     await postToSheet({key: cfg.key, by: teacherDisplayName((State.user||{}).email), sheets});
-    lsWrite(SHEET_LS.hash, sheetHash(sheets)); lsWrite(SHEET_LS.last, sheetStamp()); showSheetLast();
+    SHEET_SYNC.blocked = "";
+    lsWrite(SHEET_LS.hash, sheetHash(sheets)); lsWrite(SHEET_LS.size, String(sheetSize(sheets))); lsWrite(SHEET_LS.last, sheetStamp()); showSheetLast();
+    publishSheetSize(sheetSize(sheets));
     toast("구글 시트에 보냈습니다. 반영 여부는 시트의 '업데이트' 탭에서 확인하세요.");
   } catch(e){
     note.className = "sheet-last err"; note.textContent = "보내지 못했습니다: " + e.message;
@@ -2512,6 +2519,19 @@ function sheetHash(sheets){
   const str = JSON.stringify(sheets); let h = 5381;
   for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0;
   return h + ":" + str.length;
+}
+// "데이터 양" = 전체 탭에서 번호·이름 뒤에 값이 들어 있는 칸의 수(동작 점수·합계·비고 등).
+// 학생이 빠지거나 점수가 지워지면 줄어든다.
+function sheetSize(sheets){
+  const all = sheets[0];
+  if (!all) return 0;
+  let n = 0;
+  all.rows.slice(1).forEach(r => { for (let i = 3; i < r.length; i++) if (r[i] !== "" && r[i] != null) n++; });
+  return n;
+}
+function publishSheetSize(size){
+  const c = sheetConfig();
+  Backend.setRoster("_sheet", {url: c.url, key: c.key, auto: c.auto, size: size}).catch(() => {});
 }
 function scheduleSheetSync(){
   const cfg = sheetConfig();
@@ -2529,11 +2549,21 @@ async function runSheetSync(){
   if (!sheets.length) return;                                   // 성적이 없으면 시트를 비우지 않는다
   const h = sheetHash(sheets);
   if (h === lsRead(SHEET_LS.hash)) return;                      // 이미 보낸 내용
+  // 데이터가 지난번에 보낸 것보다 줄었으면 시트를 바꾸지 않는다. (초기화나 불완전한 불러오기로
+  // 시트의 성적이 지워지는 사고를 막는다. 일부러 줄인 것이면 현황판의 '구글 시트로 보내기'로 직접 보낸다.)
+  const size = sheetSize(sheets), lastSize = Number(lsRead(SHEET_LS.size)) || 0;
+  if (size < lastSize){
+    SHEET_SYNC.blocked = "성적이 지난번보다 줄어서(" + lastSize + "칸 → " + size + "칸) 시트는 그대로 두었습니다. 일부러 줄이신 거라면 '구글 시트로 보내기'를 눌러 직접 보내세요.";
+    showSheetLast();
+    return;
+  }
   SHEET_SYNC.sending = true;
   try {
     await postToSheet({key: cfg.key, by: teacherDisplayName((State.user||{}).email) + " (자동)", sheets});
     SHEET_SYNC.lastAt = Date.now();
-    lsWrite(SHEET_LS.hash, h); lsWrite(SHEET_LS.last, sheetStamp()); showSheetLast();
+    SHEET_SYNC.blocked = "";
+    lsWrite(SHEET_LS.hash, h); lsWrite(SHEET_LS.size, String(size)); lsWrite(SHEET_LS.last, sheetStamp()); showSheetLast();
+    publishSheetSize(size);
   } catch(e){
     const el = document.getElementById("sheetLast");
     if (el){ el.className = "sheet-last err"; el.textContent = "자동 전송에 실패했습니다: " + e.message + " (잠시 뒤 다시 시도합니다)"; }
@@ -2544,6 +2574,7 @@ async function runSheetSync(){
 function syncSheetLinkFromServer(remote){
   const local = sheetConfig();
   if (remote && typeof remote.url === "string"){
+    if (typeof remote.size === "number") lsWrite(SHEET_LS.size, String(remote.size));   // 서버의 기준 양이 정답
     const same = remote.url === local.url && String(remote.key || "") === local.key && (remote.auto !== false) === local.auto;
     if (!same){
       lsWrite(SHEET_LS.url, remote.url || ""); lsWrite(SHEET_LS.key, String(remote.key || "")); lsWrite(SHEET_LS.auto, remote.auto === false ? "0" : "1");
@@ -2573,7 +2604,7 @@ var refreshSheetSetupInputs = null;
     const u = url.value.trim();
     if (u && !/^https:\/\/script\.google\.com\/macros\/s\/[^\s]+\/exec$/.test(u)){ say("주소 형태가 맞지 않습니다 (…/exec 로 끝나야 합니다).", true); return; }
     saveSheetLink(u, key.value, auto.checked).then(() => say("저장했습니다. 다른 기기에도 함께 적용됩니다."), () => say("이 기기에는 저장했지만 서버에는 저장하지 못했습니다. 인터넷을 확인하세요.", true));
-    showSheetLast(); lsWrite(SHEET_LS.hash, ""); scheduleSheetSync();
+    showSheetLast(); lsWrite(SHEET_LS.hash, ""); lsWrite(SHEET_LS.size, "0"); scheduleSheetSync();
   });
   document.getElementById("btnSheetTest").addEventListener("click", async () => {
     const u = url.value.trim();
