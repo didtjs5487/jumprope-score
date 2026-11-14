@@ -131,7 +131,9 @@
   /* grid를 써서 5칸이 항상 컨테이너 폭에 꽉 차게 균등 분배되도록 한다
      (flex-wrap은 마지막 줄/나머지 칸이 남으면 오른쪽에 빈 여백이 생김). */
   .student-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;}
-  @media(min-width:860px) and (min-height:620px){.student-grid{display:flex;flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}}
+  @media(min-width:860px) and (min-height:620px){.student-grid{display:flex;flex-direction:column;flex-wrap:nowrap;max-height:calc(100vh - 200px);overflow-y:auto;}
+    .student-grid.by-color{display:block;}
+    .student-grid .grp-chips{display:flex;flex-direction:column;gap:4px;}}
   /* 한 줄 6칸 + 낮은 고정 높이로 번호 목록이 화면을 덜 차지하게 한다. 학적변동
      학생은 이름 자리에 사유만 표시해 칸 높이가 늘지 않음. 채점 진행 상태는 번호 색으로 표시. */
   .stu-chip{padding:0 3px;border-radius:9px;background:var(--card);border:1px solid var(--border);
@@ -188,6 +190,16 @@
   .stat-mini .mi.zero{opacity:.45;}
   .stat-mini .mi b{font-weight:800;}
   .stat-mini .dot{width:15px;height:15px;border-radius:50%;border:1.5px solid rgba(22,26,32,.25);flex:none;}
+  .dot{display:inline-block;}
+  .seg{display:inline-flex;flex:none;border:1.5px solid var(--border);border-radius:10px;overflow:hidden;}
+  .seg button{min-height:40px;padding:0 13px;border:none;background:var(--card);font-size:15px;font-weight:700;color:var(--muted);}
+  .seg button.on{background:var(--primary);color:#fff;}
+  .student-grid.by-color{display:block;}
+  .grp{margin-bottom:12px;}
+  .grp-head{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;margin:0 2px 6px;}
+  .grp-head b{font-weight:800;font-variant-numeric:tabular-nums;}
+  .grp-head .dot{width:15px;height:15px;border-radius:50%;border:1.5px solid rgba(22,26,32,.25);flex:none;}
+  .grp-chips{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;}
   .stat-toggle,.sp-clear{flex:none;min-height:44px;padding:0 12px;border-radius:10px;border:none;background:transparent;
     font-size:15px;font-weight:700;color:var(--primary);}
   .sp-clear{background:var(--primary-light);}
@@ -1311,65 +1323,38 @@ const STAT_ORDER = {
   music: [["A","빨강(A)"],["B","주황(B)"],["C","노랑(C)"],["D","초록(D)"],["E","파랑(E)"],["part","채점 중"],["none","미응시"],["out","학적변동"]],
   chall: [["full","가산점 만점"],["some","일부 통과"],["none","아직 없음"],["out","학적변동"]],
 };
+const GROUP_ORDER = {
+  // 아직 해야 할 학생이 위로 오도록: 미응시 → 채점 중 → 빨강A … 파랑E → 학적변동
+  music: [["none","미응시"],["part","채점 중"],["A","빨강(A)"],["B","주황(B)"],["C","노랑(C)"],["D","초록(D)"],["E","파랑(E)"],["out","학적변동"]],
+  chall: [["none","아직 없음"],["some","일부 통과"],["full","가산점 만점"],["out","학적변동"]],
+};
+function gridView(){
+  if (!State.gridView) State.gridView = (lsRead("jr_grid_view") === "color") ? "color" : "no";
+  return State.gridView;
+}
 function renderStatBar(){
   const bar = document.getElementById("statBar");
   if (!bar) return;
   const challenge = State.scoreMode !== "two" && State.viewMode === "challenge";
-  const order = STAT_ORDER[challenge ? "chall" : "music"];
-  const cls = State.scoreCls, t = statCounts(cls, challenge);
-  const valid = order.map(o => o[0]);
-  if (State.statFilter && !valid.includes(State.statFilter)) State.statFilter = null;
-
+  const cls = State.scoreCls, t = statCounts(cls, challenge), view = gridView();
   // 완료/남음 — 음악줄넘기: 8개 동작을 다 채점하면 완료 · 개인진도표: 가산점 만점이면 완료
   const doneKeys = challenge ? ["full"] : ["A","B","C","D","E"];
-  const sum = (obj, keys) => keys.reduce((a, k) => a + (obj[k] || 0), 0);
-  const done = sum(t, doneKeys), out = t.out || 0, total = (getRoster(cls).count || 30) - out, left = total - done;
-
-  // 전체 반 합계(명단이 있는 반만)
-  let allDone = 0, allTotal = 0, classes = 0;
-  CLASSES.forEach(c => {
-    const r = getRoster(c), has = (r.names && Object.keys(r.names).length) || (State.scoresByClass[c] && Object.keys(State.scoresByClass[c]).length);
-    if (!has) return;
-    const tc = statCounts(c, challenge);
-    allDone += sum(tc, doneKeys); allTotal += (r.count || 30) - (tc.out || 0); classes++;
-  });
-
+  const done = doneKeys.reduce((a, k) => a + (t[k] || 0), 0);
+  const total = (getRoster(cls).count || 30) - (t.out || 0), left = total - done;
   const unit = challenge ? "가산점 만점" : "완료";
-  const open = State.statOpen !== undefined ? State.statOpen : (lsRead("jr_stat_open") === "1");
-  const fLabel = (order.find(o => o[0] === State.statFilter) || [])[1];
-  // 접힌 상태에서도 강조 중인 분류는 알 수 있게 작은 해제 단추를 둔다.
-  const clear = (!open && State.statFilter) ? `<button type="button" class="sp-clear" id="spClear">강조 해제 ✕ ${fLabel}</button>` : "";
+  // 번호순에서는 색깔별 숫자를 한 줄로 함께 보여 준다(색깔별 보기에서는 묶음 제목이 그 역할).
+  const mini = view === "color" ? "" : `<div class="stat-mini" aria-label="색깔별 인원">` +
+    (challenge ? ["full","some","none"] : ["A","B","C","D","E","part","none"]).map(k =>
+      `<span class="mi ${t[k] ? "" : "zero"}"><i class="dot c-${k}"></i><b>${t[k] || 0}</b></span>`).join("") + `</div>`;
   bar.innerHTML =
-    `<div class="stat-head"><div class="stat-main"><b>${cls}반</b> ${unit} <b>${done}</b> · <span class="left">남음 <b>${left}</b></span><span class="stat-of">(${total}명)</span></div>${clear}<button type="button" class="stat-toggle" id="statToggle" aria-expanded="${open}">${open ? "접기 ▴" : "자세히 ▾"}</button></div>` +
-    (open
-      ? `<div class="stat-pills">` + order.map(([k, label]) => {
-          const n = t[k] || 0;
-          return `<button type="button" class="sp ${State.statFilter === k ? "on" : ""} ${n ? "" : "zero"}" data-cat="${k}"><i class="dot c-${k}"></i>${label}: <b>${n}명</b></button>`;
-        }).join("") + `</div><div class="stat-all">전체 ${classes}개 반 합계: ${unit} ${allDone}명 / 남음 ${allTotal - allDone}명 (${allTotal}명 중)</div>`
-      : `<div class="stat-mini" aria-label="색깔별 인원">` + (challenge ? ["full","some","none"] : ["A","B","C","D","E","part","none"]).map(k =>
-          `<span class="mi ${t[k] ? "" : "zero"}"><i class="dot c-${k}"></i><b>${t[k] || 0}</b></span>`).join("") + `</div>`);
-  const tg = document.getElementById("statToggle");
-  if (tg) tg.addEventListener("click", () => {
-    State.statOpen = !open; lsWrite("jr_stat_open", State.statOpen ? "1" : "0"); renderStatBar();
-  });
-  const cl = document.getElementById("spClear");
-  if (cl) cl.addEventListener("click", () => { State.statFilter = null; renderStatBar(); });
-  bar.querySelectorAll(".sp").forEach(btn => btn.addEventListener("click", () => {
-    State.statFilter = State.statFilter === btn.dataset.cat ? null : btn.dataset.cat;
-    renderStatBar();
+    `<div class="stat-head"><div class="stat-main"><b>${cls}반</b> ${unit} <b>${done}</b> · <span class="left">남음 <b>${left}</b></span></div>` +
+    `<div class="seg" role="group" aria-label="번호 칸 보기 방식"><button type="button" data-view="no" class="${view === "no" ? "on" : ""}">번호순</button><button type="button" data-view="color" class="${view === "color" ? "on" : ""}">색깔별</button></div></div>` + mini;
+  bar.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.view === gridView()) return;
+    State.gridView = b.dataset.view; lsWrite("jr_grid_view", State.gridView);
+    State.frozen = null;
+    renderStudentGrid();
   }));
-  applyStatFilter();
-  // 가로 한 줄이라 선택한 알약이 화면 밖에 있을 수 있다 — 가운데로 끌어온다(세로 스크롤은 건드리지 않음).
-  const on = bar.querySelector(".stat-pills .sp.on");
-  if (on) on.scrollIntoView({inline:"center", block:"nearest"});
-}
-// 누른 분류에 속한 학생만 번호 칸에서 또렷하게 보이게 한다(다시 누르면 해제).
-function applyStatFilter(){
-  const grid = document.getElementById("studentGrid");
-  if (!grid) return;
-  const f = State.statFilter;
-  grid.classList.toggle("filtering", !!f);
-  grid.querySelectorAll(".stu-chip").forEach(c => c.classList.toggle("hl", !!f && c.dataset.cat === f));
 }
 
 function renderStudentGrid(){
@@ -1387,7 +1372,7 @@ function renderStudentGrid(){
   // 기준은 지금 열어둔 모드를 따른다(개인진도표 → 가산점Ⓑ 만점, 그 외 → 환산점수 만점).
   // 2명 동시 채점은 항상 음악줄넘기 채점이므로 등급색을 쓴다.
   const challengeMode = State.scoreMode !== "two" && State.viewMode === "challenge";
-  let html = "";
+  const chipHtml = {};
   for (let no = 1; no <= count; no++){
     const rec = scores[no];
     const cs = computeScores(rec);
@@ -1404,12 +1389,37 @@ function renderStudentGrid(){
     // 개인진도표 모드는 가산점Ⓑ 만점을 초록으로, 그 밖의 모드는 음악줄넘기 등급색으로.
     const full = !status && challengeMode && computeChallenge(rec).b === B_MAX;
     const grade = (!status && !challengeMode) ? gradeOf(cs) : null;
-    html += `<button class="stu-chip ${active} ${dotClass} ${full?'full':''} ${grade?'gr-'+grade:''} ${status?'inactive':''}" data-no="${no}" data-cat="${catOf(State.scoreCls, no, challengeMode)}" title="${esc(no + "번 " + customName + (status ? " (" + status + ")" : grade ? " (" + grade + "등급)" : ""))}">
+    chipHtml[no] = `<button class="stu-chip ${active} ${dotClass} ${full?'full':''} ${grade?'gr-'+grade:''} ${status?'inactive':''}" data-no="${no}" data-cat="${catOf(State.scoreCls, no, challengeMode)}" title="${esc(no + "번 " + customName + (status ? " (" + status + ")" : grade ? " (" + grade + "등급)" : ""))}">
       ${pairIdx >= 0 ? `<span class="side">${pairIdx === 0 ? "왼쪽" : "오른쪽"}</span>` : ""}
       <span class="no">${no}<i class="gr">${grade || ((!challengeMode && dotClass === "partial") ? cs.scoredMoves + "/" + MOVES.length : "")}</i></span>${label ? `<span class="name">${esc(label)}</span>` : ""}
     </button>`;
   }
-  grid.innerHTML = html;
+  const view = gridView();
+  grid.classList.toggle("by-color", view === "color");
+  if (view === "color"){
+    // 학생을 하나 열어 둔 동안에는 묶음 이동을 미룬다 — 채점하다가 칸이 밀려 엉뚱한 학생이 눌리는 일을 막는다.
+    // (다른 학생을 고르거나 반·보기·모드를 바꿀 때 한꺼번에 다시 묶는다. 색 자체는 바로 바뀐다.)
+    const sel = State.scoreMode === "two" ? State.pairNos.join(",") : String(State.scoreNo || "");
+    const key = [State.scoreCls, challengeMode ? "c" : "m", sel].join("|");
+    let cats;
+    if (sel && State.frozen && State.frozen.key === key) cats = State.frozen.cats;
+    else {
+      cats = {};
+      for (let no = 1; no <= count; no++) cats[no] = catOf(State.scoreCls, no, challengeMode);
+      State.frozen = sel ? {key, cats} : null;
+    }
+    grid.innerHTML = GROUP_ORDER[challengeMode ? "chall" : "music"].map(([k, label]) => {
+      const nos = [];
+      for (let no = 1; no <= count; no++) if (cats[no] === k) nos.push(no);
+      if (!nos.length) return "";
+      return `<section class="grp"><div class="grp-head"><i class="dot c-${k}"></i>${label} <b>${nos.length}명</b></div><div class="grp-chips">${nos.map(n => chipHtml[n]).join("")}</div></section>`;
+    }).join("");
+  } else {
+    State.frozen = null;
+    let html = "";
+    for (let no = 1; no <= count; no++) html += chipHtml[no];
+    grid.innerHTML = html;
+  }
   renderStatBar();
   grid.querySelectorAll(".stu-chip").forEach(btn => {
     btn.addEventListener("click", () => {
