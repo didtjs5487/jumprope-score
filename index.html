@@ -179,7 +179,13 @@
   .stu-chip.picked{border-color:var(--primary);background:var(--primary-light);}
 
   /* ---- 색깔별 현황 막대 ---- */
-  .stat-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2px 6px 2px 12px;}
+  .stat-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2px 6px 2px 12px;
+    position:sticky;top:var(--hdr-h,91px);z-index:15;box-shadow:0 6px 10px -8px rgba(22,26,32,.3);}
+  .stat-mini-wrap:empty{display:none;}
+  .stat-mini-wrap{margin-top:-4px;}
+  .stat-mini-wrap .stat-mini{padding:0 12px 2px;}
+  /* 채점 카드로 자동 이동할 때 머리글·현황 줄 아래로 가려지지 않게 */
+  #scoreCardWrap{scroll-margin-top:calc(var(--hdr-h,91px) + 62px);}
   .stat-head{display:flex;align-items:center;gap:8px;min-height:46px;font-size:17px;font-weight:700;}
   .stat-main{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .stat-main b{font-weight:800;font-variant-numeric:tabular-nums;}
@@ -219,7 +225,6 @@
   .dot.c-full{background:var(--ok);} .dot.c-some{background:#BFE8D6;}
   .student-grid.filtering .stu-chip{opacity:.28;}
   .student-grid.filtering .stu-chip.hl{opacity:1;box-shadow:0 0 0 3px var(--primary);}
-  body.focus-live .stat-bar{display:none;}
 
   /* ---- 채점 모드 전환 ---- */
   .score-mode{display:flex;gap:8px;margin-bottom:10px;}
@@ -275,6 +280,8 @@
     body.focus-live #scoreMode,
     body.focus-live #clsRowScore,
     body.focus-live #studentGrid,
+    body.focus-live .stat-bar,
+    body.focus-live .stat-mini-wrap,
     body.focus-live .pair-hint,
     body.focus-live .pair-nav,
     body.focus-live .swipe-hint{display:none;}
@@ -598,6 +605,7 @@
       </div>
       <div class="cls-row" id="clsRowScore"></div>
       <div class="stat-bar" id="statBar" aria-live="polite"></div>
+      <div class="stat-mini-wrap" id="statMini"></div>
       <div class="student-grid" id="studentGrid"></div>
       <div id="scoreCardWrap">
         <div id="scoreCardEmpty" class="empty-state">반과 학생 번호를 선택하면 채점 화면이 나타납니다.</div>
@@ -1161,6 +1169,17 @@ Backend.onAuth(user => {
   });
 })();
 
+/* 머리글(제목·탭) 높이를 재서 CSS 변수로 알려 준다 — 현황 줄이 머리글 바로 아래에 붙도록 */
+(function trackHeaderHeight(){
+  const hdr = document.querySelector("#app header");
+  if (!hdr) return;
+  const set = () => { const h = hdr.offsetHeight; if (h) document.documentElement.style.setProperty("--hdr-h", h + "px"); };
+  set();
+  window.addEventListener("resize", set);
+  window.addEventListener("orientationchange", set);
+  if (window.ResizeObserver) new ResizeObserver(set).observe(hdr);   // 로그인 직후 머리글이 나타날 때도 맞춘다
+})();
+
 /* 채점 모드 전환: 한 명씩 / 두 명 동시 */
 document.querySelectorAll("#scoreMode .mode-btn").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -1348,7 +1367,9 @@ function renderStatBar(){
       `<span class="mi ${t[k] ? "" : "zero"}"><i class="dot c-${k}"></i><b>${t[k] || 0}</b></span>`).join("") + `</div>`;
   bar.innerHTML =
     `<div class="stat-head"><div class="stat-main"><b>${cls}반</b> ${unit} <b>${done}</b> · <span class="left">남음 <b>${left}</b></span></div>` +
-    `<div class="seg" role="group" aria-label="번호 칸 보기 방식"><button type="button" data-view="no" class="${view === "no" ? "on" : ""}">번호순</button><button type="button" data-view="color" class="${view === "color" ? "on" : ""}">색깔별</button></div></div>` + mini;
+    `<div class="seg" role="group" aria-label="번호 칸 보기 방식"><button type="button" data-view="no" class="${view === "no" ? "on" : ""}">번호순</button><button type="button" data-view="color" class="${view === "color" ? "on" : ""}">색깔별</button></div></div>`;
+  const miniBox = document.getElementById("statMini");
+  if (miniBox) miniBox.innerHTML = mini;
   bar.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {
     if (b.dataset.view === gridView()) return;
     State.gridView = b.dataset.view; lsWrite("jr_grid_view", State.gridView);
