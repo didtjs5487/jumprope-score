@@ -110,7 +110,7 @@
 
   /* ---- class selector ---- */
   .cls-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;-webkit-overflow-scrolling:touch;}
-  .cls-btn{flex:none;min-width:44px;padding:9px 4px;border-radius:10px;border:1px solid var(--border);
+  .cls-btn{flex:none;min-width:44px;min-height:46px;padding:9px 4px;border-radius:10px;border:1px solid var(--border);
     background:var(--card);font-weight:700;font-size:14px;color:var(--text);position:relative;}
   .cls-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
   .cls-btn .badge{display:block;font-size:9px;font-weight:500;opacity:.8;margin-top:1px;}
@@ -135,18 +135,20 @@
   /* 한 줄 6칸 + 낮은 고정 높이로 번호 목록이 화면을 덜 차지하게 한다. 학적변동
      학생은 이름 자리에 사유만 표시해 칸 높이가 늘지 않음. 채점 진행 상태는 번호 색으로 표시. */
   .stu-chip{padding:0 3px;border-radius:9px;background:var(--card);border:1px solid var(--border);
-    position:relative;min-width:0;height:44px;line-height:1.15;
+    position:relative;min-width:0;height:48px;line-height:1.15;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
   @media(min-width:860px) and (min-height:620px){.stu-chip{width:100%;flex-direction:row;justify-content:flex-start;padding:0 12px;height:42px;gap:8px;}}
   .stu-chip.active{border-color:var(--primary);background:var(--primary-light);}
   .stu-chip.inactive{opacity:.6;border-style:dashed;}
   .stu-chip.inactive.active{opacity:.9;}
-  .stu-chip .no{font-size:13px;font-weight:800;color:var(--muted);flex:none;}
-  .stu-chip.partial .no{color:var(--warn);}
+  .stu-chip .no{font-size:14px;font-weight:800;color:var(--muted);flex:none;}
+  .stu-chip.partial{background:#FFF4DD;border:2px solid #E0A24A;}
+  .stu-chip.partial .no{color:#8A5300;}
+  .stu-chip.partial .gr{font-size:12px;font-weight:800;color:#8A5300;}
   .stu-chip.done .no{color:var(--ok);}
   /* 영문 이름처럼 긴 이름도 다른 학생과 같은 칸 크기를 유지하도록, 칸 폭
      안에서 넘치는 부분은 줄이지 않고 "…"으로 잘라 보여준다. */
-  .stu-chip .name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  .stu-chip .name{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     max-width:100%;min-width:0;}
   .stu-chip.inactive .name{color:var(--danger);font-weight:700;}
   .stu-chip.full{background:var(--ok);border-color:var(--ok);}
@@ -175,12 +177,23 @@
   .stu-chip.picked{border-color:var(--primary);background:var(--primary-light);}
 
   /* ---- 색깔별 현황 막대 ---- */
-  .stat-bar{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 12px 8px;}
-  .stat-head{font-size:17px;font-weight:700;line-height:1.4;}
-  .stat-head b{font-weight:800;font-variant-numeric:tabular-nums;}
-  .stat-head .left b{color:var(--danger);}
-  .stat-all{font-size:14px;color:var(--muted);margin-top:2px;font-weight:600;}
-  .stat-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .stat-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:2px 6px 2px 12px;}
+  .stat-head{display:flex;align-items:center;gap:8px;min-height:46px;font-size:17px;font-weight:700;}
+  .stat-main{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .stat-main b{font-weight:800;font-variant-numeric:tabular-nums;}
+  .stat-main .left b{color:var(--danger);}
+  .stat-of{color:var(--muted);font-weight:600;font-size:15px;margin-left:6px;}
+  .stat-mini{display:flex;flex-wrap:nowrap;gap:12px;padding:0 0 9px;font-size:16px;font-variant-numeric:tabular-nums;}
+  .stat-mini .mi{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+  .stat-mini .mi.zero{opacity:.45;}
+  .stat-mini .mi b{font-weight:800;}
+  .stat-mini .dot{width:15px;height:15px;border-radius:50%;border:1.5px solid rgba(22,26,32,.25);flex:none;}
+  .stat-toggle,.sp-clear{flex:none;min-height:44px;padding:0 12px;border-radius:10px;border:none;background:transparent;
+    font-size:15px;font-weight:700;color:var(--primary);}
+  .sp-clear{background:var(--primary-light);}
+  .stat-all{font-size:14px;color:var(--muted);margin:2px 0 8px;font-weight:600;}
+  .stat-pills{display:flex;flex-wrap:nowrap;gap:6px;margin:2px -6px 4px -12px;padding:2px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .stat-pills .sp{flex:none;white-space:nowrap;}
   .sp{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 12px;border-radius:999px;
     border:1.5px solid var(--border);background:var(--card);font-size:16px;font-weight:700;color:var(--text);}
   .sp b{font-weight:800;font-variant-numeric:tabular-nums;}
@@ -198,7 +211,7 @@
 
   /* ---- 채점 모드 전환 ---- */
   .score-mode{display:flex;gap:8px;margin-bottom:10px;}
-  .score-mode .mode-btn{flex:1;min-height:52px;font-size:16px;}
+  .score-mode .mode-btn{flex:1;min-height:46px;font-size:16px;}
 
   /* ---- 2명 동시 채점 ---- */
   /* 두 엄지로 좌우 실수 버튼을 동시에 눌러도 양쪽이 모두 기록되어야 한다.
@@ -1322,18 +1335,33 @@ function renderStatBar(){
   });
 
   const unit = challenge ? "가산점 만점" : "완료";
+  const open = State.statOpen !== undefined ? State.statOpen : (lsRead("jr_stat_open") === "1");
+  const fLabel = (order.find(o => o[0] === State.statFilter) || [])[1];
+  // 접힌 상태에서도 강조 중인 분류는 알 수 있게 작은 해제 단추를 둔다.
+  const clear = (!open && State.statFilter) ? `<button type="button" class="sp-clear" id="spClear">강조 해제 ✕ ${fLabel}</button>` : "";
   bar.innerHTML =
-    `<div class="stat-head"><b>${cls}반</b> ${unit} <b>${done}</b>명 · <span class="left">남음 <b>${left}</b>명</span> <span style="color:var(--muted);font-weight:600;">(${total}명 중)</span></div>` +
-    `<div class="stat-pills">` + order.map(([k, label]) => {
-      const n = t[k] || 0;
-      return `<button type="button" class="sp ${State.statFilter === k ? "on" : ""} ${n ? "" : "zero"}" data-cat="${k}"><i class="dot c-${k}"></i>${label}: <b>${n}명</b></button>`;
-    }).join("") + `</div>` +
-    `<div class="stat-all">전체 ${classes}개 반 합계: ${unit} ${allDone}명 / 남음 ${allTotal - allDone}명 (${allTotal}명 중)</div>`;
+    `<div class="stat-head"><div class="stat-main"><b>${cls}반</b> ${unit} <b>${done}</b> · <span class="left">남음 <b>${left}</b></span><span class="stat-of">(${total}명)</span></div>${clear}<button type="button" class="stat-toggle" id="statToggle" aria-expanded="${open}">${open ? "접기 ▴" : "자세히 ▾"}</button></div>` +
+    (open
+      ? `<div class="stat-pills">` + order.map(([k, label]) => {
+          const n = t[k] || 0;
+          return `<button type="button" class="sp ${State.statFilter === k ? "on" : ""} ${n ? "" : "zero"}" data-cat="${k}"><i class="dot c-${k}"></i>${label}: <b>${n}명</b></button>`;
+        }).join("") + `</div><div class="stat-all">전체 ${classes}개 반 합계: ${unit} ${allDone}명 / 남음 ${allTotal - allDone}명 (${allTotal}명 중)</div>`
+      : `<div class="stat-mini" aria-label="색깔별 인원">` + (challenge ? ["full","some","none"] : ["A","B","C","D","E","part","none"]).map(k =>
+          `<span class="mi ${t[k] ? "" : "zero"}"><i class="dot c-${k}"></i><b>${t[k] || 0}</b></span>`).join("") + `</div>`);
+  const tg = document.getElementById("statToggle");
+  if (tg) tg.addEventListener("click", () => {
+    State.statOpen = !open; lsWrite("jr_stat_open", State.statOpen ? "1" : "0"); renderStatBar();
+  });
+  const cl = document.getElementById("spClear");
+  if (cl) cl.addEventListener("click", () => { State.statFilter = null; renderStatBar(); });
   bar.querySelectorAll(".sp").forEach(btn => btn.addEventListener("click", () => {
     State.statFilter = State.statFilter === btn.dataset.cat ? null : btn.dataset.cat;
     renderStatBar();
   }));
   applyStatFilter();
+  // 가로 한 줄이라 선택한 알약이 화면 밖에 있을 수 있다 — 가운데로 끌어온다(세로 스크롤은 건드리지 않음).
+  const on = bar.querySelector(".stat-pills .sp.on");
+  if (on) on.scrollIntoView({inline:"center", block:"nearest"});
 }
 // 누른 분류에 속한 학생만 번호 칸에서 또렷하게 보이게 한다(다시 누르면 해제).
 function applyStatFilter(){
@@ -1378,7 +1406,7 @@ function renderStudentGrid(){
     const grade = (!status && !challengeMode) ? gradeOf(cs) : null;
     html += `<button class="stu-chip ${active} ${dotClass} ${full?'full':''} ${grade?'gr-'+grade:''} ${status?'inactive':''}" data-no="${no}" data-cat="${catOf(State.scoreCls, no, challengeMode)}" title="${esc(no + "번 " + customName + (status ? " (" + status + ")" : grade ? " (" + grade + "등급)" : ""))}">
       ${pairIdx >= 0 ? `<span class="side">${pairIdx === 0 ? "왼쪽" : "오른쪽"}</span>` : ""}
-      <span class="no">${no}<i class="gr">${grade || ""}</i></span>${label ? `<span class="name">${esc(label)}</span>` : ""}
+      <span class="no">${no}<i class="gr">${grade || ((!challengeMode && dotClass === "partial") ? cs.scoredMoves + "/" + MOVES.length : "")}</i></span>${label ? `<span class="name">${esc(label)}</span>` : ""}
     </button>`;
   }
   grid.innerHTML = html;
@@ -2140,6 +2168,10 @@ function refreshLiveDisplay(cls, no, roundNo, moveIdx){
     chip.classList.toggle("full", challengeMode && cs.b === B_MAX);
     applyChipGrade(chip, challengeMode ? null : gradeOf(cs));
     chip.dataset.cat = catOf(cls, no, challengeMode);
+    const partial = cs.scoredMoves > 0 && !cs.allMovesScored;
+    chip.classList.toggle("partial", partial);
+    chip.classList.toggle("done", cs.allMovesScored);
+    if (partial && !challengeMode){ const gr = chip.querySelector(".gr"); if (gr) gr.textContent = cs.scoredMoves + "/" + MOVES.length; }
     renderStatBar();
   }
 }
