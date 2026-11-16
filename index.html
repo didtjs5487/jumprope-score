@@ -892,6 +892,14 @@ function getRounds(record){
   if (Object.keys(stored).length) return stored;
   return { [roundKey(1)]: { moves: {} } };
 }
+// 학생을 열 때 시작할 동작: 마지막 차수에서 아직 안 매긴 첫 동작, 다 매겼으면 완료 화면(끝난 점수를 실수로 바꾸지 않게)
+function openStepFor(cls, no){
+  const rounds = getRounds((State.scoresByClass[cls] || {})[no]);
+  const last = Math.max(...Object.keys(rounds).map(roundNumFromKey));
+  const mv = (rounds[roundKey(last)] && rounds[roundKey(last)].moves) || {};
+  const i = MOVES.findIndex((_, k) => !mv[k]);
+  return i < 0 ? MOVES.length : i;
+}
 function computeRoundStats(moves){
   moves = moves || {};
   let a = 0, scoredMoves = 0;
@@ -1515,7 +1523,7 @@ function renderStudentGrid(){
         return;
       }
       State.scoreNo = no;
-      State.liveStep = 0;
+      State.liveStep = openStepFor(State.scoreCls, no);
       State.activeRound = null;
       State.focusOff = false;
       renderStudentGrid();
@@ -1750,8 +1758,8 @@ function renderScoreCardBody(){
       </div>`;
     const prevBtn = document.getElementById("btnPrevStu");
     const nextBtn = document.getElementById("btnNextStu");
-    if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
-    if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+    if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = openStepFor(State.scoreCls, no-1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+    if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = openStepFor(State.scoreCls, no+1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
     return;
   }
 
@@ -1853,8 +1861,8 @@ function renderScoreCardBody(){
 
   const prevBtn = document.getElementById("btnPrevStu");
   const nextBtn = document.getElementById("btnNextStu");
-  if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
-  if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = 0; State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+  if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ State.scoreNo = no-1; State.liveStep = openStepFor(State.scoreCls, no-1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+  if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ State.scoreNo = no+1; State.liveStep = openStepFor(State.scoreCls, no+1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
 }
 
 /* 음악줄넘기(라이브)/상세 모드 전용: 회차 탭·재도전·동작 입력·과제수행 체크 연결 */
@@ -2129,7 +2137,7 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
     } else {
       nextStuBtn.addEventListener("click", () => {
         State.scoreNo = no + 1;
-        State.liveStep = 0;
+        State.liveStep = openStepFor(State.scoreCls, no + 1);
         State.activeRound = null;
         renderStudentGrid();
         renderScoreCard();
@@ -2590,8 +2598,8 @@ function renderDashboard(){
   }));
   list.querySelectorAll(".dl-go").forEach(b => b.addEventListener("click", () => {
     // 그 학생의 채점 화면으로 바로 간다
-    State.scoreCls = cls; State.scoreNo = Number(b.dataset.go); State.liveStep = 0; State.activeRound = null; State.focusOff = false;
-    if (State.scoreMode === "two"){ const one = document.querySelector('#scoreMode [data-smode="one"]'); if (one) one.click(); State.scoreNo = Number(b.dataset.go); }
+    State.scoreCls = cls; State.scoreNo = Number(b.dataset.go); State.liveStep = openStepFor(cls, Number(b.dataset.go)); State.activeRound = null; State.focusOff = false;
+    if (State.scoreMode === "two"){ const one = document.querySelector('#scoreMode [data-smode="one"]'); if (one) one.click(); State.scoreNo = Number(b.dataset.go); State.liveStep = openStepFor(cls, State.scoreNo); }
     document.querySelector('.tab-btn[data-tab="score"]').click();
     renderStudentGrid(); renderScoreCard();
     const wrap = document.getElementById("scoreCardWrap");
