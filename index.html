@@ -236,6 +236,14 @@
   /* ---- 채점 모드 전환 ---- */
   .score-mode{display:flex;gap:8px;margin-bottom:10px;}
   .score-mode .mode-btn{flex:1;min-height:46px;font-size:16px;}
+  /* 진동 · 소리 알림 켜고 끄기 — 켜면 파랑, 끄면 회색에 빗금 */
+  .fb-tg{flex:none;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    width:52px;min-height:46px;padding:2px 0;border-radius:9px;border:1px solid var(--border);background:var(--bg);
+    color:#9AA2AD;font-size:13px;font-weight:700;position:relative;}
+  .fb-tg .ic{width:20px;height:20px;}
+  .fb-tg.on{color:var(--primary-dark);background:var(--primary-light);border-color:var(--primary);}
+  .fb-tg:not(.on)::after{content:"";position:absolute;left:12px;right:12px;top:50%;height:2px;background:#9AA2AD;transform:rotate(-35deg);top:15px;}
+  .fb-tg:not(.on) .w{display:none;}
 
   /* ---- 2명 동시 채점 ---- */
   /* 두 엄지로 좌우 실수 버튼을 동시에 눌러도 양쪽이 모두 기록되어야 한다.
@@ -664,7 +672,9 @@
     <section id="tab-score">
       <div class="score-mode" id="scoreMode">
         <button class="mode-btn active" data-smode="one"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>1명 채점</button>
-        <button class="mode-btn" data-smode="two"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c2.8 0 4.6 2 4.6 5"/></svg>2명 동시 채점</button>
+        <button class="mode-btn" data-smode="two"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c2.8 0 4.6 2 4.6 5"/></svg>2명 동시</button>
+        <button type="button" class="fb-tg" data-fb="vib" aria-label="진동 알림"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 9v6M20 9v6"/></svg><span>진동</span></button>
+        <button type="button" class="fb-tg" data-fb="snd" aria-label="소리 알림"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path class="w" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg><span>소리</span></button>
       </div>
       <div class="cls-row" id="clsRowScore"></div>
       <div class="stat-bar" id="statBar" aria-live="polite"></div>
@@ -1556,6 +1566,77 @@ function pairSide(cls, no){
   const level = moves[State.liveStep];
   return { rec, rn, level, clicks: clicksFromLevel(level), score: level || 5 };
 }
+/* ---- 누를 때 알림: 진동 · 신호음 ----
+   학생을 보면서 누르므로 눌렸는지 손과 귀로 알 수 있게 한다. 이 폰에만 저장(jr_feedback).
+   실수 = 짧게 한 번 · 되돌리기 = 짧게 두 번 · 다음 동작 = 길게(소리는 올라가는 두 음).
+   아이폰은 웹 진동을 지원하지 않아 iOS 18 이상에서만 가벼운 '톡' 한 번으로 대신한다. */
+const FEEDBACK_LS = "jr_feedback";
+function feedbackPrefs(){
+  try { const v = JSON.parse(localStorage.getItem(FEEDBACK_LS) || "null"); if (v) return {vib: v.vib !== false, snd: v.snd !== false}; } catch (e) {}
+  return {vib: true, snd: true};
+}
+function setFeedbackPrefs(p){ try { localStorage.setItem(FEEDBACK_LS, JSON.stringify(p)); } catch (e) {} }
+let fbAudio = null;
+function fbBeep(tones){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    fbAudio = fbAudio || new AC();
+    if (fbAudio.state === "suspended") fbAudio.resume();
+    let t = fbAudio.currentTime + 0.005;
+    tones.forEach(([freq, ms, gap]) => {
+      const o = fbAudio.createOscillator(), g = fbAudio.createGain();
+      o.type = "square"; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.2, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + ms / 1000);
+      o.connect(g); g.connect(fbAudio.destination);
+      o.start(t); o.stop(t + ms / 1000 + 0.02);
+      t += (ms + (gap || 40)) / 1000;
+    });
+  } catch (e) {}
+}
+let fbIos = null;
+function fbIosTick(){
+  try {
+    if (!fbIos){
+      fbIos = document.createElement("label");
+      fbIos.setAttribute("aria-hidden", "true");
+      fbIos.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;";
+      const i = document.createElement("input"); i.type = "checkbox"; i.setAttribute("switch", ""); i.tabIndex = -1;
+      fbIos.appendChild(i); document.body.appendChild(fbIos);
+      fbIos.addEventListener("click", e => e.stopPropagation());
+    }
+    fbIos.click();
+  } catch (e) {}
+}
+const FEEDBACK = {
+  miss: {vib: [45],          snd: [[1050, 70]]},
+  undo: {vib: [25, 70, 25],  snd: [[480, 60, 50], [480, 60]]},
+  next: {vib: [130],         snd: [[700, 80, 15], [1050, 120]]},
+};
+function feedback(kind, only){
+  const p = Object.assign({}, feedbackPrefs()), f = FEEDBACK[kind]; if (!f) return;
+  if (only){ p.vib = only === "vib"; p.snd = only === "snd"; }
+  if (p.vib){ if (navigator.vibrate) navigator.vibrate(f.vib); else fbIosTick(); }
+  if (p.snd) fbBeep(f.snd);
+}
+function renderFeedbackSetting(){
+  const p = feedbackPrefs();
+  document.querySelectorAll(".fb-tg[data-fb]").forEach(b => {
+    const on = p[b.dataset.fb];
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
+    b.title = (b.dataset.fb === "vib" ? "진동" : "소리") + (on ? " 켬 — 누르면 끔" : " 끔 — 누르면 켬");
+  });
+}
+(function wireFeedbackSetting(){
+  document.querySelectorAll(".fb-tg[data-fb]").forEach(b => b.addEventListener("click", () => {
+    const p = feedbackPrefs(); p[b.dataset.fb] = !p[b.dataset.fb]; setFeedbackPrefs(p);
+    renderFeedbackSetting();
+    if (p[b.dataset.fb]) feedback("miss", b.dataset.fb);   // 켤 때 한 번 맛보기
+  }));
+  renderFeedbackSetting();
+})();
+
 function savePairMiss(cls, no, delta){
   const s = pairSide(cls, no);
   const clicks = Math.max(0, Math.min(4, s.clicks + delta));
@@ -1664,6 +1745,7 @@ function renderPairCard(){
 
   const goNext = () => {
     if (State.liveStep >= MOVES.length) return;
+    feedback("next");
     // 실수 탭이 한 번도 없었던 학생도 "클리어(5점)"로 확정 저장한다.
     // 저장이 없으면 그 동작은 채점하지 않은 것으로 남아 등급·현황에 반영되지 않는다
     // (1명 채점 모드에서 동작을 넘길 때와 같은 처리).
@@ -1683,8 +1765,8 @@ function renderPairCard(){
     onPrev: goPrev,
     onTap: (el) => {
       if (el.disabled) return;
-      if (el.dataset.miss != null) savePairMiss(cls, Number(el.dataset.miss), +1);
-      else savePairMiss(cls, Number(el.dataset.undo), -1);
+      if (el.dataset.miss != null){ feedback("miss"); savePairMiss(cls, Number(el.dataset.miss), +1); }
+      else { feedback("undo"); savePairMiss(cls, Number(el.dataset.undo), -1); }
     },
   });
   const prev = document.getElementById("btnPairPrev");
@@ -2100,6 +2182,7 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
   };
   const goNext = () => {
     if (done) return;
+    feedback("next");
     if (currentLevel() == null) saveMoveQuiet(cls, no, roundNo, i, 5); // 탭 없음 = 클리어로 확정 저장
     goTo(i + 1);
   };
@@ -2112,11 +2195,13 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
       goNext();   // 이미 최저점(1점) — 한 번 더 누르면 다음 동작으로
       return;
     }
+    feedback("miss");
     saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(curClicks + 1));
   });
   const undoBtn = card.querySelector("#btnUndo");
   if (undoBtn) undoBtn.addEventListener("click", () => {
     const clicks = Math.max(0, clicksFromLevel(currentLevel()) - 1);
+    feedback("undo");
     saveMoveQuiet(cls, no, roundNo, i, levelFromClicks(clicks));
   });
   card.querySelectorAll(".sheet-row[data-go]").forEach(row => {
