@@ -111,7 +111,7 @@
   /* ---- class selector ---- */
   .cls-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;-webkit-overflow-scrolling:touch;}
   .cls-btn{flex:none;min-width:44px;min-height:46px;padding:9px 4px;border-radius:10px;border:1px solid var(--border);
-    background:var(--card);font-weight:700;font-size:14px;color:var(--text);position:relative;}
+    background:var(--card);font-weight:700;font-size:16px;color:var(--text);position:relative;}
   .cls-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
   .cls-btn .badge{display:block;font-size:9px;font-weight:500;opacity:.8;margin-top:1px;}
 
@@ -191,8 +191,15 @@
   .stat-main b{font-weight:800;font-variant-numeric:tabular-nums;}
   .stat-main .left b{color:var(--danger);}
   .stat-of{color:var(--muted);font-weight:600;font-size:15px;margin-left:6px;}
-  .stat-mini{display:flex;flex-wrap:nowrap;gap:12px;padding:0 0 9px;font-size:16px;font-variant-numeric:tabular-nums;}
-  .stat-mini .mi{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+  .stat-mini{display:flex;flex-wrap:nowrap;justify-content:space-between;gap:4px;padding:0 0 9px;font-size:16px;font-variant-numeric:tabular-nums;}
+  .stat-mini .mb{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;
+    font-style:normal;font-size:14px;font-weight:800;color:#fff;border:1.5px solid transparent;flex:none;}
+  .mb.c-A{background:#E23B3B;} .mb.c-B{background:#F07A1E;} .mb.c-C{background:#F3C50B;color:#3B2E00;}
+  .mb.c-D{background:#2FA84F;} .mb.c-E{background:#2E6BE6;}
+  .mb.c-part{background:#FFE2B0;color:#8A5300;border-color:#B86A00;}
+  .mb.c-none{background:#fff;color:var(--muted);border-color:#C5CCD6;}
+  .mb.c-full{background:var(--ok);} .mb.c-some{background:#BFE8D6;color:#0B5A41;}
+  .stat-mini .mi{display:inline-flex;align-items:center;gap:3px;white-space:nowrap;}
   .stat-mini .mi.zero{opacity:.45;}
   .stat-mini .mi b{font-weight:800;}
   .stat-mini .dot{width:15px;height:15px;border-radius:50%;border:1.5px solid rgba(22,26,32,.25);flex:none;}
@@ -321,7 +328,7 @@
 
   .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(22,26,32,.06);border:1px solid var(--border);}
   .score-card h2{font-size:19px;margin-bottom:1px;}
-  .score-card .sub{color:var(--muted);font-size:13px;line-height:1.4;margin-bottom:9px;}
+  .score-card .sub{color:var(--muted);font-size:15px;line-height:1.4;margin-bottom:9px;}
   .move-row{margin-bottom:12px;}
   .move-row .move-name{font-size:13px;font-weight:600;margin-bottom:6px;}
   .lv-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;}
@@ -374,7 +381,7 @@
   /* 지금 동작 — 줄이 펼쳐져 채점 칸이 된다 */
   .sheet-open{touch-action:none;background:var(--primary-light);border-top:2px solid var(--primary);
     border-bottom:1px solid var(--border);padding:11px 14px 13px;}
-  .so-step{font-size:13px;font-weight:800;color:var(--primary);letter-spacing:.05em;font-variant-numeric:tabular-nums;}
+  .so-step{font-size:15px;font-weight:800;color:var(--primary);letter-spacing:.05em;font-variant-numeric:tabular-nums;}
   .so-name{font-size:24px;font-weight:800;line-height:1.2;margin:4px 0 9px;letter-spacing:-.02em;}
   .so-marks{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
   .so-mk{width:36px;height:36px;border-radius:10px;background:var(--card);border:2px solid #CFE0FF;
@@ -391,7 +398,7 @@
   .sheet-done{background:var(--lv5-bg);border-top:2px solid var(--ok);padding:16px 14px;text-align:center;}
   .sheet-done .t{font-size:21px;font-weight:800;color:var(--ok);}
   .sheet-done .s{font-size:14px;color:var(--muted);font-weight:600;margin-top:4px;}
-  .swipe-hint{text-align:center;font-size:13px;color:var(--muted);margin:11px 0 2px;font-weight:600;}
+  .swipe-hint{text-align:center;font-size:15px;color:var(--muted);margin:11px 0 2px;font-weight:600;}
   .swipe-hint b{color:var(--primary);}
   /* 데스크톱은 터치 스와이프가 없어 이동 수단이 없어지므로, 이전/다음 동작
      버튼을 데스크톱에서만 보여준다(모바일은 스와이프+실수 버튼 자동진행). */
@@ -451,11 +458,13 @@
   .summary-bar{position:sticky;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);
     padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 -4px 14px rgba(22,26,32,.06);
     margin:14px -16px -16px;border-radius:0 0 var(--radius) var(--radius);}
-  .summary-bar .scores{flex:1;font-size:13px;color:var(--muted);line-height:1.4;}
+  .summary-bar .scores{flex:1;font-size:15px;color:var(--muted);line-height:1.35;font-weight:600;font-variant-numeric:tabular-nums;}
+  .summary-bar .scores b{color:var(--text);font-weight:800;}
+  .summary-bar .scores #scoresText{white-space:nowrap;}
   .summary-bar .final{font-size:26px;font-weight:800;color:var(--primary);font-variant-numeric:tabular-nums;}
   .summary-bar .final small{font-size:13px;font-weight:600;color:var(--muted);}
-  .nav-btn{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 12px;font-size:14px;font-weight:700;min-height:44px;}
-  .save-state{font-size:13px;color:var(--muted);}
+  .nav-btn{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 12px;font-size:16px;font-weight:700;min-height:50px;}
+  .save-state{font-size:14px;color:var(--muted);}
   .save-state.err{color:var(--danger);font-weight:700;}
 
   .empty-state{text-align:center;color:var(--muted);padding:40px 16px;font-size:15px;}
@@ -513,6 +522,60 @@
   .roster-actions{display:flex;gap:8px;align-items:center;}
   .count-field{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;}
   .count-field input{width:70px;padding:8px;border:1px solid var(--border);border-radius:8px;font-size:14px;text-align:center;}
+
+  /* ---- 현황판(새 구조) ---- */
+  .bg-A{background:#E23B3B;} .bg-B{background:#F07A1E;} .bg-C{background:#F3C50B;} .bg-D{background:#2FA84F;} .bg-E{background:#2E6BE6;}
+  .bg-part{background:#F2C98A;} .bg-none{background:#DDE2EA;}
+  .dash-sum{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:10px;}
+  .ds-line{font-size:17px;font-weight:700;line-height:1.4;}
+  .ds-line b{font-weight:800;font-variant-numeric:tabular-nums;}
+  .ds-line .left b{color:var(--danger);}
+  .of{color:var(--muted);font-weight:600;font-size:15px;}
+  .ds-bar{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:9px 0 8px;background:#DDE2EA;}
+  .ds-bar i{display:block;height:100%;}
+  .ds-legend{display:flex;flex-wrap:wrap;gap:5px 14px;font-size:15px;font-weight:600;}
+  .ds-legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+  .ds-legend span.zero{opacity:.45;}
+  .ds-legend b{font-weight:800;font-variant-numeric:tabular-nums;}
+  .ds-legend .dot{width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(22,26,32,.25);flex:none;}
+  .dash-classes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px;}
+  .dc{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;min-height:48px;padding:0 12px;
+    border-radius:12px;border:1.5px solid var(--border);background:var(--card);font-size:16px;font-weight:700;color:var(--text);text-align:left;}
+  .dc.on{border-color:var(--primary);background:var(--primary-light);}
+  .dc-n{white-space:nowrap;}
+  .dc-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#DDE2EA;min-width:0;}
+  .dc-bar i{display:block;height:100%;background:var(--ok);}
+  .dc-bar i.p{background:#F2C98A;}
+  .dc-f{font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;}
+  .dc-f b{color:var(--text);font-weight:800;}
+  .dl-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+  .dl-head h2{font-size:20px;}
+  .dash-list{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+  .dl-item{border-bottom:1px solid var(--border);}
+  .dl-item:last-child{border-bottom:none;}
+  .dl-row{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:8px;width:100%;min-height:52px;padding:0 14px;
+    border:none;background:var(--card);text-align:left;color:var(--text);}
+  .dl-row:active{background:var(--primary-light);}
+  .dl-item.open .dl-row{background:var(--primary-light);}
+  .dl-no{font-size:15px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;}
+  .dl-name{font-size:17px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .dl-val{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;}
+  .dl-score{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;}
+  .dl-unit{font-size:14px;color:var(--muted);font-weight:600;margin-right:6px;}
+  .gbadge{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:8px;
+    font-style:normal;font-size:16px;font-weight:800;color:#fff;}
+  .gbadge.bg-C{color:#3B2E00;}
+  .dl-none{font-size:15px;font-weight:600;color:var(--muted);}
+  .dl-item.out .dl-name,.dl-item.out .dl-no{color:#9AA2AD;}
+  .dl-item.out .dl-row{opacity:1;}
+  .dl-more{padding:4px 14px 12px 52px;background:var(--primary-light);}
+  .dl-facts{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:15px;color:var(--muted);font-weight:600;}
+  .dl-facts b{color:var(--text);font-weight:800;font-variant-numeric:tabular-nums;}
+  .dl-go{margin-top:10px;min-height:46px;padding:0 16px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:16px;font-weight:700;}
+  .dash-tools{margin-top:22px;padding-top:16px;border-top:1px solid var(--border);}
+  .dash-tools-title{font-size:17px;margin-bottom:8px;}
+  .dash-tools-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+  .dash-tools-btns .export-btn{flex:1 1 auto;}
 
   /* ---- dashboard ---- */
   .cls-summary-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-bottom:14px;}
@@ -616,29 +679,17 @@
 
     <!-- 현황판 -->
     <section id="tab-dashboard" class="hidden">
-      <div class="cls-summary-row" id="clsSummaryRow"></div>
-      <div class="dash-toolbar">
-        <div id="dashFilterLabel" style="font-size:15px;color:var(--muted);font-weight:600;">전체 반</div>
-        <button class="export-btn" id="btnExportXlsx"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14"/></svg>엑셀로 내보내기 (반별 시트)</button>
-        <button class="export-btn sheet-btn" id="btnSendSheet"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-3-7-7-1z"/></svg>구글 시트로 보내기</button>
-      </div>
-      <p class="sheet-last" id="sheetLast"></p>
-      <div class="table-scroll">
-        <table class="dash-table" id="dashTable">
-          <thead>
-            <tr>
-              <th data-sort="cls">반</th>
-              <th data-sort="no">번호</th>
-              <th data-sort="name">이름</th>
-              <th data-sort="a">완성도Ⓐ</th>
-              <th data-sort="b">과제Ⓑ</th>
-              <th data-sort="raw">원점수</th>
-              <th data-sort="final">환산점수</th>
-              <th data-sort="by">채점교사</th>
-            </tr>
-          </thead>
-          <tbody id="dashTbody"></tbody>
-        </table>
+      <div class="dash-sum" id="dashSum"></div>
+      <div class="dash-classes" id="dashClasses"></div>
+      <div class="dl-head" id="dashListHead"></div>
+      <div class="dash-list" id="dashList"></div>
+      <div class="dash-tools">
+        <h2 class="dash-tools-title">성적 파일</h2>
+        <div class="dash-tools-btns">
+          <button class="export-btn" id="btnExportXlsx"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 11 12 15.5 16.5 11M5 20h14"/></svg>엑셀로 내보내기 (반별 시트)</button>
+          <button class="export-btn sheet-btn" id="btnSendSheet"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-3-7-7-1z"/></svg>구글 시트로 보내기</button>
+        </div>
+        <p class="sheet-last" id="sheetLast"></p>
       </div>
     </section>
 
@@ -1342,6 +1393,8 @@ const STAT_ORDER = {
   music: [["A","빨강(A)"],["B","주황(B)"],["C","노랑(C)"],["D","초록(D)"],["E","파랑(E)"],["part","채점 중"],["none","미응시"],["out","학적변동"]],
   chall: [["full","가산점 만점"],["some","일부 통과"],["none","아직 없음"],["out","학적변동"]],
 };
+// 색 점 줄에 넣는 글자 — 색만으로는 뜻을 알기 어려워서
+const MINI_TAG = {A:"A", B:"B", C:"C", D:"D", E:"E", part:"중", none:"미", full:"만", some:"일"};
 const GROUP_ORDER = {
   // 아직 해야 할 학생이 위로 오도록: 미응시 → 채점 중 → 빨강A … 파랑E → 학적변동
   music: [["none","미응시"],["part","채점 중"],["A","빨강(A)"],["B","주황(B)"],["C","노랑(C)"],["D","초록(D)"],["E","파랑(E)"],["out","학적변동"]],
@@ -1364,7 +1417,7 @@ function renderStatBar(){
   // 번호순에서는 색깔별 숫자를 한 줄로 함께 보여 준다(색깔별 보기에서는 묶음 제목이 그 역할).
   const mini = view === "color" ? "" : `<div class="stat-mini" aria-label="색깔별 인원">` +
     (challenge ? ["full","some","none"] : ["A","B","C","D","E","part","none"]).map(k =>
-      `<span class="mi ${t[k] ? "" : "zero"}"><i class="dot c-${k}"></i><b>${t[k] || 0}</b></span>`).join("") + `</div>`;
+      `<span class="mi ${t[k] ? "" : "zero"}"><i class="mb c-${k}">${MINI_TAG[k] || ""}</i><b>${t[k] || 0}</b></span>`).join("") + `</div>`;
   bar.innerHTML =
     `<div class="stat-head"><div class="stat-main"><b>${cls}반</b> ${unit} <b>${done}</b> · <span class="left">남음 <b>${left}</b></span></div>` +
     `<div class="seg" role="group" aria-label="번호 칸 보기 방식"><button type="button" data-view="no" class="${view === "no" ? "on" : ""}">번호순</button><button type="button" data-view="color" class="${view === "color" ? "on" : ""}">색깔별</button></div></div>`;
@@ -1691,9 +1744,9 @@ function renderScoreCardBody(){
         <p class="roster-help">이 학생은 "${esc(status)}" 상태라 채점할 수 없습니다.</p>
       </div>
       <div class="summary-bar">
-        <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
+        <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전</button>
         <div class="scores"></div>
-        <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 학생 ▶</button>
+        <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 ▶</button>
       </div>`;
     const prevBtn = document.getElementById("btnPrevStu");
     const nextBtn = document.getElementById("btnNextStu");
@@ -1749,10 +1802,10 @@ function renderScoreCardBody(){
       </div>
     </div>`;
     html += `<div class="summary-bar">
-      <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
+      <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전</button>
       <div class="scores">과제수행Ⓑ<br>통과 ${ch.count}/${ch.total}개${ch.bonus ? ` · 노력 +${ch.bonus}` : ""}</div>
       <div class="final">${ch.b}<small>/${B_MAX}점</small></div>
-      <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 학생 ▶</button>
+      <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 ▶</button>
     </div>`;
   } else {
     html += `<p class="sub">${activeRound}차 · ${activeStats.scoredMoves}/${MOVES.length}개 동작 채점됨${cs.roundCount>1 ? ` · 최고 기록 ${cs.bestRoundNo}차 반영` : ""}${rec.scoredBy ? " · 마지막 채점: " + esc(rec.scoredBy) : ""}</p>`;
@@ -1761,10 +1814,10 @@ function renderScoreCardBody(){
     html += State.viewMode === "live" ? renderLiveBody(activeMoves) : renderDetailBody(activeMoves);
     html += renderTaskSection(rec);
     html += `<div class="summary-bar">
-      <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전 학생</button>
-      <div class="scores"><span id="scoresText">완성도Ⓐ ${cs.a}/${A_MAX} · 과제Ⓑ ${cs.b}/${B_MAX}<br>원점수 ${cs.raw}</span><span id="saveState" class="save-state"></span></div>
+      <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전</button>
+      <div class="scores"><span id="scoresText">완성도 <b>${cs.a}</b><br>과제 <b>${cs.b}</b></span><span id="saveState" class="save-state"></span></div>
       <div class="final" id="finalScore">${cs.final}<small>점</small></div>
-      <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 학생 ▶</button>
+      <button class="nav-btn" id="btnNextStu" ${no>=count?"disabled":""}>다음 ▶</button>
     </div>`;
   }
 
@@ -2185,7 +2238,7 @@ function refreshLiveDisplay(cls, no, roundNo, moveIdx){
   const undoBtn = document.getElementById("btnUndo");
   if (undoBtn) undoBtn.disabled = clicks <= 0;
   const scoresText = document.getElementById("scoresText");
-  if (scoresText) scoresText.innerHTML = `완성도Ⓐ ${cs.a}/${A_MAX} · 과제Ⓑ ${cs.b}/${B_MAX}<br>원점수 ${cs.raw}`;
+  if (scoresText) scoresText.innerHTML = `완성도 <b>${cs.a}</b><br>과제 <b>${cs.b}</b>`;
   const finalEl = document.getElementById("finalScore");
   if (finalEl) finalEl.innerHTML = `${cs.final}<small>점</small>`;
   const allRounds = getRounds(rec);
@@ -2447,54 +2500,104 @@ function allRecordsFlat(){
   });
   return rows;
 }
-function renderDashboard(){
-  const summaryRow = document.getElementById("clsSummaryRow");
-  summaryRow.innerHTML = CLASSES.map(c => {
-    const scores = State.scoresByClass[c] || {};
-    const count = getRoster(c).count || 30;
-    const done = Object.keys(scores).filter(no => computeScores(scores[no]).allMovesScored).length;
-    const active = State.dashCls === c ? "active" : "";
-    return `<button class="cls-card ${active}" data-cls="${c}"><div class="n">${c}반</div><div class="frac">${done}/${count}</div></button>`;
-  }).join("") + `<button class="cls-card ${State.dashCls==='all'?'active':''}" data-cls="all"><div class="n">전체</div><div class="frac">보기</div></button>`;
-  summaryRow.querySelectorAll(".cls-card").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const v = btn.dataset.cls;
-      State.dashCls = v === "all" ? "all" : Number(v);
-      renderDashboard();
-    });
-  });
-  document.getElementById("dashFilterLabel").textContent = State.dashCls === "all" ? "전체 반" : State.dashCls + "반";
-
-  let rows = allRecordsFlat();
-  if (State.dashCls !== "all") rows = rows.filter(r => r.cls === State.dashCls);
-  const {key, dir} = State.dashSort;
-  rows.sort((x,y) => {
-    let a = x[key], b = y[key];
-    if (typeof a === "string") return a.localeCompare(b) * dir;
-    return (a-b) * dir;
-  });
-
-  document.getElementById("dashTbody").innerHTML = rows.map(r => `
-    <tr>
-      <td>${r.cls}반</td>
-      <td>${r.no}</td>
-      <td class="name-cell">${esc(r.name)}</td>
-      <td>${r.a}/${A_MAX}</td>
-      <td>${r.b}/${B_MAX}</td>
-      <td>${r.raw}${r.complete?"":' <span class="part-tag">채점중</span>'}</td>
-      <td class="final-cell">${r.final}</td>
-      <td>${esc(r.by)}</td>
-    </tr>
-  `).join("") || `<tr><td colspan="8" style="padding:24px;color:var(--muted);">아직 채점된 학생이 없습니다.</td></tr>`;
+/* ---- 현황판 ----
+   위에서 아래로 한 번에 읽히게: ① 전체 요약 ② 반별 진행 ③ 고른 반의 학생 목록 ④ 성적 파일 도구.
+   인원 기준과 색은 채점 탭과 같다(학적변동 제외, 빨강A~파랑E·채점 중·미응시). */
+const DASH_KEYS = ["A","B","C","D","E","part","none"];
+const DASH_LABEL = {A:"빨강(A)", B:"주황(B)", C:"노랑(C)", D:"초록(D)", E:"파랑(E)", part:"채점 중", none:"미응시"};
+function dashHasData(c){
+  const r = getRoster(c), sc = State.scoresByClass[c];
+  return !!((r.names && Object.keys(r.names).length) || (sc && Object.keys(sc).length));
 }
-document.querySelectorAll("#dashTable th[data-sort]").forEach(th => {
-  th.addEventListener("click", () => {
-    const key = th.dataset.sort;
-    if (State.dashSort.key === key) State.dashSort.dir *= -1;
-    else State.dashSort = {key, dir:1};
-    renderDashboard();
+function renderDashboard(){
+  if (!State.dashCls || State.dashCls === "all") State.dashCls = State.scoreCls || 1;
+  const cls = State.dashCls;
+  const sum = (o, keys) => keys.reduce((a, k) => a + (o[k] || 0), 0);
+  const GR = ["A","B","C","D","E"];
+
+  // ① 전체 요약 — 명단이나 기록이 있는 반만 더한다
+  const per = {}, tot = {};
+  CLASSES.forEach(c => {
+    per[c] = statCounts(c, false);
+    if (dashHasData(c)) DASH_KEYS.forEach(k => tot[k] = (tot[k] || 0) + (per[c][k] || 0));
   });
-});
+  const all = sum(tot, DASH_KEYS), doneAll = sum(tot, GR);
+  document.getElementById("dashSum").innerHTML =
+    `<div class="ds-line">전체 <b>완료 ${doneAll}</b> · 채점 중 <b>${tot.part || 0}</b> · <span class="left">미응시 <b>${tot.none || 0}</b></span> <span class="of">(${all}명)</span></div>` +
+    `<div class="ds-bar" role="img" aria-label="등급·상태별 비율">` + DASH_KEYS.map(k => (tot[k] && all) ? `<i class="bg-${k}" style="width:${(tot[k] / all * 100).toFixed(2)}%"></i>` : "").join("") + `</div>` +
+    `<div class="ds-legend">` + DASH_KEYS.map(k => `<span class="${tot[k] ? "" : "zero"}"><i class="dot c-${k}"></i>${DASH_LABEL[k]} <b>${tot[k] || 0}</b></span>`).join("") + `</div>`;
+
+  // ② 반별 진행
+  const box = document.getElementById("dashClasses");
+  box.innerHTML = CLASSES.map(c => {
+    const t = per[c], n = sum(t, DASH_KEYS), d = sum(t, GR), p = t.part || 0;
+    return `<button type="button" class="dc ${c === cls ? "on" : ""}" data-cls="${c}">
+      <span class="dc-n">${c}반</span>
+      <span class="dc-bar"><i style="width:${n ? d / n * 100 : 0}%"></i><i class="p" style="width:${n ? p / n * 100 : 0}%"></i></span>
+      <span class="dc-f"><b>${d}</b>/${n}</span>
+    </button>`;
+  }).join("");
+  box.querySelectorAll(".dc").forEach(b => b.addEventListener("click", () => {
+    State.dashCls = Number(b.dataset.cls); State.dashOpen = null; renderDashboard();
+  }));
+
+  // ③ 고른 반의 학생 목록 — 미응시·학적변동 학생도 모두 나온다
+  const sort = State.dashOrder || "no";
+  const t = per[cls], inClass = sum(t, DASH_KEYS);
+  document.getElementById("dashListHead").innerHTML =
+    `<h2>${cls}반 <span class="of">완료 ${sum(t, GR)} · 남음 ${inClass - sum(t, GR)}</span></h2>` +
+    `<div class="seg" role="group" aria-label="정렬">` + [["no","번호순"],["score","점수순"],["left","남은 학생"]].map(([k, l]) =>
+      `<button type="button" data-order="${k}" class="${sort === k ? "on" : ""}">${l}</button>`).join("") + `</div>`;
+  document.querySelectorAll("#dashListHead .seg button").forEach(b => b.addEventListener("click", () => {
+    State.dashOrder = b.dataset.order; renderDashboard();
+  }));
+
+  const roster = getRoster(cls), count = roster.count || 30, scores = State.scoresByClass[cls] || {};
+  const rows = [];
+  for (let no = 1; no <= count; no++){
+    const rec = scores[no], cs = computeScores(rec);
+    rows.push({no, rec, cs, cat: catOf(cls, no, false), name: studentName(cls, no), status: (roster.status && roster.status[no]) || ""});
+  }
+  const isGrade = r => GR.includes(r.cat);
+  if (sort === "score"){
+    // 점수 높은 순. 아직 점수가 없는 학생은 뒤로(채점 중 → 미응시 → 학적변동)
+    const rank = r => isGrade(r) ? 0 : ({part:1, none:2, out:3})[r.cat];
+    rows.sort((x, y) => rank(x) - rank(y) || (isGrade(x) ? (y.cs.final - x.cs.final) || (y.cs.raw - x.cs.raw) : 0) || x.no - y.no);
+  } else if (sort === "left"){
+    const rank = r => ({none:0, part:1, out:3})[r.cat] ?? 2;
+    rows.sort((x, y) => rank(x) - rank(y) || x.no - y.no);
+  }
+  const list = document.getElementById("dashList");
+  list.innerHTML = rows.map(r => {
+    let val;
+    if (r.cat === "out") val = `<span class="dl-none">${esc(r.status)}</span>`;
+    else if (r.cat === "none") val = `<span class="dl-none">미응시${r.cs.b ? " · 가산점 " + r.cs.b : ""}</span>`;
+    else if (r.cat === "part") val = `<span class="part-tag">채점 중 ${r.cs.scoredMoves}/${MOVES.length}</span>`;
+    else val = `<b class="dl-score">${r.cs.final}</b><span class="dl-unit">점</span><i class="gbadge bg-${r.cat}">${r.cat}</i>`;
+    const open = State.dashOpen === r.no && r.cat !== "out";
+    const more = !open ? "" : `<div class="dl-more">
+        <div class="dl-facts"><span>완성도Ⓐ <b>${r.cs.a}/${A_MAX}</b></span><span>과제Ⓑ <b>${r.cs.b}/${B_MAX}</b></span><span>원점수 <b>${r.cs.raw}</b></span>${isGrade(r) ? `<span>환산 <b>${r.cs.final}점</b></span>` : ""}${r.cs.roundCount > 1 ? `<span>${r.cs.bestRoundNo}차 반영 (총 ${r.cs.roundCount}차)</span>` : ""}${r.rec && r.rec.scoredBy ? `<span>채점 ${esc(r.rec.scoredBy)}</span>` : ""}</div>
+        <button type="button" class="dl-go" data-go="${r.no}">채점 탭에서 열기 ▶</button>
+      </div>`;
+    return `<div class="dl-item ${r.cat === "out" ? "out" : ""} ${open ? "open" : ""}">
+      <button type="button" class="dl-row" data-no="${r.no}" ${r.cat === "out" ? "disabled" : ""} aria-expanded="${open}">
+        <span class="dl-no">${r.no}</span><span class="dl-name">${esc(r.name)}</span><span class="dl-val">${val}</span>
+      </button>${more}</div>`;
+  }).join("");
+  list.querySelectorAll(".dl-row").forEach(b => b.addEventListener("click", () => {
+    const no = Number(b.dataset.no);
+    State.dashOpen = State.dashOpen === no ? null : no; renderDashboard();
+  }));
+  list.querySelectorAll(".dl-go").forEach(b => b.addEventListener("click", () => {
+    // 그 학생의 채점 화면으로 바로 간다
+    State.scoreCls = cls; State.scoreNo = Number(b.dataset.go); State.liveStep = 0; State.activeRound = null; State.focusOff = false;
+    if (State.scoreMode === "two"){ const one = document.querySelector('#scoreMode [data-smode="one"]'); if (one) one.click(); State.scoreNo = Number(b.dataset.go); }
+    document.querySelector('.tab-btn[data-tab="score"]').click();
+    renderStudentGrid(); renderScoreCard();
+    const wrap = document.getElementById("scoreCardWrap");
+    if (wrap && !isDesktopLayout()) wrap.scrollIntoView({block:"start"});
+  }));
+}
 
 const EXPORT_HEADER = ["반","번호","이름", ...MOVES, "완성도(Ⓐ)","과제수행(Ⓑ)","원점수","환산점수","반영 차수","총 시도 차수","채점교사","비고"];
 // 한 반의 성적 줄을 만든다(머리글 제외).
