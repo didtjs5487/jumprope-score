@@ -236,14 +236,18 @@
   /* ---- 채점 모드 전환 ---- */
   .score-mode{display:flex;gap:8px;margin-bottom:10px;}
   .score-mode .mode-btn{flex:1;min-height:46px;font-size:16px;}
-  /* 진동 · 소리 알림 켜고 끄기 — 켜면 파랑, 끄면 회색에 빗금 */
-  .fb-tg{flex:none;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-    width:52px;min-height:46px;padding:2px 0;border-radius:9px;border:1px solid var(--border);background:var(--bg);
-    color:#9AA2AD;font-size:13px;font-weight:700;position:relative;}
-  .fb-tg .ic{width:20px;height:20px;}
-  .fb-tg.on{color:var(--primary-dark);background:var(--primary-light);border-color:var(--primary);}
-  .fb-tg:not(.on)::after{content:"";position:absolute;left:12px;right:12px;top:50%;height:2px;background:#9AA2AD;transform:rotate(-35deg);top:15px;}
-  .fb-tg:not(.on) .w{display:none;}
+  /* 진동 · 소리 켜고 끄기 — 게임처럼 동그란 아이콘 단추. 켬 = 파란 원, 끔 = 회색 원 + X/빗금 아이콘 */
+  .fb-tg{flex:none;display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;
+    border-radius:50%;border:2px solid #C5CCD6;background:#EEF1F5;color:#8A93A0;
+    transition:background .15s,border-color .15s,color .15s,transform .12s;}
+  .fb-tg .ic{width:24px;height:24px;stroke-width:2.2;margin:0;vertical-align:0;}
+  .fb-tg .on-ic{display:none;}
+  .fb-tg.on{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 3px 8px rgba(40,98,230,.3);}
+  .fb-tg.on .on-ic{display:block;} .fb-tg.on .off-ic{display:none;}
+  .fb-tg:active{transform:scale(.9);}
+  .fb-tg.pop{animation:fbPop .28s ease-out;}
+  @keyframes fbPop{0%{transform:scale(.85);}60%{transform:scale(1.1);}100%{transform:scale(1);}}
+  @media (prefers-reduced-motion:reduce){.fb-tg.pop{animation:none;}}
 
   /* ---- 2명 동시 채점 ---- */
   /* 두 엄지로 좌우 실수 버튼을 동시에 눌러도 양쪽이 모두 기록되어야 한다.
@@ -673,8 +677,8 @@
       <div class="score-mode" id="scoreMode">
         <button class="mode-btn active" data-smode="one"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>1명 채점</button>
         <button class="mode-btn" data-smode="two"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c2.8 0 4.6 2 4.6 5"/></svg>2명 동시</button>
-        <button type="button" class="fb-tg" data-fb="vib" aria-label="진동 알림"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 9v6M20 9v6"/></svg><span>진동</span></button>
-        <button type="button" class="fb-tg" data-fb="snd" aria-label="소리 알림"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z"/><path class="w" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></svg><span>소리</span></button>
+        <button type="button" class="fb-tg" data-fb="vib" aria-label="진동"><svg class="ic on-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4.5 8.5l-1.5 1.5 1.5 1.5-1.5 1.5 1.5 1.5M19.5 8.5l1.5 1.5-1.5 1.5 1.5 1.5-1.5 1.5"/></svg><svg class="ic off-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 4l16 16"/></svg></button>
+        <button type="button" class="fb-tg" data-fb="snd" aria-label="소리"><svg class="ic on-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 9.5H7L11.5 5v14L7 14.5H3.5z"/><path d="M15 9a4 4 0 0 1 0 6M17.8 6.3a7.8 7.8 0 0 1 0 11.4"/></svg><svg class="ic off-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 9.5H7L11.5 5v14L7 14.5H3.5z"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg></button>
       </div>
       <div class="cls-row" id="clsRowScore"></div>
       <div class="stat-bar" id="statBar" aria-live="polite"></div>
@@ -1625,13 +1629,16 @@ function renderFeedbackSetting(){
   document.querySelectorAll(".fb-tg[data-fb]").forEach(b => {
     const on = p[b.dataset.fb];
     b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
-    b.title = (b.dataset.fb === "vib" ? "진동" : "소리") + (on ? " 켬 — 누르면 끔" : " 끔 — 누르면 켬");
+    const nm = b.dataset.fb === "vib" ? "진동" : "소리";
+    b.title = nm + (on ? " 켬 — 누르면 끔" : " 끔 — 누르면 켬");
+    b.setAttribute("aria-label", nm + (on ? " 켜짐" : " 꺼짐"));
   });
 }
 (function wireFeedbackSetting(){
   document.querySelectorAll(".fb-tg[data-fb]").forEach(b => b.addEventListener("click", () => {
     const p = feedbackPrefs(); p[b.dataset.fb] = !p[b.dataset.fb]; setFeedbackPrefs(p);
     renderFeedbackSetting();
+    b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
     if (p[b.dataset.fb]) feedback("miss", b.dataset.fb);   // 켤 때 한 번 맛보기
   }));
   renderFeedbackSetting();
