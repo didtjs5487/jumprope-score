@@ -330,7 +330,14 @@
     body.focus-live .summary-bar,
     body.focus-live .task-section,
     body.focus-live .desktop-move-nav{display:none;}
-    body.focus-live .score-card h2{font-size:15px;margin:0 70px 2px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    body.focus-live .score-card h2{font-size:15px;margin:0 0 2px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    body.focus-live .card-head{margin-right:70px;gap:6px;}
+    /* 2명 동시 가로 화면은 줄을 늘리지 않게 단추만 "목록" 옆에 띄운다 */
+    body.focus-live .pair-head{position:fixed;top:5px;right:84px;z-index:40;margin:0;}
+    body.focus-live .pair-head h2{display:none;}
+    body.focus-live .pair-top{padding-right:172px;}
+    body.focus-live .fb-tg{width:40px;height:40px;}
+    body.focus-live .fb-tg .ic{width:21px;height:21px;}
     body.focus-live .sheet{border:none;border-radius:0;}
     body.focus-live .sheet-open{border-top:none;padding:6px 10px 8px;background:transparent;}
     body.focus-live .so-name{font-size:21px;margin:3px 0 7px;}
@@ -340,6 +347,11 @@
 
   .score-card{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:0 10px 30px rgba(22,26,32,.06);border:1px solid var(--border);}
   .score-card h2{font-size:19px;margin-bottom:1px;}
+  .card-head{display:flex;align-items:center;gap:8px;margin-bottom:2px;}
+  .card-head h2{flex:1;min-width:0;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pair-head{margin-bottom:8px;}
+  .pair-head h2{font-size:17px;color:var(--muted);}
+  .fb-dock{display:flex;gap:8px;flex:none;}
   .score-card .sub{color:var(--muted);font-size:15px;line-height:1.4;margin-bottom:9px;}
   .move-row{margin-bottom:12px;}
   .move-row .move-name{font-size:13px;font-weight:600;margin-bottom:6px;}
@@ -677,8 +689,6 @@
       <div class="score-mode" id="scoreMode">
         <button class="mode-btn active" data-smode="one"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>1명 채점</button>
         <button class="mode-btn" data-smode="two"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c2.8 0 4.6 2 4.6 5"/></svg>2명 동시</button>
-        <button type="button" class="fb-tg" data-fb="vib" aria-label="진동"><svg class="ic on-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4.5 8.5l-1.5 1.5 1.5 1.5-1.5 1.5 1.5 1.5M19.5 8.5l1.5 1.5-1.5 1.5 1.5 1.5-1.5 1.5"/></svg><svg class="ic off-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="4" width="8" height="16" rx="2"/><path d="M4 4l16 16"/></svg></button>
-        <button type="button" class="fb-tg" data-fb="snd" aria-label="소리"><svg class="ic on-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 9.5H7L11.5 5v14L7 14.5H3.5z"/><path d="M15 9a4 4 0 0 1 0 6M17.8 6.3a7.8 7.8 0 0 1 0 11.4"/></svg><svg class="ic off-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 9.5H7L11.5 5v14L7 14.5H3.5z"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg></button>
       </div>
       <div class="cls-row" id="clsRowScore"></div>
       <div class="stat-bar" id="statBar" aria-live="polite"></div>
@@ -1634,15 +1644,20 @@ function renderFeedbackSetting(){
     b.setAttribute("aria-label", nm + (on ? " 켜짐" : " 꺼짐"));
   });
 }
-(function wireFeedbackSetting(){
-  document.querySelectorAll(".fb-tg[data-fb]").forEach(b => b.addEventListener("click", () => {
-    const p = feedbackPrefs(); p[b.dataset.fb] = !p[b.dataset.fb]; setFeedbackPrefs(p);
-    renderFeedbackSetting();
-    b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
-    if (p[b.dataset.fb]) feedback("miss", b.dataset.fb);   // 켤 때 한 번 맛보기
-  }));
+// 채점 화면 머리(학생 이름 줄 오른쪽)에 들어가는 진동·소리 단추
+function fbButtonsHtml(){
+  const p = feedbackPrefs();
+  const one = (k, nm, svg) => `<button type="button" class="fb-tg ${p[k] ? "on" : ""}" data-fb="${k}" aria-pressed="${p[k]}" aria-label="${nm} ${p[k] ? "켜짐" : "꺼짐"}" title="${nm} ${p[k] ? "켬 — 누르면 끔" : "끔 — 누르면 켬"}">${svg}</button>`;
+  return `<div class="fb-dock">${one("vib", "진동", "<svg class=\"ic on-ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"8\" y=\"4\" width=\"8\" height=\"16\" rx=\"2\"/><path d=\"M4.5 8.5l-1.5 1.5 1.5 1.5-1.5 1.5 1.5 1.5M19.5 8.5l1.5 1.5-1.5 1.5 1.5 1.5-1.5 1.5\"/></svg><svg class=\"ic off-ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"8\" y=\"4\" width=\"8\" height=\"16\" rx=\"2\"/><path d=\"M4 4l16 16\"/></svg>")}${one("snd", "소리", "<svg class=\"ic on-ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3.5 9.5H7L11.5 5v14L7 14.5H3.5z\"/><path d=\"M15 9a4 4 0 0 1 0 6M17.8 6.3a7.8 7.8 0 0 1 0 11.4\"/></svg><svg class=\"ic off-ic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3.5 9.5H7L11.5 5v14L7 14.5H3.5z\"/><path d=\"M15.5 9.5l5 5M20.5 9.5l-5 5\"/></svg>")}</div>`;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest(".fb-tg[data-fb]");
+  if (!b) return;
+  const k = b.dataset.fb, p = feedbackPrefs(); p[k] = !p[k]; setFeedbackPrefs(p);
   renderFeedbackSetting();
-})();
+  b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop");
+  if (p[k]) feedback("miss", k);   // 켤 때 한 번 맛보기
+});
 
 function savePairMiss(cls, no, delta){
   const s = pairSide(cls, no);
@@ -1717,7 +1732,7 @@ function renderPairCard(){
 
   const nameBox = (no, i) => `<div class="pair-name ${i === 0 ? "left" : "right"}">${esc(studentName(cls, no))}<small>${no}번 · ${i === 0 ? "왼쪽" : "오른쪽"}</small></div>`;
 
-  let html = `<div class="pair-wrap" id="pairWrap"><div class="pair-top">
+  let html = `<div class="card-head pair-head"><h2>2명 동시 채점</h2>${fbButtonsHtml()}</div><div class="pair-wrap" id="pairWrap"><div class="pair-top">
     ${nameBox(a, 0)}${nameBox(b, 1)}`;
 
   if (done){
@@ -1871,7 +1886,7 @@ function renderScoreCardBody(){
       <button class="mode-btn ${State.viewMode==='detail'?'active':''}" id="btnModeDetail">${IC.pencil}점수 수정</button>
     </div>`;
 
-  let html = `<h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>`;
+  let html = `<div class="card-head"><h2>${cls}반 ${no}번 · ${esc(studentName(cls,no))}</h2>${fbButtonsHtml()}</div>`;
 
   if (State.viewMode === "challenge"){
     // 개인진도표: 정식 채점(회차·과제수행·환산점수)과 무관한 연습·진단용 화면이라
