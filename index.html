@@ -595,6 +595,10 @@
   .dl-more{padding:4px 14px 12px 52px;background:var(--primary-light);}
   .dl-facts{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:15px;color:var(--muted);font-weight:600;}
   .dl-facts b{color:var(--text);font-weight:800;font-variant-numeric:tabular-nums;}
+  .rec-clear{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;margin:14px 0 2px;min-height:48px;
+    border-radius:12px;border:1.5px dashed #E8A49C;background:#fff;color:var(--danger);font-size:16px;font-weight:700;}
+  .rec-clear:active{background:#FDECEA;}
+  body.focus-live .rec-clear{display:none;}
   .dl-clear{margin:10px 0 0 8px;min-height:46px;padding:0 14px;border-radius:12px;border:1.5px solid var(--danger);background:#fff;color:var(--danger);font-size:16px;font-weight:700;}
   .dl-go{margin-top:10px;min-height:46px;padding:0 16px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:16px;font-weight:700;}
   .dash-tools{margin-top:22px;padding-top:16px;border-top:1px solid var(--border);}
@@ -1267,7 +1271,7 @@ Backend.onAuth(user => {
 /* 채점 모드 전환: 한 명씩 / 두 명 동시 */
 document.querySelectorAll("#scoreMode .mode-btn").forEach(btn => {
   btn.addEventListener("click", () => {
-    commitPendingLast();
+    if (!leaveDraftOk()) return;
     document.querySelectorAll("#scoreMode .mode-btn").forEach(b => b.classList.remove("active"));
     btn.classList.add("active");
     State.scoreMode = btn.dataset.smode;
@@ -1342,7 +1346,7 @@ function startAppData(){
     if (State.currentTab === "dashboard") renderDashboard();
   });
   renderClassRow("clsRowScore", State.scoreCls, cls => {
-    commitPendingLast(); State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
+    if (!leaveDraftOk()) return; State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
     renderClassRow("clsRowScore", State.scoreCls, arguments.callee, false);
     loadRosterFor();
     renderStudentGrid();
@@ -1475,7 +1479,7 @@ function renderStatBar(){
 function renderStudentGrid(){
   dropDrafts();
   renderClassRow("clsRowScore", State.scoreCls, cls => {
-    commitPendingLast(); State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
+    if (!leaveDraftOk()) return; State.scoreCls = cls; State.scoreNo = null; State.liveStep = 0;
     loadRosterFor();
     renderStudentGrid();
     renderScoreCard();
@@ -1542,7 +1546,7 @@ function renderStudentGrid(){
       const no = Number(btn.dataset.no);
       if (State.scoreMode === "two"){
         // 두 명을 차례로 고른다(왼쪽 → 오른쪽). 고른 번호를 다시 누르면 선택 취소.
-        commitPendingLast();
+        if (!leaveDraftOk()) return;
         const at = State.pairNos.indexOf(no);
         if (at >= 0) State.pairNos.splice(at, 1);
         else if (State.pairNos.length < 2) State.pairNos.push(no);
@@ -1557,7 +1561,7 @@ function renderStudentGrid(){
         }
         return;
       }
-      commitPendingLast();
+      if (!leaveDraftOk()) return;
       State.scoreNo = no;
       State.liveStep = openStepFor(State.scoreCls, no);
       State.activeRound = null;
@@ -1773,7 +1777,7 @@ function renderPairCard(){
       <button id="btnPairPrev" ${State.liveStep <= 0 ? "disabled" : ""}>◀ 이전 동작</button>
       <button class="main" id="btnPairNext">다음 동작 ▶</button>
     </div>
-    <p class="pair-hint">${IC.bulb}화면을 좌우로 쓸면 다음/이전 동작으로 넘어갑니다</p></div>`;
+    <p class="pair-hint">${IC.bulb}${State.liveStep === MOVES.length - 1 ? '마지막 동작 — <b>옆으로 쓸면 두 학생 모두 저장</b>' : '화면을 좌우로 쓸면 다음/이전 동작으로 넘어갑니다'}</p></div>`;
   }
   card.innerHTML = html;
 
@@ -1809,7 +1813,7 @@ function renderPairCard(){
   if (next) next.addEventListener("click", goNext);
   const fresh = document.getElementById("btnPairNew");
   if (fresh) fresh.addEventListener("click", () => {
-    commitPendingLast();
+    if (!leaveDraftOk()) return;
     State.pairNos = []; State.liveStep = 0; State.focusOff = false;
     renderStudentGrid(); renderScoreCard();
   });
@@ -1876,8 +1880,8 @@ function renderScoreCardBody(){
       </div>`;
     const prevBtn = document.getElementById("btnPrevStu");
     const nextBtn = document.getElementById("btnNextStu");
-    if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ commitPendingLast(); State.scoreNo = no-1; State.liveStep = openStepFor(State.scoreCls, no-1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
-    if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ commitPendingLast(); State.scoreNo = no+1; State.liveStep = openStepFor(State.scoreCls, no+1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+    if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ if (!leaveDraftOk()) return; State.scoreNo = no-1; State.liveStep = openStepFor(State.scoreCls, no-1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+    if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ if (!leaveDraftOk()) return; State.scoreNo = no+1; State.liveStep = openStepFor(State.scoreCls, no+1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
     return;
   }
 
@@ -1939,6 +1943,7 @@ function renderScoreCardBody(){
     html += modeToggleHtml;
     html += State.viewMode === "live" ? renderLiveBody(activeMoves) : renderDetailBody(activeMoves);
     html += renderTaskSection(rec);
+    if (hasMusicRecord(cls, no)) html += `<button type="button" class="rec-clear" id="btnClearRec">${IC.ban || ""}잘못 입력된 기록 지우기</button>`;
     html += `<div class="summary-bar">
       <button class="nav-btn" id="btnPrevStu" ${no<=1?"disabled":""}>◀ 이전</button>
       <div class="scores"><span id="scoresText">완성도 <b>${cs.a}</b><br>과제 <b>${cs.b}</b></span><span id="saveState" class="save-state"></span></div>
@@ -1979,8 +1984,8 @@ function renderScoreCardBody(){
 
   const prevBtn = document.getElementById("btnPrevStu");
   const nextBtn = document.getElementById("btnNextStu");
-  if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ commitPendingLast(); State.scoreNo = no-1; State.liveStep = openStepFor(State.scoreCls, no-1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
-  if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ commitPendingLast(); State.scoreNo = no+1; State.liveStep = openStepFor(State.scoreCls, no+1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+  if (prevBtn) prevBtn.addEventListener("click", () => { if (no>1){ if (!leaveDraftOk()) return; State.scoreNo = no-1; State.liveStep = openStepFor(State.scoreCls, no-1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
+  if (nextBtn) nextBtn.addEventListener("click", () => { if (no<count){ if (!leaveDraftOk()) return; State.scoreNo = no+1; State.liveStep = openStepFor(State.scoreCls, no+1); State.activeRound = null; renderStudentGrid(); renderScoreCard(); }});
 }
 
 /* 음악줄넘기(라이브)/상세 모드 전용: 회차 탭·재도전·동작 입력·과제수행 체크 연결 */
@@ -2008,6 +2013,10 @@ function wireScoringControls(cls, no, rec, roundNos, activeRound, activeMoves){
       State.liveStep = 0;
       saveRecord(cls, no, {rounds: newRounds, moves: null});
     });
+  });
+  const clearBtn = document.getElementById("btnClearRec");
+  if (clearBtn) clearBtn.addEventListener("click", () => {
+    clearMusicRecord(cls, no, () => { State.activeRound = null; State.liveStep = 0; renderStudentGrid(); renderScoreCard(); });
   });
   const addRoundBtn = document.getElementById("btnAddRound");
   if (addRoundBtn) addRoundBtn.addEventListener("click", () => {
@@ -2151,7 +2160,7 @@ function renderLiveBody(moves){
 
   return `<div class="live-gesture-zone" id="liveGestureZone"><div class="sheet">${rows}</div></div>
     <button class="undo-btn-big" id="btnUndo" ${(done || curClicks <= 0) ? "disabled" : ""}>${ICON_UNDO} 잘못 눌렀다면 되돌리기</button>
-    <p class="swipe-hint">${IC.bulb}펼쳐진 칸을 <b>위로 쓸면 다음 동작</b>, 아래로 쓸면 이전 · 줄을 누르면 그 동작으로</p>
+    <p class="swipe-hint">${IC.bulb}${State.liveStep === MOVES.length - 1 ? '마지막 동작 — 펼쳐진 칸을 <b>위로 쓸면 저장</b>(넘기지 않으면 저장되지 않음)' : '펼쳐진 칸을 <b>위로 쓸면 다음 동작</b>, 아래로 쓸면 이전 · 줄을 누르면 그 동작으로'}</p>
     <div class="desktop-move-nav">
       <button id="btnPrevMoveDesktop" ${cur<=0?"disabled":""}>◀ 이전 동작</button>
       <button id="btnNextMoveDesktop" ${done?"disabled":""}>${cur<MOVES.length-1 ? "다음 동작 ▶" : "완료 ▶"}</button>
@@ -2259,7 +2268,7 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
       nextStuBtn.textContent = "이 반의 마지막 학생입니다";
     } else {
       nextStuBtn.addEventListener("click", () => {
-        commitPendingLast();
+        if (!leaveDraftOk()) return;
         State.scoreNo = no + 1;
         State.liveStep = openStepFor(State.scoreCls, no + 1);
         State.activeRound = null;
@@ -2279,8 +2288,9 @@ function wireLiveBody(cls, no, rec, roundNo, moves){
 /* ---- 끝까지 채점한 것만 저장 ----
    8개 동작을 다 매기기 전에는 서버에 보내지 않고 이 폰에만 임시로 들고 있다(State.drafts).
    학생을 바꾸면 끝나지 않은 임시 기록은 버린다 — 넘기다 잘못 눌려 "채점 중"이 서버에 남던 문제를 막는다.
-   단, 8번 동작까지 와서 실수 없이 다른 학생으로 가면 8번을 5점(클리어)으로 채워 저장한다(commitPendingLast). */
-State.drafts = {};   // "반|번호" -> {server: 서버 기록(없으면 null), rounds, scoredBy}
+   8번까지 직접 넘겨야 저장된다(자동 채우기 없음 — 잘못 넘긴 학생이 만점이 될 수 있어서). 30초 안에 끝나면 확인한다. */
+State.drafts = {};   // "반|번호" -> {server: 서버 기록(없으면 null), rounds, scoredBy, startedAt, startMoves}
+const FAST_FINISH_MS = 30000;   // 노래에 맞춰 8개 동작을 하면 30초 안에 끝날 수 없다
 function draftKey(cls, no){ return cls + "|" + no; }
 function movesSig(m){ m = m || {}; return MOVES.map((_, i) => m[i] || 0).join(","); }
 function roundsHoldBack(prevRec, rounds){
@@ -2310,22 +2320,52 @@ function dropDrafts(){
     if (d.server) State.scoresByClass[c][n] = d.server; else delete State.scoresByClass[c][n];
   });
 }
-// 학생을 떠나기 직전: 8번 동작에서 실수 없이 떠나면 8번을 5점으로 채워 완료 저장
-function commitPendingLast(){
-  const last = MOVES.length - 1;
-  if (State.liveStep !== last) return;
-  const cls = State.scoreCls, two = State.scoreMode === "two";
-  const nos = two ? State.pairNos.slice() : (State.scoreNo != null ? [State.scoreNo] : []);
-  nos.forEach(no => {
-    if (!State.drafts[draftKey(cls, no)]) return;
-    const rec = (State.scoresByClass[cls] || {})[no] || {};
-    const rounds = getRounds(rec);
-    const rn = two ? pairRoundNo(rec) : (State.activeRound || Math.max(...Object.keys(rounds).map(roundNumFromKey)));
-    const mv = (rounds[roundKey(rn)] || {}).moves || {};
-    if (mv[last]) return;
-    for (let k = 0; k < last; k++) if (!mv[k]) return;
-    if (two) savePairMiss(cls, no, 0); else saveMoveQuiet(cls, no, rn, last, 5);
+// 학생을 떠나기 직전: 거의 다(6개 이상) 채점한 임시 기록이 있으면 버려도 되는지 묻는다.
+// 자동으로 채워 저장하지는 않는다 — 잘못 넘긴 학생이 5점(만점)으로 저장될 수 있어서.
+const LEAVE_WARN_MOVES = 6;
+function draftMoves(d){
+  let n = 0;
+  Object.values(d.rounds || {}).forEach(rd => {
+    const k = computeRoundStats(rd && rd.moves).scoredMoves;
+    if (k < MOVES.length) n = Math.max(n, k);
   });
+  return n;
+}
+function leaveDraftOk(){
+  const cls = State.scoreCls;
+  for (const k of openDraftKeys()){
+    const d = State.drafts[k]; if (!d) continue;
+    const n = draftMoves(d); if (n < LEAVE_WARN_MOVES) continue;
+    const no = Number(k.split("|")[1]);
+    if (!confirm(`${cls}반 ${no}번 ${studentName(cls, no)} — ${n}개 동작까지 채점했습니다.\n8번까지 넘겨야 저장됩니다. 저장하지 않고 넘어갈까요?`)) return false;
+  }
+  return true;
+}
+// 잘못 입력된 음악줄넘기 기록을 통째로 지운다(모든 차수). 개인진도표 기록은 남긴다.
+function hasMusicRecord(cls, no){
+  const rounds = getStoredRounds((State.scoresByClass[cls] || {})[no] || {});
+  return Object.values(rounds).some(rd => computeRoundStats(rd && rd.moves).scoredMoves > 0);
+}
+function clearMusicRecord(cls, no, after){
+  const rec = (State.scoresByClass[cls] || {})[no] || {};
+  const cs = computeScores(rec);
+  const what = cs.allMovesScored ? `완성도 ${cs.a}점 · 환산 ${cs.final}점` : `${cs.scoredMoves}/${MOVES.length}개 동작 채점 중`;
+  if (!confirm(`${cls}반 ${no}번 ${studentName(cls, no)}의 음악줄넘기 기록(${what})을 모두 지울까요?\n지운 학생은 '미응시'가 됩니다. 개인진도표 기록은 그대로 둡니다. 되돌릴 수 없습니다.`)) return false;
+  const key = draftKey(cls, no), d = State.drafts[key];
+  delete State.drafts[key];
+  const base = d ? (d.server || {}) : rec;
+  const hadServer = d ? !!(d.server && hasRoundsWithMoves(d.server)) : true;
+  const patch = {rounds: null, moves: null, scoredBy: null};
+  State.scoresByClass[cls] = State.scoresByClass[cls] || {};
+  State.scoresByClass[cls][no] = Object.assign({}, base, patch);
+  const done = () => toast(`${no}번 ${studentName(cls, no)} 기록을 지웠습니다`);
+  if (hadServer) Backend.setScore(cls, no, patch).then(done).catch(err => toast("저장 실패: " + err.message, true));
+  else done();
+  if (after) after();
+  return true;
+}
+function hasRoundsWithMoves(rec){
+  return Object.values(getStoredRounds(rec || {})).some(rd => computeRoundStats(rd && rd.moves).scoredMoves > 0);
 }
 // 내보내기·시트 전송은 서버에 저장된 기록만 쓴다(임시 기록 제외)
 function withServerRecords(fn){
@@ -2344,7 +2384,10 @@ function mergeScorePatch(cls, no, patch){
   const prevRec = State.scoresByClass[cls][no];
   const key = draftKey(cls, no);
   const hold = !!patch.rounds && roundsHoldBack(prevRec, patch.rounds);
-  if (hold && !State.drafts[key]) State.drafts[key] = {server: prevRec ? JSON.parse(JSON.stringify(prevRec)) : null};
+  if (hold && !State.drafts[key]){
+    State.drafts[key] = {server: prevRec ? JSON.parse(JSON.stringify(prevRec)) : null, startedAt: Date.now(),
+      startMoves: draftMoves({rounds: getStoredRounds(prevRec || {})})};
+  }
   State.scoresByClass[cls][no] = Object.assign({}, prevRec, patch);
   if (hold){
     State.drafts[key].rounds = State.scoresByClass[cls][no].rounds;
@@ -2352,6 +2395,21 @@ function mergeScorePatch(cls, no, patch){
     const el = document.getElementById("saveState");
     if (el){ el.textContent = " · 8개 다 하면 저장"; el.classList.remove("err"); }
     return;
+  }
+  // 임시 기록이 이번 조작으로 8개를 채웠다 — 너무 빨리(30초 안) 끝났으면 정말 평가했는지 묻는다
+  const fin = State.drafts[key];
+  if (fin && patch.rounds && MOVES.length - fin.startMoves >= 4 && Date.now() - fin.startedAt < FAST_FINISH_MS){
+    const sec = Math.max(1, Math.round((Date.now() - fin.startedAt) / 1000));
+    if (!confirm(`${cls}반 ${no}번 ${studentName(cls, no)} — 8개 동작이 ${sec}초 만에 끝났습니다.\n정말 평가한 학생이면 [확인], 잘못 넘긴 것이면 [취소](기록을 버립니다)를 누르세요.`)){
+      delete State.drafts[key];
+      if (fin.server) State.scoresByClass[cls][no] = fin.server; else delete State.scoresByClass[cls][no];
+      setTimeout(() => {
+        // 취소 직후 들어온 탭이 다시 만든 임시 기록도 지운다
+        delete State.drafts[key];
+        if (fin.server) State.scoresByClass[cls][no] = fin.server; else delete State.scoresByClass[cls][no];
+        State.liveStep = 0; State.activeRound = null; if (State.scoreMode === "two"){ State.pairNos = []; } renderStudentGrid(); renderScoreCard(); toast("기록을 버렸습니다"); }, 0);
+      return;
+    }
   }
   delete State.drafts[key];
 
@@ -2783,7 +2841,7 @@ function renderDashboard(){
     const open = State.dashOpen === r.no && r.cat !== "out";
     const more = !open ? "" : `<div class="dl-more">
         <div class="dl-facts"><span>완성도Ⓐ <b>${r.cs.a}/${A_MAX}</b></span><span>과제Ⓑ <b>${r.cs.b}/${B_MAX}</b></span><span>원점수 <b>${r.cs.raw}</b></span>${isGrade(r) ? `<span>환산 <b>${r.cs.final}점</b></span>` : ""}${r.cs.roundCount > 1 ? `<span>${r.cs.bestRoundNo}차 반영 (총 ${r.cs.roundCount}차)</span>` : ""}${r.rec && r.rec.scoredBy ? `<span>채점 ${esc(r.rec.scoredBy)}</span>` : ""}</div>
-        <button type="button" class="dl-go" data-go="${r.no}">채점 탭에서 열기 ▶</button>${r.cat === "part" ? `<button type="button" class="dl-clear" data-clear="${r.no}">끝까지 안 된 기록 지우기</button>` : ""}
+        <button type="button" class="dl-go" data-go="${r.no}">채점 탭에서 열기 ▶</button>${hasMusicRecord(cls, r.no) ? `<button type="button" class="dl-clear" data-clear="${r.no}">기록 지우기</button>` : ""}
       </div>`;
     return `<div class="dl-item ${r.cat === "out" ? "out" : ""} ${open ? "open" : ""}">
       <button type="button" class="dl-row" data-no="${r.no}" ${r.cat === "out" ? "disabled" : ""} aria-expanded="${open}">
@@ -2795,25 +2853,11 @@ function renderDashboard(){
     State.dashOpen = State.dashOpen === no ? null : no; renderDashboard();
   }));
   list.querySelectorAll(".dl-clear").forEach(b => b.addEventListener("click", () => {
-    const no = Number(b.dataset.clear);
-    if (!confirm(`${cls}반 ${no}번 ${studentName(cls, no)} — 끝까지 채점되지 않은 기록을 지울까요?\n(끝까지 채점한 차수와 개인진도표 기록은 그대로 둡니다)`)) return;
-    const rec = (State.scoresByClass[cls] || {})[no] || {};
-    const rounds = getStoredRounds(rec), keep = {};
-    let i = 1;
-    Object.keys(rounds).map(roundNumFromKey).sort((x, y) => x - y).forEach(rn => {
-      const rd = rounds[roundKey(rn)];
-      if (rd && computeRoundStats(rd.moves).allMovesScored) keep[roundKey(i++)] = rd;
-    });
-    const patch = {rounds: Object.keys(keep).length ? keep : null, moves: null};
-    if (!patch.rounds) patch.scoredBy = null;
-    State.scoresByClass[cls][no] = Object.assign({}, rec, patch);
-    delete State.drafts[draftKey(cls, no)];
-    Backend.setScore(cls, no, patch).then(() => toast("지웠습니다")).catch(err => toast("저장 실패: " + err.message, true));
-    State.dashOpen = null; renderDashboard();
+    clearMusicRecord(cls, Number(b.dataset.clear), () => { State.dashOpen = null; renderDashboard(); });
   }));
   list.querySelectorAll(".dl-go").forEach(b => b.addEventListener("click", () => {
     // 그 학생의 채점 화면으로 바로 간다
-    commitPendingLast(); State.scoreCls = cls; State.scoreNo = Number(b.dataset.go); State.liveStep = openStepFor(cls, Number(b.dataset.go)); State.activeRound = null; State.focusOff = false;
+    if (!leaveDraftOk()) return; State.scoreCls = cls; State.scoreNo = Number(b.dataset.go); State.liveStep = openStepFor(cls, Number(b.dataset.go)); State.activeRound = null; State.focusOff = false;
     if (State.scoreMode === "two"){ const one = document.querySelector('#scoreMode [data-smode="one"]'); if (one) one.click(); State.scoreNo = Number(b.dataset.go); State.liveStep = openStepFor(cls, State.scoreNo); }
     document.querySelector('.tab-btn[data-tab="score"]').click();
     renderStudentGrid(); renderScoreCard();
